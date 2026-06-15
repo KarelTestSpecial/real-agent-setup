@@ -197,7 +197,7 @@ bash setup.sh
 3. **Boot Your Agent**: Launch Antigravity, OpenCode, or your preferred agent. The agent will read `~/AGENTS.md` automatically at startup and immediately assume its professional persona.
 
 > [!TIP]
-> **Bookend every session — run startup and closeout yourself.** The agent reads its mandates automatically, but the two lifecycle rituals are **on-request by design** (you stay in control; nothing heavy fires on its own):
+> **Bookend every session — if needed, run startup and closeout yourself.** The agent reads its mandates automatically, but the two lifecycle rituals are not deterministic for every agent (ask your agent for help on this):
 > - **At the start of a session**, ask the agent to *"run the startup checklist"* (or run `session-startup` yourself). This primes context, reports your `~/INBOX/` item count, verifies the TMS, and triggers the throttled weekly backup.
 > - **At the end of a session**, ask the agent to *"run closeout"* (or run `session-closeout` yourself). This captures any new learned lessons, syncs the TMS (`todo` / `in-progress` / `done`), prunes stale items, and records the session event in memory.
 >
