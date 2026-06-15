@@ -1,0 +1,50 @@
+#!/bin/bash
+# ==============================================================================
+# Script: update-antigravity
+# Doel: Intelligente installatie van Google Antigravity 2.0 (Agent Manager)
+#       Voorkomt namespace en Electron app.asar conflicten in Linux-omgevingen.
+# ==============================================================================
+
+set -eo pipefail # Garandeert onmiddellijke terminatie bij een sub-commando fout
+
+ARCHIVE_PATH="$1"
+
+# 1. Validatie van de Input
+if [[ -z "$ARCHIVE_PATH" || ! -f "$ARCHIVE_PATH" ]]; then
+    echo "SYSTEEMFOUT: Geen geldig .tar.gz archiefbestand gespecificeerd."
+    echo "Gebruik: update-antigravity <pad-naar-tar.gz>"
+    exit 1
+fi
+
+APP_NAME="Antigravity 2.0 (Agent Manager)"
+TARGET_DIR="/opt/antigravity"
+BIN_NAME="antigravity"
+
+echo ">> Startende geautomatiseerde deployment voor: $APP_NAME"
+echo ">> Geresolveerde doelmap: $TARGET_DIR"
+
+# 2. Defensieve Opschoning (Cruciaal ter voorkoming van Electron conflicten)
+echo ">> Verwijderen van verouderde binaire en resource-bestanden..."
+sudo rm -rf "$TARGET_DIR"
+sudo mkdir -p "$TARGET_DIR"
+
+# 3. Veilige Extractie
+echo ">> Extractie van het archief naar de bestemmingsmap..."
+sudo tar -xzf "$ARCHIVE_PATH" -C "$TARGET_DIR" --strip-components=1
+
+# 4. Systeemintegratie: Aanmaken van Symbolische Links in de binaire PAD-structuur
+echo ">> Registreren van binaire executables in /usr/bin..."
+if [[ -f "$TARGET_DIR/bin/$BIN_NAME" ]]; then
+    sudo ln -sf "$TARGET_DIR/bin/$BIN_NAME" "/usr/bin/$BIN_NAME"
+else
+    sudo ln -sf "$TARGET_DIR/$BIN_NAME" "/usr/bin/$BIN_NAME"
+fi
+
+# 5. Systeembeveiliging: Configuratie van Kernel-Level Sandboxing
+if [[ -f "$TARGET_DIR/chrome-sandbox" ]]; then
+    echo ">> Configureren van root-privileges voor de nsjail / chrome-sandbox..."
+    sudo chown root:root "$TARGET_DIR/chrome-sandbox"
+    sudo chmod 4755 "$TARGET_DIR/chrome-sandbox"
+fi
+
+echo ">> SUCCESS: Installatie van $APP_NAME voltooid."

@@ -1,0 +1,51 @@
+#!/bin/bash
+# fable-watch: controleert of Anthropic de toegang tot Fable 5 / Mythos 5 herstelt.
+# Achtergrond: US export-control directief blokkeert beide modellen (juni 2026).
+# Schrijft een one-line status naar ~/BRAIN/.fable_status en logt naar ~/scratch/fable-watch.log.
+# PII-vrij en generiek — veilig binnen de BRAIN-scaffolding/real-agent-setup.
+set -u
+
+URL="https://www.anthropic.com/news/fable-mythos-access"
+STATUS_FILE="$HOME/BRAIN/.fable_status"
+HASH_FILE="$HOME/BRAIN/.fable_hash"
+LOG="$HOME/scratch/fable-watch.log"
+TS=$(date '+%Y-%m-%d %H:%M')
+mkdir -p "$HOME/scratch"
+
+body=$(curl -sS -L -m 30 -A "Mozilla/5.0 (fable-watch; MACCHA)" "$URL" 2>>"$LOG")
+if [ -z "$body" ]; then
+  echo "[$TS] FOUT: lege respons van $URL (netwerk?) — status ongewijzigd gelaten" >> "$LOG"
+  exit 0
+fi
+
+# Ruwe tekst: tags strippen, lowercase, witruimte normaliseren.
+text=$(printf '%s' "$body" | sed 's/<[^>]*>/ /g' | tr 'A-Z' 'a-z' | tr -s ' \t\n' ' ')
+
+# Content-hash om elke inhoudelijke wijziging te detecteren.
+hash=$(printf '%s' "$text" | md5sum | cut -d' ' -f1)
+prevhash=$(cat "$HASH_FILE" 2>/dev/null || echo "")
+printf '%s' "$hash" > "$HASH_FILE"
+changed=false
+[ -n "$prevhash" ] && [ "$hash" != "$prevhash" ] && changed=true
+
+# Signaal 1: expliciete herstel-taal.
+restored=false
+if printf '%s' "$text" | grep -Eq 'access (has been |is now )?restored|restored access|now available again|fully restored|resumed|reinstated'; then
+  restored=true
+fi
+# Signaal 2: de blokkade-taal is verdwenen.
+blocked=true
+if ! printf '%s' "$text" | grep -Eq 'suspend all access|disable fable|export control|misunderstanding'; then
+  blocked=false
+fi
+
+if $restored || ! $blocked; then
+  echo "🟢 [$TS] Fable 5 / Mythos 5 lijkt WEER BESCHIKBAAR — verifieer: $URL" > "$STATUS_FILE"
+  echo "[$TS] WIJZIGING: herstel-signaal (restored=$restored blocked=$blocked changed=$changed)" >> "$LOG"
+elif $changed; then
+  echo "🟡 [$TS] Pagina is GEWIJZIGD (nog niet duidelijk hersteld) — controleer: $URL" > "$STATUS_FILE"
+  echo "[$TS] pagina-inhoud veranderd, geen expliciet herstel-signaal" >> "$LOG"
+else
+  echo "🔴 [$TS] Fable 5 / Mythos 5 nog geblokkeerd (US export-control)." > "$STATUS_FILE"
+  echo "[$TS] nog geblokkeerd" >> "$LOG"
+fi

@@ -1,0 +1,18 @@
+#!/bin/bash
+# ==============================================================================
+# Script: update-antigravitycli
+# Beschrijving: Updatet de Antigravity CLI (agy).
+# ==============================================================================
+
+set -e
+
+echo "🔄 [Opo] Antigravity CLI (agy) updaten..."
+
+if [ -f "$HOME/.local/bin/agy" ]; then
+    "$HOME/.local/bin/agy" update
+else
+    echo "⚠️ Fout: agy binary niet gevonden op $HOME/.local/bin/agy"
+    exit 1
+fi
+
+echo "✅ Antigravity CLI is succesvol geüpdatet!"

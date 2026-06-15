@@ -1,0 +1,48 @@
+#!/bin/bash
+# Session Closeout: prune TMS + method-improver + integrity check
+MEMANTO=~/bin/memanto_cli.py
+TMS_PRUNE=~/INFRA/maintenance/tms_prune.js
+INTEGRITY=~/bin/tms_integrity_hook.py
+
+echo "========================================"
+echo " SESSION CLOSEOUT"
+echo "========================================"
+
+# 1 TMS Prune
+echo ""
+echo "=== Stap 1: TMS Pruning ==="
+if [ -f "$TMS_PRUNE" ]; then
+  node "$TMS_PRUNE" 2>/dev/null && echo "TMS gepruned" || echo "TMS prune overslagen"
+else
+  echo "tms_prune.js niet gevonden"
+fi
+
+# 2 Method Improver (self-reflection prompt)
+echo ""
+echo "=== Stap 2: Method Improver ==="
+echo "Reflecteer:"
+echo "  - Wat ging goed deze sessie?"
+echo "  - Wat waren herhaalde fouten?"
+echo "  - Zijn er lessen die voldoen aan de significantie-drempel?"
+echo ""
+echo "Gebruik: memanto_cli.py distill \"Titel\" \"Inhoud\" --category technical/strategic/security"
+
+# 3 Integrity Hook
+echo ""
+echo "=== Stap 3: TMS Integrity Check ==="
+if [ -f "$INTEGRITY" ]; then
+  python3 "$INTEGRITY" 2>&1
+else
+  echo "tms_integrity_hook.py niet gevonden"
+fi
+
+# 4 Memanto: remember session summary
+echo ""
+echo "=== Stap 4: Session Memory ==="
+"$MEMANTO" remember "Sessie afgesloten op $(date '+%Y-%m-%d %H:%M')" --category Event --source closeout 2>/dev/null
+echo "Sessie gemarkeerd in Memanto"
+
+echo ""
+echo "========================================"
+echo " CLOSEOUT VOLTOOID"
+echo "========================================"

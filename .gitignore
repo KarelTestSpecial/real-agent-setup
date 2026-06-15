@@ -1,0 +1,58 @@
+# === Persoonlijke bestanden (NOOIT committen) ===
+/AGENTS.md
+/IMPROVEMENT.md
+/ALIASES.md
+/done.md
+/in-progress.md
+/todo.md
+/learned-lessons/*
+!/learned-lessons/README.md
+
+# === Publish-time sanitization config (local only — holds personal tokens) ===
+.publish-sanitize.sed
+.publish-pii-words
+.publish-skip
+
+# === Brain Runtime ===
+brain/data/
+
+# === Credentials & Secrets ===
+*.token.json
+*client_secret*.json
+.env
+.env.*
+credentials.json
+service-account-key.json
+*.pem
+id_*
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyc
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+dist/
+build/
+*.egg
+
+# === Dependencies ===
+node_modules/
+.pnpm-store/
+
+# === Logs & Temp ===
+*.log
+.tmp/
+tmp/
+
+# === OS artifacts ===
+.DS_Store
+Thumbs.db
+
+# === IDE/Editor configs ===
+.idea/
+.vscode/
+*.swp
+*.swo

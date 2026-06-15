@@ -1,0 +1,65 @@
+#!/bin/bash
+# MACCHA versleutelde backup van INFO/ PLAN/ BRAIN/ creatief/ naar Google Drive.
+# Wekelijks getriggerd via session-startup (marker ~/BRAIN/.last_backup);
+# handmatig draaien kan altijd: ~/bin/maccha-backup
+set -euo pipefail
+
+H="${HOME:-/home/$(whoami)}"
+DRIVE=/mnt/chromeos/GoogleDrive/MyDrive
+DEST_DIR="$DRIVE/MACCHA-backups"
+KEY_FILE="$H/.config/maccha/backup.key"
+MARKER="$H/BRAIN/.last_backup"
+KEEP=4
+STAMP=$(date +%Y%m%d-%H%M)
+OUT="$DEST_DIR/maccha-backup-$STAMP.tar.gz.enc"
+
+if [ ! -d "$DRIVE" ]; then
+  echo "❌ Google Drive niet gemount op $DRIVE — deel Drive met Linux via de Files-app." >&2
+  exit 1
+fi
+mkdir -p "$DEST_DIR"
+
+if [ ! -f "$KEY_FILE" ]; then
+  mkdir -p "$(dirname "$KEY_FILE")"
+  umask 077
+  openssl rand -hex 32 > "$KEY_FILE"
+  echo "🔑 NIEUWE sleutel aangemaakt: $KEY_FILE"
+  echo "   ⚠️  Bewaar een kopie BUITEN dit toestel (wachtwoordmanager/papier) —"
+  echo "   zonder deze sleutel is de backup waardeloos na verlies van de laptop!"
+fi
+
+echo "📦 Backup maken → $OUT"
+tar -C "$H" -czf - \
+  --exclude='node_modules' --exclude='*/node_modules' \
+  --exclude='BRAIN/archive/2026-06-mappenstructuur' \
+  --exclude='.vite' \
+  INFO PLAN BRAIN creatief \
+| openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass file:"$KEY_FILE" -out "$OUT"
+
+echo "🔍 Integriteitscheck (ontsleutelen + tar-inhoud lezen)..."
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:"$KEY_FILE" -in "$OUT" | tar -tzf - > /dev/null
+
+SIZE=$(du -h "$OUT" | cut -f1)
+echo "✅ Backup OK: $OUT ($SIZE)"
+
+# Rotatie: bewaar de laatste $KEEP
+ls -1t "$DEST_DIR"/maccha-backup-*.tar.gz.enc 2>/dev/null | tail -n +$((KEEP+1)) | xargs -r rm -v
+
+# Restore-instructies naast de backups (zonder sleutel!)
+cat > "$DEST_DIR/RESTORE.md" <<'EOF'
+# MACCHA backup herstellen
+
+Inhoud: ~/INFO, ~/PLAN, ~/BRAIN, ~/creatief (zonder node_modules en oude backups).
+
+1. Zet de sleutel terug op het (nieuwe) toestel:
+   mkdir -p ~/.config/maccha && nano ~/.config/maccha/backup.key   # plak de 64-tekens hex-sleutel
+   chmod 600 ~/.config/maccha/backup.key
+2. Herstel in de homedirectory:
+   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+     -pass file:~/.config/maccha/backup.key \
+     -in maccha-backup-JJJJMMDD-UUMM.tar.gz.enc | tar -xzf - -C ~
+De sleutel staat NIET in deze map — de eigenaar bewaart die apart (wachtwoordmanager/papier).
+EOF
+
+date +%s > "$MARKER"
+echo "🗓️  Marker bijgewerkt ($MARKER) — volgende automatische run over 7 dagen."

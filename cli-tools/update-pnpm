@@ -1,0 +1,7 @@
+#!/bin/bash
+# ==============================================================================
+# Script: update-pnpm
+# Beschrijving: Updatet pnpm via corepack.
+# ==============================================================================
+
+corepack use pnpm@latest && pnpm -v
