@@ -259,15 +259,15 @@ class MemantoMemory:
             return []
 
         # 1. Primary Vector Cosine Similarity
-        # Lege query = "geef recente items": embedden is dan zinloos (en een 400 bij de API),
-        # dus direct door naar de keyword/recency-fallback.
+        # Empty query = "give recent items": embedding is then pointless (and a 400 from the API),
+        # so go straight to the keyword/recency fallback.
         scores = []
         if self.client and query and query.strip():
             try:
                 candidate_texts = [c["text"] for c in candidates]
                 # Embed candidates in batch.
-                # gemini-embedding-2 leest een lijst kale strings als één document;
-                # expliciete Content-objecten dwingen één embedding per tekst af.
+                # gemini-embedding-2 reads a list of bare strings as a single document;
+                # explicit Content objects force one embedding per text.
                 candidates_emb = self.client.models.embed_content(
                     model=self.embedding_model,
                     contents=[types.Content(parts=[types.Part(text=t)]) for t in candidate_texts]

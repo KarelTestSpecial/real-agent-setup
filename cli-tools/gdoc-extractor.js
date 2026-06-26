@@ -38,7 +38,7 @@
   }
   
   if (!text || text.trim().length === 0) {
-    alert("Geen tekst gevonden om te extraheren!");
+    alert("No text found to extract!");
     return;
   }
   
@@ -125,7 +125,7 @@
   `;
   
   const copyBtn = document.createElement('button');
-  copyBtn.textContent = 'Kopiëren naar klembord';
+  copyBtn.textContent = 'Copy to clipboard';
   copyBtn.style.cssText = `
     padding: 8px 16px;
     background: #007acc;
@@ -140,10 +140,10 @@
   copyBtn.onclick = () => {
     textarea.select();
     document.execCommand('copy');
-    copyBtn.textContent = '✓ Gekopieerd!';
+    copyBtn.textContent = '✓ Copied!';
     copyBtn.style.background = '#28a745';
     setTimeout(() => {
-      copyBtn.textContent = 'Kopiëren naar klembord';
+      copyBtn.textContent = 'Copy to clipboard';
       copyBtn.style.background = '#007acc';
     }, 2000);
   };

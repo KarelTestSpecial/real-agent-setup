@@ -1,3 +1,3 @@
 # Done
 
-*Placeholder — zie lokale kopie voor actuele geschiedenis.*
+*Placeholder — see the local copy for current history.*

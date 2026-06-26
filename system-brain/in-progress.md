@@ -1,3 +1,3 @@
 # In Progress
 
-*Placeholder — zie lokale kopie voor actuele status.*
+*Placeholder — see the local copy for current status.*

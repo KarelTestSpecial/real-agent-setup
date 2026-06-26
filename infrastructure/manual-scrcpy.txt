@@ -1,47 +1,48 @@
-Hier is een praktische, beknopte handleiding voor jouw specifieke Nokia 1.3 + Chromebook setup. Je kunt dit bestandje opslaan als `README.txt` in je Home-map, zodat je het altijd bij de hand hebt.
+A practical, concise guide for a low-end Android phone + Chromebook (Crostini) setup.
+You can save this file as `README.txt` in your home folder so it is always at hand.
 
 ***
 
-# Handleiding: Scrcpy Gebruik op Nokia 1.3 (Android Go)
+# Guide: Using Scrcpy on a Low-End Android (Android Go) Phone
 
-Omdat je een Nokia 1.3 (Android Go) gebruikt, is een specifieke opstartmethode essentieel om crashes te voorkomen.
+On a low-end Android Go device, a specific startup method is essential to avoid crashes.
 
-### 1. Voorbereiding (Elke keer als je begint)
-1.  **USB:** Verbind je Nokia met de Chromebook via een USB-kabel.
-2.  **Delen:** Klik rechtsonder op je Chromebook op het **USB-icoontje**. Zorg dat je kiest voor **"Verbinden met Linux"**.
-3.  **Toestemming:** Als je een pop-up op je Nokia ziet over "USB-foutopsporing", tik op OK/Toestaan.
+### 1. Preparation (every time you start)
+1.  **USB:** Connect your phone to the Chromebook with a USB cable.
+2.  **Sharing:** Click the **USB icon** in the Chromebook's bottom-right tray. Make sure to choose **"Connect to Linux"**.
+3.  **Permission:** If you see a "USB debugging" pop-up on the phone, tap OK/Allow.
 
-### 2. Het programma starten
-Open je terminal (`penguin`) en gebruik **altijd** het onderstaande commando. Dit is geoptimaliseerd voor de beperkte hardware van je telefoon:
+### 2. Starting the program
+Open your terminal (`penguin`) and **always** use the command below. It is optimized for limited phone hardware:
 
 ```bash
 scrcpy --no-audio --max-size 800 --video-bit-rate 800K --max-fps 20 --codec=h264
 ```
 
-*   **Waarom deze instellingen?**
-    *   `--no-audio`: Voorkomt crashes omdat de Nokia 1.3 moeite heeft met audio-streaming.
-    *   `--max-size 800`: Houdt het beeld scherp genoeg, maar de data-stroom laag.
-    *   `--video-bit-rate 800K`: Zorgt voor een vloeiende verbinding zonder haperingen.
-    *   `--max-fps 20`: Spaart je processor en voorkomt oververhitting/crashes.
+*   **Why these settings?**
+    *   `--no-audio`: Prevents crashes on low-end devices that struggle with audio streaming.
+    *   `--max-size 800`: Keeps the image sharp enough while keeping the data stream low.
+    *   `--video-bit-rate 800K`: Provides a smooth connection without stutter.
+    *   `--max-fps 20`: Spares the processor and prevents overheating/crashes.
 
-### 3. Bediening
-*   **Muis:** Klikken = Tikken op de telefoon.
-*   **Toetsenbord:** Typen werkt direct in de actieve app op je Nokia.
-*   **Bestanden:** Sleep een bestand (bijv. een .apk of foto) naar het scrcpy-venster om het direct naar de `/sdcard/` map van je telefoon te kopiëren.
-*   **Sneltoetsen (Scrcpy):**
-    *   `Ctrl + f`: Volledig scherm aan/uit.
-    *   `Ctrl + h` of `Home`: Ga naar het 'Home' scherm van je telefoon.
-    *   `Ctrl + b` of `Back`: Ga terug in een app.
+### 3. Controls
+*   **Mouse:** Click = tap on the phone.
+*   **Keyboard:** Typing works directly in the active app on the phone.
+*   **Files:** Drag a file (e.g. an .apk or photo) onto the scrcpy window to copy it straight to the phone's `/sdcard/` folder.
+*   **Shortcuts (Scrcpy):**
+    *   `Ctrl + f`: Toggle fullscreen.
+    *   `Ctrl + h` or `Home`: Go to the phone's 'Home' screen.
+    *   `Ctrl + b` or `Back`: Go back in an app.
 
-### 4. Problemen oplossen
-*   **"Killed" of geen beeld:** De verbinding is waarschijnlijk verloren. Sluit het venster, haal de USB-kabel eruit en doe hem er opnieuw in. Typ daarna:
+### 4. Troubleshooting
+*   **"Killed" or no image:** The connection was probably lost. Close the window, unplug the USB cable and plug it back in. Then type:
     ```bash
     adb kill-server
     adb start-server
     ```
-    (En start daarna scrcpy weer met het commando uit stap 2).
-*   **Toestel traag?** Start je Nokia 1.3 eens opnieuw op. Android Go-toestellen presteren na een verse herstart altijd merkbaar beter voor externe verbindingen.
+    (Then start scrcpy again with the command from step 2.)
+*   **Device slow?** Reboot the phone. Android Go devices always perform noticeably better for external connections after a fresh restart.
 
 ***
 
-**Tip:** Je kunt dit commando ook in een klein tekstbestandje opslaan (bijv. `start-nokia.sh`) in je home-map. Dan hoef je het commando niet steeds te typen!
+**Tip:** You can also save this command in a small script (e.g. `start-phone.sh`) in your home folder, so you don't have to type it every time!

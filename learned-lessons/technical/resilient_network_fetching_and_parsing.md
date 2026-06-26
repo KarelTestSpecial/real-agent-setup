@@ -1,3 +1,11 @@
+---
+title: Resilient Network Fetching & Parsing
+category: technical
+domain: ai-network-resilience
+tier: 2
+last_updated: 2026-06-15
+---
+
 # Resilient Network Fetching, Zero-Crash Parsing, and Safe Error Logging in Node.js/TypeScript
 
 ## Context & Problem

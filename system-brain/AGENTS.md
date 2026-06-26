@@ -173,9 +173,9 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 | Task flow (TMS) | `~/BRAIN/tms/` (symlinks: `~/todo.md`, `~/in-progress.md`, `~/done.md`) |
 | Guardrails register (machine-enforced) | `~/BRAIN/policies/guardrails.md` |
 | Session protocol (detailed) | `~/BRAIN/AGENTS.md` |
-| Working memory | `~/BRAIN/memanto/memanto_global.json` (via `memanto_cli.py remember/recall/answer/distill`) |
+| Working memory | `~/BRAIN/memanto/memanto_global.json` (via `memanto_cli.py remember/recall/answer/distill/prune`) |
 | Learned lessons | `~/BRAIN/learned-lessons/` |
-| Tool register | `~/BRAIN/systeem-info/TOOL_REGISTER.md` |
+| Tool register | `~/BRAIN/system-info/TOOL_REGISTER.md` |
 | Infrastructure scripts | `~/bin/` and `~/INFRA/` |
 | Encrypted weekly backup | `maccha-backup` (AES-256 tar of personal zones → cloud drive, key in `~/.config/maccha/backup.key`, triggered by `session-startup`) |
 

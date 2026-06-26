@@ -1,3 +1,11 @@
+---
+title: Himalaya Raw Message Send & Mandatory From Header
+category: technical
+domain: email-integration
+tier: 2
+last_updated: 2026-06-15
+---
+
 # Himalaya CLI Raw Message Send & Mandatory From Header
 
 ## 1. Sending Raw Emails via stdin (EML integration)

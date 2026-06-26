@@ -28,12 +28,12 @@ def cmd_list(args):
 
 def cmd_prime(args):
     output = ["# Opencode Session Prime", ""]
-    output.append("## Recente Memories (Memanto)")
+    output.append("## Recent Memories (Memanto)")
     recent = brain.recall("", limit=10)
     for m in recent:
         output.append(f"- [{m['category']}] (conf:{m['confidence']:.2f}) {m['text']}")
     if not recent:
-        output.append("- Geen actieve herinneringen.")
+        output.append("- No active memories.")
     output.append("")
     output.append("## Learned Lessons Index")
     if os.path.isdir(LESSONS_DIR):
@@ -63,7 +63,7 @@ def cmd_prime(args):
     if os.path.exists(sp):
         with open(sp) as f:
             c = f.read()
-        fm = re.search(r"## \U0001f680 Actieve Focus(.*?)(?=\n##)", c, re.DOTALL)
+        fm = re.search(r"## \U0001f680 Active Focus(.*?)(?=\n##)", c, re.DOTALL)
         if fm:
             output.append(f"## Active Focus (STATE.md)\n{fm.group(1).strip()}")
     print("\n".join(output))
@@ -83,7 +83,42 @@ def cmd_distill(args):
         f.write(f"---\ntitle: {args.title}\ntier: {'global' if is_global else 'local'}\ncategory: {cat}\n---\n\n# {args.title}\n\n{args.content}\n")
     mid = brain.remember(f"[{cat}] {args.title}: {args.content[:200]}", category="Learning", source="distill")
     print(f"Lesson '{args.title}' -> {'GLOBAL' if is_global else f'learned-lessons/{cat}'}")
-    print(f"Bestand: {fp}\nMemanto ID: {mid}")
+    print(f"File: {fp}\nMemanto ID: {mid}")
+
+def cmd_prune(args):
+    """Flow-through: remove decayed working-memory entries (default: Event < 0.2).
+    Curated categories (Learning/Preference/Fact) are never touched."""
+    PROTECTED = {"Learning", "Preference", "Fact"}
+    cats = [c.strip() for c in args.category.split(",")] if args.category else ["Event"]
+    if any(c in PROTECTED for c in cats):
+        print(f"REFUSED: curated category {PROTECTED & set(cats)} may not be pruned.")
+        sys.exit(1)
+    before = list(brain.memories)
+    doomed = [m for m in before
+              if m.get("category") in cats and m.get("confidence", 1.0) < args.threshold]
+    keep = [m for m in before if m not in doomed]
+    print(f"Store: {len(before)} entries | removing: {len(doomed)} ({','.join(cats)} < {args.threshold}) | keeping: {len(keep)}")
+    for m in doomed[:10]:
+        print(f"  - conf={m.get('confidence', 0):.2f} | {m.get('text', '')[:60]}")
+    if len(doomed) > 10:
+        print(f"  ... +{len(doomed) - 10} more")
+    if args.dry_run:
+        print("(dry-run: nothing written)")
+        return
+    if not doomed:
+        return
+    bak = MEMORY_FILE + ".bak-" + datetime.date.today().strftime("%Y%m%d")
+    with open(bak, "w") as f:
+        json.dump(before, f, ensure_ascii=False, indent=2)
+    brain.memories = keep
+    brain._save_memories()
+    # Rotate backups: let them flow through instead of piling up — keep only the newest KEEP_BAKS.
+    KEEP_BAKS = 3
+    import glob
+    olds = sorted(glob.glob(MEMORY_FILE + ".bak-*"))
+    for stale in olds[:-KEEP_BAKS]:
+        os.remove(stale)
+    print(f"Pruned. Backup: {bak} (keeping last {KEEP_BAKS}, removed {max(0, len(olds) - KEEP_BAKS)} old)")
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(prog="memanto", description="Memanto + Librarian CLI")
@@ -108,5 +143,10 @@ if __name__ == "__main__":
     dp = sub.add_parser("distill")
     dp.add_argument("title"); dp.add_argument("content"); dp.add_argument("--category")
 
+    prn = sub.add_parser("prune", help="Remove decayed working-memory entries (default: Event < 0.2)")
+    prn.add_argument("--category", help="Comma-separated categories (default: Event)")
+    prn.add_argument("--threshold", type=float, default=0.2, help="Remove entries with confidence < threshold")
+    prn.add_argument("--dry-run", action="store_true", help="Show what would be removed, write nothing")
+
     args = p.parse_args()
-    {"remember": cmd_remember, "recall": cmd_recall, "answer": cmd_answer, "list": cmd_list, "prime": cmd_prime, "distill": cmd_distill}[args.command](args)
+    {"remember": cmd_remember, "recall": cmd_recall, "answer": cmd_answer, "list": cmd_list, "prime": cmd_prime, "distill": cmd_distill, "prune": cmd_prune}[args.command](args)

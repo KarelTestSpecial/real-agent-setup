@@ -1,3 +1,3 @@
 # TODO
 
-*Placeholder — zie lokale kopie voor actuele taken.*
+*Placeholder — see the local copy for current tasks.*

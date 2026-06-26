@@ -67,8 +67,8 @@ function main() {
 
                 console.log(JSON.stringify({
                     decision: "deny",
-                    reason: `⚠️ TEST ENFORCEMENT: Je hebt code gewijzigd in: ${modifiedCodeFiles.join(', ')}. Er zijn echter geen tests (her)geschreven. Volgens de 'Technical Integrity' mandate moet elke functionele wijziging vergezeld gaan van validatie-logica. Voeg tests toe voor deze wijzigingen.`,
-                    systemMessage: "🛡️ Test-Enforcer: Code gewijzigd zonder tests. Context gewist, retry geforceerd...",
+                    reason: `⚠️ TEST ENFORCEMENT: You modified code in: ${modifiedCodeFiles.join(', ')}. However, no tests were (re)written. Per the 'Technical Integrity' mandate, every functional change must be accompanied by validation logic. Add tests for these changes.`,
+                    systemMessage: "🛡️ Test-Enforcer: Code changed without tests. Context cleared, retry forced...",
                     hookSpecificOutput: {
                         clearContext: true
                     }
