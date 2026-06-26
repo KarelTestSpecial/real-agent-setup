@@ -132,7 +132,7 @@ async function main() {
         const interactionId = createRes.id;
         
         if (!interactionId) {
-            throw new Error('Geen Interaction ID ontvangen van de API.');
+            throw new Error('No Interaction ID received from the API.');
         }
 
         console.log(`\x1b[32m✅ Deep Research Session Started!\x1b[0m ID: \x1b[90m${interactionId}\x1b[0m`);
@@ -147,7 +147,7 @@ async function main() {
             elapsed += 1;
             const spinChar = spinner[spinnerIdx];
             spinnerIdx = (spinnerIdx + 1) % spinner.length;
-            process.stdout.write(`\r\x1b[36m${spinChar} Analyseren... [${elapsed}s verlopen]\x1b[0m`);
+            process.stdout.write(`\r\x1b[36m${spinChar} Analyzing... [${elapsed}s elapsed]\x1b[0m`);
         }, 1000);
 
         let finished = false;

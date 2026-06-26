@@ -1,38 +1,38 @@
 #!/bin/bash
-# hermes-running — snel antwoord op: "draait Hermes nu, en wat deed hij laatst?"
-# Gebruik: hermes-running
+# hermes-running — quick answer to: "is Hermes running now, and what did it do last?"
+# Usage: hermes-running
 
 HERMES_HOME="$HOME/.hermes"
 
-echo "=== Hermes runtime-check ($(date '+%Y-%m-%d %H:%M')) ==="
+echo "=== Hermes runtime check ($(date '+%Y-%m-%d %H:%M')) ==="
 
-# 1. Actieve processen (de python-CLI, gateway of proxy)
+# 1. Active processes (the python CLI, gateway or proxy)
 PROCS=$(pgrep -af 'hermes' | grep -v 'hermes-running' | grep -v pgrep)
 if [ -n "$PROCS" ]; then
-    echo "⚠️  HERMES DRAAIT NU:"
+    echo "⚠️  HERMES IS RUNNING NOW:"
     echo "$PROCS" | sed 's/^/    /'
 else
-    echo "✅ Geen Hermes-proces actief."
+    echo "✅ No Hermes process active."
 fi
 
-# 2. Geplande/achtergrond-mechanismen die hem kunnen opstarten
+# 2. Scheduled/background mechanisms that could start it
 CRON_SYS=$(crontab -l 2>/dev/null | grep -i hermes)
-[ -n "$CRON_SYS" ] && echo "⚠️  Systeem-crontab verwijst naar Hermes:" && echo "$CRON_SYS" | sed 's/^/    /'
+[ -n "$CRON_SYS" ] && echo "⚠️  System crontab references Hermes:" && echo "$CRON_SYS" | sed 's/^/    /'
 
 SVC=$(systemctl --user list-units --all 2>/dev/null | grep -i hermes)
-[ -n "$SVC" ] && echo "⚠️  Systemd user-unit gevonden:" && echo "$SVC" | sed 's/^/    /'
+[ -n "$SVC" ] && echo "⚠️  Systemd user unit found:" && echo "$SVC" | sed 's/^/    /'
 
 if [ -z "$CRON_SYS" ] && [ -z "$SVC" ]; then
-    echo "✅ Geen crontab-entries of systemd-units die Hermes starten."
+    echo "✅ No crontab entries or systemd units that start Hermes."
 fi
 
-# 3. Laatste activiteit volgens de logs
-echo "--- Laatste log-activiteit ---"
+# 3. Last activity according to the logs
+echo "--- Last log activity ---"
 for log in "$HERMES_HOME"/logs/*.log; do
     [ -f "$log" ] || continue
-    printf "  %-12s laatst gewijzigd: %s\n" "$(basename "$log")" "$(date -r "$log" '+%Y-%m-%d %H:%M')"
+    printf "  %-12s last modified: %s\n" "$(basename "$log")" "$(date -r "$log" '+%Y-%m-%d %H:%M')"
 done
 
-# 4. Recentste sessies
-echo "--- Recentste sessies ---"
+# 4. Most recent sessions
+echo "--- Most recent sessions ---"
 ls -t "$HERMES_HOME"/sessions/ 2>/dev/null | head -3 | sed 's/^/  /'

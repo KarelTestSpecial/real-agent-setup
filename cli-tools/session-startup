@@ -69,17 +69,6 @@ else
 fi
 
 echo ""
-echo "=== Fable 5 / Mythos 5 access watcher (recheck once per day) ==="
-FW_MARKER=~/BRAIN/.last_fable_check
-LASTF=$(cat "$FW_MARKER" 2>/dev/null || echo 0)
-if (( NOW - LASTF > 86400 )); then
-  echo "$NOW" > "$FW_MARKER"
-  ~/bin/fable-watch
-fi
-cat ~/BRAIN/.fable_status 2>/dev/null || echo "(no status yet — run ~/bin/fable-watch)"
-
-
-echo ""
 echo "=== Shortlist Sync Check ==="
 if [ -f ~/bin/tms_shortlist_sync.py ]; then
   python3 ~/bin/tms_shortlist_sync.py

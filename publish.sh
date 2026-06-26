@@ -182,6 +182,24 @@ if [ "$LEAK" -ne 0 ]; then
 fi
 echo -e "  ${GREEN}✓${RESET} No personal identifiers or hardcoded home paths in synced content."
 
+# === Hard Language Gate ===
+# The public repo must stay English. publish.sh copies local scripts verbatim and
+# the local source is Dutch — so abort if a Dutch marker word survives into a synced
+# file. Mirrors the PII gate: a silent language regression becomes a loud, blocking stop.
+# (Words are distinctly Dutch and chosen not to collide with English; tune as needed.)
+echo ""
+echo -e "${CYAN}${BOLD}🌐 Hard Language Gate (English-only)${RESET}"
+DUTCH_WORDS="niet geen bestand bestanden geheugen wekelijks wekelijkse verwijder verwijderen verwijderd opschonen opgeschoond voltooid mislukt gevonden sleutel gebruiker overgeslagen waarschuwing melding gekopieerd kopiëren onderzoek handleiding telefoon succesvol afgerond leegmaken bewaar zonder analyseren verlopen pagina gewijzigd beschikbaar huidige downloaden installatie verbinding bezig ophalen opslaan bijwerken controleert controleren vereist voorbeeld geïnstalleerd geinstalleerd aanmaken starten gebruik"
+NL=0
+for word in $DUTCH_WORDS; do
+    if grep -rnwIiE "$word" "${GATE_DIRS[@]}" 2>/dev/null; then NL=1; fi
+done
+if [ "$NL" -ne 0 ]; then
+    echo -e "  ${RED}${BOLD}✗ DUTCH DETECTED — aborting (translate the lines above to English before publishing).${RESET}"
+    exit 1
+fi
+echo -e "  ${GREEN}✓${RESET} No Dutch marker words in synced content."
+
 # === Git ===
 echo ""
 echo -e "${CYAN}${BOLD}🐙 Git Repository Integrity Check${RESET}"

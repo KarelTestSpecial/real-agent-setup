@@ -1,12 +1,12 @@
 #!/bin/bash
 # ==============================================================================
 # Script: check-antigravity-update
-# Doel: Controleert de actuele versie van Antigravity 2.0 (Agent Manager) ten 
-#       opzichte van de laatst beschikbare stabiele release, en biedt de optie 
-#       om de upgrade direct en veilig uit te voeren.
+# Purpose: Checks the current version of Antigravity 2.0 (Agent Manager) against
+#          the latest available stable release, and offers the option to run the
+#          upgrade directly and safely.
 # ==============================================================================
 
-# Kleuren voor UI
+# Colors for UI
 CYAN="\e[36m"
 GREEN="\e[32m"
 YELLOW="\e[33m"
@@ -18,8 +18,8 @@ RESET="\e[0m"
 echo -e "${CYAN}${BOLD}🔍 Antigravity 2.0 Agent Manager Update Checker & Installer${RESET}"
 echo -e "======================================================================"
 
-# 1. Bepaal de geïnstalleerde versie via de ingebouwde ASAR parser
-echo -e "${BLUE}Analyseren van geïnstalleerde app-package...${RESET}"
+# 1. Determine the installed version via the built-in ASAR parser
+echo -e "${BLUE}Analyzing installed app package...${RESET}"
 INSTALLED_VERSION=$(node -e "
 const fs = require('fs');
 try {
@@ -39,91 +39,91 @@ try {
     fs.closeSync(fd);
     console.log(JSON.parse(fileBuf.toString('utf8')).version);
 } catch(e) {
-    console.log('Niet geïnstalleerd');
+    console.log('Not installed');
 }
 ")
 
-echo -e "${BLUE}Geïnstalleerde versie:${RESET} ${BOLD}${INSTALLED_VERSION}${RESET}"
+echo -e "${BLUE}Installed version:${RESET} ${BOLD}${INSTALLED_VERSION}${RESET}"
 
-# 2. Haal de laatste beschikbare versie op via de API
+# 2. Fetch the latest available version via the API
 API_URL="https://antigravity-auto-updater-974169037036.us-central1.run.app/releases"
-echo -e "${BLUE}Ophalen van release-informatie...${RESET}"
+echo -e "${BLUE}Fetching release information...${RESET}"
 
 RELEASES_JSON=$(curl -sL "$API_URL")
 
 if [ -z "$RELEASES_JSON" ] || [ "$RELEASES_JSON" == "[]" ]; then
-    echo -e "${RED}❌ Fout: Kon geen verbinding maken met de update-server of geen releases gevonden.${RESET}"
+    echo -e "${RED}❌ Error: Could not connect to the update server or no releases found.${RESET}"
     exit 1
 fi
 
-# De API geeft een gesorteerde JSON array terug. De eerste entry is de nieuwste release.
+# The API returns a sorted JSON array. The first entry is the newest release.
 LATEST_VERSION=$(echo "$RELEASES_JSON" | jq -r '.[0].version')
 EXEC_ID=$(echo "$RELEASES_JSON" | jq -r '.[0].execution_id')
 
-echo -e "${BLUE}Laatste beschikbare versie:${RESET} ${BOLD}${LATEST_VERSION}${RESET}"
+echo -e "${BLUE}Latest available version:${RESET} ${BOLD}${LATEST_VERSION}${RESET}"
 
-if [ "$INSTALLED_VERSION" == "Niet geïnstalleerd" ]; then
-    echo -e "${YELLOW}⚠️ Antigravity 2.0 is momenteel niet correct geïnstalleerd op /opt/antigravity.${RESET}"
-    echo -e "Je kunt de nieuwste versie installeren met:"
-    echo -e "  ${GREEN}update-antigravity <pad-naar-tar.gz>${RESET}"
+if [ "$INSTALLED_VERSION" == "Not installed" ]; then
+    echo -e "${YELLOW}⚠️ Antigravity 2.0 is currently not correctly installed at /opt/antigravity.${RESET}"
+    echo -e "You can install the latest version with:"
+    echo -e "  ${GREEN}update-antigravity <path-to-tar.gz>${RESET}"
     exit 0
 fi
 
-# 3. Vergelijken en Rapporteren
+# 3. Compare and report
 if [ "$INSTALLED_VERSION" == "$LATEST_VERSION" ]; then
     echo -e "======================================================================"
-    echo -e "${GREEN}✅ Je bent helemaal up-to-date! Er is geen actie vereist.${RESET}"
-    echo -e "Huidige versie ${BOLD}${INSTALLED_VERSION}${RESET} is de nieuwste stabiele release."
+    echo -e "${GREEN}✅ You are fully up to date! No action required.${RESET}"
+    echo -e "Current version ${BOLD}${INSTALLED_VERSION}${RESET} is the latest stable release."
     echo -e "======================================================================"
     exit 0
 fi
 
 echo -e "======================================================================"
-echo -e "${YELLOW}🚀 UPDATE BESCHIKBAAR!${RESET}"
-echo -e "Er is een nieuwe stabiele release van Antigravity 2.0 beschikbaar."
-echo -e "  • Huidige versie : ${RED}${INSTALLED_VERSION}${RESET}"
-echo -e "  • Nieuwe versie  : ${GREEN}${LATEST_VERSION}${RESET} (Build: ${EXEC_ID})"
+echo -e "${YELLOW}🚀 UPDATE AVAILABLE!${RESET}"
+echo -e "A new stable release of Antigravity 2.0 is available."
+echo -e "  • Current version : ${RED}${INSTALLED_VERSION}${RESET}"
+echo -e "  • New version     : ${GREEN}${LATEST_VERSION}${RESET} (Build: ${EXEC_ID})"
 echo ""
 
-# Genereer de download-URL
+# Generate the download URL
 DOWNLOAD_URL="https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${LATEST_VERSION}-${EXEC_ID}/linux-x64/Antigravity.tar.gz"
 
-echo -e "${BLUE}Officiële Google CDN download-link:${RESET}"
+echo -e "${BLUE}Official Google CDN download link:${RESET}"
 echo -e "  ${CYAN}${DOWNLOAD_URL}${RESET}"
 echo "======================================================================"
 
-# Bied interactieve optie aan om de update direct uit te voeren
-read -p "Wil je deze update nu automatisch downloaden en installeren? (j/n): " CONFIRM
+# Offer interactive option to run the update directly
+read -p "Download and install this update automatically now? (y/n): " CONFIRM
 CONFIRM=$(echo "$CONFIRM" | tr '[:upper:]' '[:lower:]')
 
-if [[ "$CONFIRM" == "j" || "$CONFIRM" == "ja" || "$CONFIRM" == "y" || "$CONFIRM" == "yes" ]]; then
-    echo -e "\n${CYAN}>> Starten van de geautomatiseerde upgrade...${RESET}"
-    
+if [[ "$CONFIRM" == "y" || "$CONFIRM" == "yes" ]]; then
+    echo -e "\n${CYAN}>> Starting the automated upgrade...${RESET}"
+
     TEMP_ARCHIVE="$HOME/Downloads/Antigravity_AgentManager.tar.gz"
-    
-    echo -e "${BLUE}>> Downloaden van de nieuwste release naar ${TEMP_ARCHIVE}...${RESET}"
+
+    echo -e "${BLUE}>> Downloading the latest release to ${TEMP_ARCHIVE}...${RESET}"
     if wget -O "$TEMP_ARCHIVE" "$DOWNLOAD_URL"; then
-        echo -e "${GREEN}>> Download voltooid!${RESET}"
-        
-        echo -e "${BLUE}>> Starten van de installatie via update-antigravity...${RESET}"
+        echo -e "${GREEN}>> Download complete!${RESET}"
+
+        echo -e "${BLUE}>> Starting the installation via update-antigravity...${RESET}"
         if update-antigravity "$TEMP_ARCHIVE"; then
-            echo -e "${GREEN}>> Installatie met succes voltooid!${RESET}"
+            echo -e "${GREEN}>> Installation completed successfully!${RESET}"
         else
-            echo -e "${RED}❌ Fout: Installatie via update-antigravity is mislukt.${RESET}"
+            echo -e "${RED}❌ Error: Installation via update-antigravity failed.${RESET}"
             exit 1
         fi
-        
-        echo -e "${BLUE}>> Opschonen van tijdelijk archiefbestand...${RESET}"
+
+        echo -e "${BLUE}>> Cleaning up temporary archive file...${RESET}"
         rm -f "$TEMP_ARCHIVE"
-        echo -e "${GREEN}>> Opslag opgeruimd. Systeem is weer spik en span!${RESET}"
-        echo -e "\n${GREEN}🎉 Antigravity 2.0 is succesvol geüpgraded naar versie ${LATEST_VERSION}!${RESET}"
+        echo -e "${GREEN}>> Storage cleaned up. System is spick and span again!${RESET}"
+        echo -e "\n${GREEN}🎉 Antigravity 2.0 upgraded successfully to version ${LATEST_VERSION}!${RESET}"
     else
-        echo -e "${RED}❌ Fout: Downloaden van update is mislukt.${RESET}"
+        echo -e "${RED}❌ Error: Downloading the update failed.${RESET}"
         rm -f "$TEMP_ARCHIVE"
         exit 1
     fi
 else
-    echo -e "\n${YELLOW}Upgrade overgeslagen.${RESET} Je kunt dit later handmatig doen met:"
+    echo -e "\n${YELLOW}Upgrade skipped.${RESET} You can do this later manually with:"
     echo -e "  ${GREEN}wget -O ~/Downloads/Antigravity_AgentManager.tar.gz \"${DOWNLOAD_URL}\"${RESET}"
     echo -e "  ${GREEN}update-antigravity ~/Downloads/Antigravity_AgentManager.tar.gz${RESET}"
     echo -e "  ${GREEN}rm ~/Downloads/Antigravity_AgentManager.tar.gz${RESET}"
