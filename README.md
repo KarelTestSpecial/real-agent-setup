@@ -23,6 +23,18 @@ Imagine this:
 
 ---
 
+## 🔄 The MACCHA Lifecycle (Startup & Closeout)
+
+MACCHA is not just a static set of rules; it is a **living engine** driven by two critical rituals: Startup and Closeout. 
+
+- **At the start of a session**, the agent will proactively read `~/AGENTS.md` and run the mandatory **Startup Protocol**. This primes your context, checks your `~/INBOX/`, verifies your TMS (`todo` / `in-progress`), and triggers throttled weekly backups. *(Note: Once you are familiar with the workflow, you can edit your personal `~/AGENTS.md` to disable the automatic trigger and only run the startup checklist when explicitly requested).*
+- **At the end of a session, you MUST manually ask the agent to "run closeout"** (or run `session-closeout` yourself). Because AI agents cannot predict when you are about to close your terminal, they cannot run this automatically. **Do not skip this!** Closeout captures your newly learned lessons, syncs and prunes your TMS, and records the session event in memory.
+
+> [!IMPORTANT]
+> **Making the closeout request a habit is what turns MACCHA from a static rule file into a genuinely *self-improving* brain — each closeout compounds into the next startup.**
+
+---
+
 ## 🆚 The MACCHA Philosophy (vs. Always-On Agents)
 
 While projects like **Hermes Agent** and **OpenClaw** provide incredibly powerful autonomous assistants, they are typically designed as "always-on" daemons. They require heavy local computing power, continuous background processing, and constant API polling. For many users, running a heavy 24/7 node simply isn't feasible.
@@ -201,18 +213,6 @@ bash setup.sh
    export PATH="$HOME/bin:$PATH"
    ```
 3. **Boot Your Agent**: Launch Antigravity, OpenCode, or your preferred agent.
-
----
-
-## 🔄 The MACCHA Lifecycle (Startup & Closeout)
-
-MACCHA is not just a static set of rules; it is a **living engine** driven by two critical rituals: Startup and Closeout. 
-
-- **At the start of a session**, the agent will proactively read `~/AGENTS.md` and run the mandatory **Startup Protocol**. This primes your context, checks your `~/INBOX/`, verifies your TMS (`todo` / `in-progress`), and triggers throttled weekly backups. *(Note: Once you are familiar with the workflow, you can edit your personal `~/AGENTS.md` to disable the automatic trigger and only run the startup checklist when explicitly requested).*
-- **At the end of a session, you MUST manually ask the agent to "run closeout"** (or run `session-closeout` yourself). Because AI agents cannot predict when you are about to close your terminal, they cannot run this automatically. **Do not skip this!** Closeout captures your newly learned lessons, syncs and prunes your TMS, and records the session event in memory.
-
-> [!IMPORTANT]
-> **Making the closeout request a habit is what turns MACCHA from a static rule file into a genuinely *self-improving* brain — each closeout compounds into the next startup.**
 
 ---
 
