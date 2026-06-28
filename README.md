@@ -200,14 +200,19 @@ bash setup.sh
    ```bash
    export PATH="$HOME/bin:$PATH"
    ```
-3. **Boot Your Agent**: Launch Antigravity, OpenCode, or your preferred agent. The agent will read `~/AGENTS.md` automatically at startup and immediately assume its professional persona.
+3. **Boot Your Agent**: Launch Antigravity, OpenCode, or your preferred agent.
 
-> [!TIP]
-> **Bookend every session — if needed, run startup and closeout yourself.** The agent reads its mandates automatically, but the two lifecycle rituals are not deterministic for every agent (ask your agent for help on this):
-> - **At the start of a session**, ask the agent to *"run the startup checklist"* (or run `session-startup` yourself). This primes context, reports your `~/INBOX/` item count, verifies the TMS, and triggers the throttled weekly backup.
-> - **At the end of a session**, ask the agent to *"run closeout"* (or run `session-closeout` yourself). This captures any new learned lessons, syncs the TMS (`todo` / `in-progress` / `done`), prunes stale items, and records the session event in memory.
->
-> Making these two requests a habit is what turns MACCHA from a static rule file into a genuinely *self-improving* brain — each closeout compounds into the next startup.
+---
+
+## 🔄 The MACCHA Lifecycle (Startup & Closeout)
+
+MACCHA is not just a static set of rules; it is a **living engine** driven by two critical rituals: Startup and Closeout. 
+
+- **At the start of a session**, the agent will proactively read `~/AGENTS.md` and run the mandatory **Startup Protocol**. This primes your context, checks your `~/INBOX/`, verifies your TMS (`todo` / `in-progress`), and triggers throttled weekly backups. 
+- **At the end of a session, you MUST manually ask the agent to "run closeout"** (or run `session-closeout` yourself). Because AI agents cannot predict when you are about to close your terminal, they cannot run this automatically. **Do not skip this!** Closeout captures your newly learned lessons, syncs and prunes your TMS, and records the session event in memory.
+
+> [!IMPORTANT]
+> **Making the closeout request a habit is what turns MACCHA from a static rule file into a genuinely *self-improving* brain — each closeout compounds into the next startup.**
 
 ---
 
