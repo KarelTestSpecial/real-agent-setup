@@ -1,0 +1,35 @@
+#!/bin/bash
+# Backup van de MACCHA lokale omtooiing naar de SD-kaart.
+# Enkel wat écht lokaal uniek is: BRAIN, INFO, PLAN, scripts, dotfiles.
+# Workspace-projecten worden NOT geback-upped (staan op GitHub of zijn hercreëerbaar).
+
+DEST_DIR="/mnt/chromeos/removable/SD Card/linux_home_backup"
+
+echo "Start MACCHA back-up naar SD-kaart..."
+echo "Doelmap: $DEST_DIR"
+
+rsync -rtP \
+  --modify-window=2 \
+  --delete-excluded \
+  --exclude='.git/' \
+  --exclude='.venv/' \
+  --exclude='node_modules/' \
+  --exclude='/BRAIN/archive/' \
+  --include='/BRAIN/***' \
+  --include='/INFO/***' \
+  --include='/PLAN/***' \
+  --include='/creatief/***' \
+  --include='/bin/***' \
+  --include='/scratch/***' \
+  --include='/.ssh/***' \
+  --include='/.bashrc' \
+  --include='/.bash_aliases' \
+  --include='/.gitconfig' \
+  --include='/.profile' \
+  --include='/.bash_history' \
+  --include='/.npmrc' \
+  --include='/*.md' \
+  --exclude='/*' \
+  "$HOME/" "$DEST_DIR/"
+
+echo "Back-up completed!"

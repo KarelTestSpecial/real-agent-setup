@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""tms_human_view.py — generates a human-friendly table from todo.md.
+"""tms_human_view.py — genereert een mensvriendelijke tabel uit todo.md.
 
-DERIVED VIEW (AGENTS.md rule 1.b: one fact, one owner).
-Source = BRAIN/tms/todo.md. Output must NEVER be edited by hand;
-always change tasks in todo.md and re-run this script.
+AFGELEIDE WEERGAVE (CLAUDE.md regel 1.b: één feit, één eigenaar).
+Bron = BRAIN/tms/todo.md. Output mag NOOIT handmatig bewerkt worden;
+wijzig taken altijd in todo.md en draai dit script opnieuw.
 
-Usage:  tms_human_view.py            -> writes to the default output path
-        tms_human_view.py --stdout   -> prints to screen
+Usage: tms_human_view.py            -> writes to standard output path
+          tms_human_view.py --stdout   -> print naar scherm
 """
 import re
 import sys
@@ -15,24 +15,24 @@ from pathlib import Path
 
 HOME = Path.home()
 SRC = HOME / "BRAIN" / "tms" / "todo.md"
-OUT = HOME / "INFO" / "for-owner" / "todo_overview.md"
+OUT = HOME / "INFO" / "owner" / "todo_overzicht.md"
 
 STATUS = {" ": "⬜ Open", "/": "🔄 In progress", "x": "✅ Done"}
 
-# Friendlier section names in the output.
-SECTION_RENAME = {"Cron Jobs": "Recurring"}
+# Vriendelijkere sectienamen in de uitvoer.
+SECTION_RENAME = {"Cron Jobs": "Terugkerend"}
 
 CHECKBOX = re.compile(r"^(\s*)- \[([ /x])\]\s*(.*)$")
 SECTION = re.compile(r"^##\s+(.*)$")
 TIER = re.compile(r"^\[(Ephemeral|Sprint|Strategic|Eternal)\]\s*")
-LINK = re.compile(r"\[([^\]]+)\]\([^)]*\)")        # [text](url) -> text
-BARE_FILE = re.compile(r"\(?file://\S+\)?")         # bare file:// paths
+LINK = re.compile(r"\[([^\]]+)\]\([^)]*\)")        # [tekst](url) -> tekst
+BARE_FILE = re.compile(r"\(?file://\S+\)?")         # losse file:// paden
 BARE_URL = re.compile(r"https?://\S+")
 BOLD = re.compile(r"\*\*(.+?)\*\*")
 
 
 def clean_emoji_headers(s: str) -> str:
-    # Remove leading emoji/icons + trailing tier label from section titles.
+    # Remove leidende emoji/iconen + achterliggend tier-label uit sectietitels.
     s = re.sub(r"\s*\[(Ephemeral|Sprint|Strategic|Eternal)\]\s*$", "", s)
     return re.sub(r"^[\W_]*\b", "", s).strip() or s.strip()
 
@@ -47,14 +47,14 @@ def strip_tech(text: str) -> str:
 
 
 def split_title_desc(body: str):
-    """Extract title + short description from the raw item text."""
+    """Haal titel + korte toelichting uit de ruwe item-tekst."""
     body = body.strip()
     m = BOLD.search(body)
     if m:
         title = m.group(1).strip()
         rest = body[m.end():].lstrip(" :—-")
     else:
-        # No bold: title = part before the first separator.
+        # No bold: titel = stuk vóór eerste scheidingsteken.
         m2 = re.split(r"\s[—:]\s|\s-\s|:\s", body, maxsplit=1)
         title = m2[0].strip()
         rest = m2[1].strip() if len(m2) > 1 else ""
@@ -81,12 +81,12 @@ def parse(lines):
         if not cm:
             continue
         indent, state, body = cm.group(1), cm.group(2), cm.group(3)
-        # Strip the tier label and urgency flame.
+        # Tier-label en urgentievlam eruit halen.
         body = TIER.sub("", body)
         urgent = "🔥" in body
         body = body.replace("🔥", "").strip()
         title, desc = split_title_desc(body)
-        if indent:  # subtask
+        if indent:  # subtaak
             title = "↳ " + title
         rows.append({
             "section": section,
@@ -101,13 +101,13 @@ def parse(lines):
 def render(rows) -> str:
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     out = []
-    out.append("# 📋 Task Overview (readable version)\n")
+    out.append("# 📋 Takenoverzicht (leesbare versie)\n")
     out.append(
-        f"> *Automatically generated on {now} from `todo.md` — "
-        "do NOT edit by hand. Change tasks in the TMS and re-run "
-        "`~/bin/tms_human_view.py`.*\n"
+        f"> *Automatisch gegenereerd op {now} uit `todo.md` — "
+        "NOT handmatig bewerken. Wijzig taken in de TMS en draai "
+        "`~/bin/tms_human_view.py` opnieuw.*\n"
     )
-    # Group per section, in order of first appearance.
+    # Groepeer per sectie, in volgorde van eerste verschijning.
     order = []
     groups = {}
     for r in rows:
@@ -118,7 +118,7 @@ def render(rows) -> str:
 
     for sec in order:
         out.append(f"\n## {sec}\n")
-        out.append("| | Task | Status | Notes |")
+        out.append("| | Taak | Status | Toelichting |")
         out.append("|---|---|---|---|")
         for r in groups[sec]:
             desc = r["desc"] or "—"
@@ -129,7 +129,7 @@ def render(rows) -> str:
 
 def main():
     if not SRC.exists():
-        sys.exit(f"Source not found: {SRC}")
+        sys.exit(f"Bron not found: {SRC}")
     rows = parse(SRC.read_text(encoding="utf-8").splitlines())
     text = render(rows)
     if "--stdout" in sys.argv:
@@ -137,7 +137,7 @@ def main():
     else:
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(text, encoding="utf-8")
-        print(f"Written: {OUT}  ({len(rows)} tasks)")
+        print(f"Geschreven: {OUT}  ({len(rows)} taken)")
 
 
 if __name__ == "__main__":

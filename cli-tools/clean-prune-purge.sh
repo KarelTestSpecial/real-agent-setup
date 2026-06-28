@@ -1,31 +1,31 @@
 #!/bin/bash
 # ==============================================================================
 # Script: clean-prune-purge.sh
-# Description: System-wide cleanup (apt, pnpm store and optionally trash).
+# Beschrijving: Systeem-brede opschoning (apt, pnpm store en optioneel prullenbak).
 # ==============================================================================
 
-echo "🧹 Cleaning system and pnpm store..."
+echo "🧹 Clean up van systeem en pnpm store..."
 
-# Clean apt
+# Apt clean
 sudo apt autoremove --purge -y
 sudo apt clean
 
-# Prune PNPM store
+# PNPM store clean
 if command -v pnpm &> /dev/null; then
     pnpm store prune
 fi
 
-# Optional: empty the trash
+# Optioneel: Prullenbak legen
 TRASH_DIR="$HOME/.local/share/Trash"
 if [ -d "$TRASH_DIR" ]; then
-    read -p "🗑️  Empty the trash as well? (y/N): " confirm
+    read -p "🗑️  Wil je ook de prullenbak legen? (y/N): " confirm
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        echo "Emptying trash..."
+        echo "Legen van prullenbak..."
         rm -rf "$TRASH_DIR/files"/* "$TRASH_DIR/info"/*
-        echo "✅ Trash emptied."
+        echo "✅ Prullenbak is geleegd."
     else
-        echo "⏭️  Skipping trash."
+        echo "⏭️  Prullenbak overslaan."
     fi
 fi
 
-echo "✅ System cleaned."
+echo "✅ Systeem is cleaned up."

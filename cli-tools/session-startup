@@ -1,28 +1,28 @@
 #!/bin/bash
 # Session Startup: prime context + verify state
 MEMANTO=~/bin/memanto_cli.py
-echo "=== PRIME: loading context ==="
+echo "=== PRIME: laden van context ==="
 "$MEMANTO" prime 2>/dev/null
 echo ""
 echo "=== TMS check ==="
-# Rule guard (AGENTS.md 1.b): warns only on violations, otherwise a single OK line.
+# Regelbewaker (CLAUDE.md 1.b): waarschuwt alleen bij overtredingen, anders één OK-regel.
 TMS_OK=true
 for f in ~/todo.md ~/in-progress.md; do
   if [ ! -f "$f" ]; then
-    echo "⚠️  $f missing — broken symlink to BRAIN?"
+    echo "⚠️  $f ontbreekt — kapotte symlink naar BRAIN?"
     TMS_OK=false
     continue
   fi
   X_COUNT=$(grep -c '^- \[x\]' "$f")
   if (( X_COUNT > 0 )); then
-    echo "⚠️  $f contains $X_COUNT completed [x] item(s) — move to done.md immediately as a single line"
+    echo "⚠️  $f bevat $X_COUNT finished(e) [x]-item(s) — direct als één regel naar done.md verplaatsen"
     TMS_OK=false
   fi
 done
 if [ -f ~/in-progress.md ]; then
   IP_OPEN=$(grep -c '^- \[[ /]\]' ~/in-progress.md)
   if (( IP_OPEN > 10 )); then
-    echo "⚠️  in-progress.md has $IP_OPEN open items (max ~10) — trim back to todo.md"
+    echo "⚠️  in-progress.md heeft $IP_OPEN open items (max ±10) — terugsnoeien naar todo.md"
     TMS_OK=false
   fi
 fi
@@ -31,42 +31,44 @@ if $TMS_OK; then
 fi
 
 echo ""
-echo "=== Weekly TMS sweep (throttled, once per 7 days) ==="
+echo "=== Weekly TMS-sweep (throttled, 1x per 7 dagen) ==="
 SWEEP_MARKER=~/BRAIN/tms/.last_sweep
 NOW=$(date +%s)
 LAST=$(cat "$SWEEP_MARKER" 2>/dev/null || echo 0)
 if (( NOW - LAST > 604800 )); then
   echo "$NOW" > "$SWEEP_MARKER"
   node ~/INFRA/maintenance/tms_prune.js
-  echo "🧠 Pruning Memanto working memory (decayed Event noise)..."
-  "$MEMANTO" prune 2>/dev/null | grep -E 'Store:|Pruned' || true
-  echo "⚠️  Weekly sweep due — manual steps for the agent:"
-  echo "   [x] items from todo/in-progress to done.md as a single line;"
-  echo "   remove duplicates; in-progress.md max ~10 items; enforce label format."
+  echo "🧠 Memanto-werkgeheugen prunen (uitgedoofde Event-ruis)..."
+  ~/bin/memanto_cli.py prune 2>/dev/null | grep -E 'Store:|Cleaned up' || true
+  echo "⚠️  Weekly sweep verschuldigd — handmatige stappen voor de agent:"
+  echo "   [x]-items uit todo/in-progress als één regel naar done.md;"
+  echo "   dubbels remove; in-progress.md max ±10 items; labelvorm afdwingen."
 else
-  echo "Last sweep $(( (NOW - LAST) / 86400 )) day(s) ago — OK."
+  echo "Laatste sweep $(( (NOW - LAST) / 86400 )) dag(en) geleden — OK."
 fi
 
 echo ""
 echo "=== INBOX check ==="
 INBOX_N=$(find ~/INBOX -mindepth 1 -not -name 'README.md' 2>/dev/null | wc -l)
 if (( INBOX_N > 0 )); then
-  echo "📥 INBOX contains $INBOX_N item(s) — process to owner locations and empty:"
+  echo "📥 INBOX bevat $INBOX_N item(s) — verwerken naar eigenaar-locaties en empty:"
   find ~/INBOX -mindepth 1 -not -name 'README.md' | head -10
 else
-  echo "INBOX empty."
+  echo "INBOX leeg."
 fi
 
 echo ""
-echo "=== Weekly encrypted backup (throttled, once per 7 days) ==="
+echo "=== Weekly verkeyde backup (throttled, 1x per 7 dagen) ==="
 BK_MARKER=~/BRAIN/.last_backup
 LASTB=$(cat "$BK_MARKER" 2>/dev/null || echo 0)
 if (( NOW - LASTB > 604800 )); then
-  echo "Backup due — starting in background (log: ~/scratch/maccha-backup.log)"
+  echo "Backup verschuldigd — start op achtergrond (log: ~/scratch/maccha-backup.log)"
   nohup ~/bin/maccha-backup > ~/scratch/maccha-backup.log 2>&1 &
 else
-  echo "Last backup $(( (NOW - LASTB) / 86400 )) day(s) ago — OK."
+  echo "Laatste backup $(( (NOW - LASTB) / 86400 )) dag(en) geleden — OK."
 fi
+
+echo ""
 
 echo ""
 echo "=== Shortlist Sync Check ==="
@@ -74,7 +76,7 @@ if [ -f ~/bin/tms_shortlist_sync.py ]; then
   python3 ~/bin/tms_shortlist_sync.py
 fi
 
-# Refresh the human-readable todo view (derived from todo.md; silent unless error).
+# Leesbare todo-weergave verversen (afgeleid uit todo.md; stil, tenzij fout).
 if [ -f ~/bin/tms_human_view.py ]; then
-  python3 ~/bin/tms_human_view.py > /dev/null 2>&1 || echo "⚠️  tms_human_view.py failed"
+  python3 ~/bin/tms_human_view.py > /dev/null 2>&1 || echo "⚠️  tms_human_view.py faalde"
 fi

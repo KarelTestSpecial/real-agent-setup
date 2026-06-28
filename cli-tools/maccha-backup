@@ -1,7 +1,7 @@
 #!/bin/bash
-# MACCHA encrypted backup of INFO/ PLAN/ BRAIN/ creatief/ to Google Drive.
-# Triggered weekly via session-startup (marker ~/BRAIN/.last_backup);
-# can always be run manually: ~/bin/maccha-backup
+# MACCHA verkeyde backup van INFO/ PLAN/ BRAIN/ creatief/ naar Google Drive.
+# Weekly getriggerd via session-startup (marker ~/BRAIN/.last_backup);
+# handmatig draaien kan altijd: ~/bin/maccha-backup
 set -euo pipefail
 
 H="${HOME:-/home/$(whoami)}"
@@ -14,7 +14,7 @@ STAMP=$(date +%Y%m%d-%H%M)
 OUT="$DEST_DIR/maccha-backup-$STAMP.tar.gz.enc"
 
 if [ ! -d "$DRIVE" ]; then
-  echo "❌ Google Drive not mounted at $DRIVE — share Drive with Linux via the Files app." >&2
+  echo "❌ Google Drive not gemount op $DRIVE — deel Drive met Linux via de Files-app." >&2
   exit 1
 fi
 mkdir -p "$DEST_DIR"
@@ -23,12 +23,12 @@ if [ ! -f "$KEY_FILE" ]; then
   mkdir -p "$(dirname "$KEY_FILE")"
   umask 077
   openssl rand -hex 32 > "$KEY_FILE"
-  echo "🔑 NEW key created: $KEY_FILE"
-  echo "   ⚠️  Keep a copy OFF this device (password manager/paper) —"
-  echo "   without this key the backup is worthless after losing the laptop!"
+  echo "🔑 NIEUWE key aangemaakt: $KEY_FILE"
+  echo "   ⚠️  Save een kopie BUITEN dit toestel (wachtwoordmanager/papier) —"
+  echo "   without deze key is de backup waardeloos na verlies van de laptop!"
 fi
 
-echo "📦 Creating backup → $OUT"
+echo "📦 Backup maken → $OUT"
 tar -C "$H" -czf - \
   --exclude='node_modules' --exclude='*/node_modules' \
   --exclude='BRAIN/archive/2026-06-mappenstructuur' \
@@ -36,30 +36,30 @@ tar -C "$H" -czf - \
   INFO PLAN BRAIN creatief \
 | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass file:"$KEY_FILE" -out "$OUT"
 
-echo "🔍 Integrity check (decrypt + read tar contents)..."
+echo "🔍 Integriteitscheck (ontkeyen + tar-inhoud lezen)..."
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:"$KEY_FILE" -in "$OUT" | tar -tzf - > /dev/null
 
 SIZE=$(du -h "$OUT" | cut -f1)
 echo "✅ Backup OK: $OUT ($SIZE)"
 
-# Rotation: keep the last $KEEP
+# Rotatie: save de laatste $KEEP
 ls -1t "$DEST_DIR"/maccha-backup-*.tar.gz.enc 2>/dev/null | tail -n +$((KEEP+1)) | xargs -r rm -v
 
-# Restore instructions next to the backups (without the key!)
+# Restore-instructies naast de backups (without key!)
 cat > "$DEST_DIR/RESTORE.md" <<'EOF'
-# Restoring a MACCHA backup
+# MACCHA backup herstellen
 
-Contents: ~/INFO, ~/PLAN, ~/BRAIN, ~/creatief (without node_modules and old backups).
+Content: ~/INFO, ~/PLAN, ~/BRAIN, ~/creatief (without node_modules and old backups).
 
-1. Put the key back on the (new) device:
-   mkdir -p ~/.config/maccha && nano ~/.config/maccha/backup.key   # paste the 64-char hex key
+1. Zet de key terug op het (nieuwe) toestel:
+   mkdir -p ~/.config/maccha && nano ~/.config/maccha/backup.key   # plak de 64-tekens hex-key
    chmod 600 ~/.config/maccha/backup.key
-2. Restore in the home directory:
+2. Herstel in de homedirectory:
    openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
      -pass file:~/.config/maccha/backup.key \
-     -in maccha-backup-YYYYMMDD-HHMM.tar.gz.enc | tar -xzf - -C ~
-The key is NOT in this folder — the owner keeps it separately (password manager/paper).
+     -in maccha-backup-JJJJMMDD-UUMM.tar.gz.enc | tar -xzf - -C ~
+De key staat NOT in deze map — de eigenaar savet die apart (wachtwoordmanager/papier).
 EOF
 
 date +%s > "$MARKER"
-echo "🗓️  Marker updated ($MARKER) — next automatic run in 7 days."
+echo "🗓️  Marker bijgewerkt ($MARKER) — volgende automatische run over 7 dagen."

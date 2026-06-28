@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Per AGENTS.md rule 1.b: done.md is archived per quarter to
-// BRAIN/archive/tms/<year>-Q<x>.md. Physical paths under BRAIN/ (no symlinks).
+// Conform AGENTS.md regel 1.b: done.md archiveert per kwartaal naar
+// BRAIN/archive/tms/<jaar>-Q<x>.md. Fysieke paden onder BRAIN/ (no symlinks).
 const TMS_DIR = path.join(os.homedir(), 'BRAIN', 'tms');
 const DONE_PATH = path.join(TMS_DIR, 'done.md');
 const ARCHIVE_DIR = path.join(os.homedir(), 'BRAIN', 'archive', 'tms');
@@ -22,7 +22,7 @@ function pruneDone() {
 
     const lines = fs.readFileSync(DONE_PATH, 'utf8').split('\n');
     if (lines.length <= MAX_DONE_LINES) {
-        console.log(`TMS Hygiene: done.md is ${lines.length} lines (limit ${MAX_DONE_LINES}), no prune needed.`);
+        console.log(`TMS Hygiene: done.md is ${lines.length} regels (limiet ${MAX_DONE_LINES}), no prune nodig.`);
         return;
     }
 
@@ -31,11 +31,11 @@ function pruneDone() {
     const archivePath = quarterFile();
 
     fs.mkdirSync(ARCHIVE_DIR, { recursive: true });
-    const header = `\n\n## --- Archived from done.md on ${new Date().toISOString().split('T')[0]} ---\n`;
+    const header = `\n\n## --- Gearchiveerd uit done.md op ${new Date().toISOString().split('T')[0]} ---\n`;
     fs.appendFileSync(archivePath, header + toArchive.join('\n') + '\n');
     fs.writeFileSync(DONE_PATH, toKeep.join('\n').trim() + '\n');
 
-    console.log(`TMS Hygiene: ${toArchive.length} lines moved to ${archivePath}.`);
+    console.log(`TMS Hygiene: ${toArchive.length} regels verplaatst naar ${archivePath}.`);
 }
 
 pruneDone();
