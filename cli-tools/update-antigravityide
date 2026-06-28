@@ -1,50 +1,50 @@
 #!/bin/bash
 # ==============================================================================
 # Script: update-antigravityide
-# Purpose: Intelligent installation of Google Antigravity IDE (Classic Editor)
-#          Avoids namespace and Electron app.asar conflicts in Linux environments.
+# Goal: Intelligent installation of Google Antigravity IDE (Classic Editor)
+#       Voorkomt namespace en Electron app.asar conflicten in Linux-omgevingen.
 # ==============================================================================
 
-set -eo pipefail # Ensures immediate termination on a sub-command failure
+set -eo pipefail # Garandeert onmiddellijke terminatie bij een sub-commando fout
 
 ARCHIVE_PATH="$1"
 
-# 1. Input validation
+# 1. Validatie van de Input
 if [[ -z "$ARCHIVE_PATH" || ! -f "$ARCHIVE_PATH" ]]; then
-    echo "SYSTEM ERROR: No valid .tar.gz archive file specified."
+    echo "SYSTEEMFOUT: No geldig .tar.gz archieffile gespecificeerd."
     echo "Usage: update-antigravityide <path-to-tar.gz>"
     exit 1
 fi
 
-APP_NAME="Antigravity IDE (Classic Editor)"
+APP_NAME="Antigravity IDE (Klassieke Editor)"
 TARGET_DIR="/opt/antigravity-ide"
 BIN_NAME="antigravity-ide"
 
-echo ">> Starting automated deployment for: $APP_NAME"
-echo ">> Resolved target directory: $TARGET_DIR"
+echo ">> Startende geautomatiseerde deployment voor: $APP_NAME"
+echo ">> Geresolveerde doelmap: $TARGET_DIR"
 
-# 2. Defensive cleanup (crucial to prevent Electron conflicts)
-echo ">> Removing outdated binary and resource files..."
+# 2. Defensieve Opschoning (Cruciaal ter voorkoming van Electron conflicten)
+echo ">> Remove van verouderde binaire en resource-fileen..."
 sudo rm -rf "$TARGET_DIR"
 sudo mkdir -p "$TARGET_DIR"
 
-# 3. Safe extraction
-echo ">> Extracting the archive to the target directory..."
+# 3. Veilige Extractie
+echo ">> Extractie van het archief naar de bestemmingsmap..."
 sudo tar -xzf "$ARCHIVE_PATH" -C "$TARGET_DIR" --strip-components=1
 
-# 4. System integration: create symbolic links in the binary PATH structure
-echo ">> Registering binary executables in /usr/bin..."
+# 4. System integration: Creating symbolic links in the binary PATH structure
+echo ">> Registreren van binaire executables in /usr/bin..."
 if [[ -f "$TARGET_DIR/bin/$BIN_NAME" ]]; then
     sudo ln -sf "$TARGET_DIR/bin/$BIN_NAME" "/usr/bin/$BIN_NAME"
 else
     sudo ln -sf "$TARGET_DIR/$BIN_NAME" "/usr/bin/$BIN_NAME"
 fi
 
-# 5. System security: configure kernel-level sandboxing
+# 5. Systeembeveiliging: Configuratie van Kernel-Level Sandboxing
 if [[ -f "$TARGET_DIR/chrome-sandbox" ]]; then
-    echo ">> Configuring root privileges for the nsjail / chrome-sandbox..."
+    echo ">> Configureren van root-privileges voor de nsjail / chrome-sandbox..."
     sudo chown root:root "$TARGET_DIR/chrome-sandbox"
     sudo chmod 4755 "$TARGET_DIR/chrome-sandbox"
 fi
 
-echo ">> SUCCESS: Installation of $APP_NAME complete."
+echo ">> SUCCESS: Installation of $APP_NAME completed."

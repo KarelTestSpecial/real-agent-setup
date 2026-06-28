@@ -1,0 +1,107 @@
+#!/bin/bash
+# Syscheck-upstairs: checks folders above the home directory
+#   - schijfruimte (/, /home)
+#   - /tmp opruimbehoefte
+#   - /var/log grootte
+#   - vreemde users in /home
+# Usage: syscheck-upstairs [--clean]  (--clean clears old tmp/log/apt files)
+# Locatie: ~/bin/syscheck-upstairs
+
+THRESHOLD_PCT=80
+TMP_DAYS=7
+LOG_DAYS=30
+CACHE_DAYS=30
+
+ALERTS=()
+NOTES=()
+
+echo "── syscheck-upstairs ──────────────────────────────"
+echo ""
+
+# ── 1. Schijfruimte ──
+echo "📁 Schijfruimte:"
+while IFS= read -r line; do
+  mount=$(echo "$line" | awk '{print $6}')
+  size=$(echo "$line" | awk '{print $2}')
+  used=$(echo "$line" | awk '{print $3}')
+  pct=$(echo "$line" | awk '{print $5}')
+  pct_num=${pct%\%}
+  echo "  $mount  $used / $size  (${pct} usaget)"
+  if [ "$pct_num" -ge "$THRESHOLD_PCT" ]; then
+    ALERTS+=("WARNING: $mount is $pct vol!")
+  fi
+done < <(df -h / /home 2>/dev/null | tail -n +2)
+
+# ── 2. /tmp ──
+echo ""
+echo "🗑️  /tmp:"
+tmp_size=$(du -sh /tmp 2>/dev/null | cut -f1)
+tmp_old=$(find /tmp -maxdepth 1 -atime +$TMP_DAYS -not -name '.X*-lock' -not -name '.ICE-unix' 2>/dev/null | wc -l)
+echo "  Grootte: $tmp_size"
+echo "  Files ouder dan $TMP_DAYS dagen: $tmp_old"
+NOTES+=("/tmp: $tmp_old oude fileen")
+
+# ── 3. /var/log ──
+echo ""
+echo "📋 /var/log:"
+log_size=$(du -sh /var/log 2>/dev/null | cut -f1)
+log_old=$(find /var/log -type f -mtime +$LOG_DAYS 2>/dev/null | wc -l)
+echo "  Grootte: $log_size"
+echo "  Logs ouder dan $LOG_DAYS dagen: $log_old"
+NOTES+=("/var/log: $log_size, $log_old oude logs")
+
+# ── 4. /var/cache/apt/archives ──
+echo ""
+echo "📦 APT-cache:"
+cache_size=$(du -sh /var/cache/apt/archives 2>/dev/null | cut -f1)
+cache_old=$(find /var/cache/apt/archives -name '*.deb' -mtime +$CACHE_DAYS 2>/dev/null | wc -l)
+echo "  Grootte: $cache_size"
+echo "  .deb ouder dan $CACHE_DAYS dagen: $cache_old"
+NOTES+=("APT-cache: $cache_size")
+
+# ── 5. Onbekende homedirs ──
+echo ""
+echo "👤 Andere users in /home:"
+other_users=0
+for dir in /home/*/; do
+  user=$(basename "$dir")
+  if [ "$user" != "kareltestspecial" ]; then
+    echo "  ⚠️  $user"
+    ALERTS+=("Onbekende user in /home: $user")
+    other_users=$((other_users + 1))
+  fi
+done
+if [ "$other_users" -eq 0 ]; then
+  echo "  No (alleen kareltestspecial)"
+fi
+
+# ── 6. Optional --clean ──
+if [ "$1" = "--clean" ]; then
+  echo ""
+  echo "🧹 Oude fileen opruimen..."
+  if [ "$tmp_old" -gt 0 ]; then
+    find /tmp -maxdepth 1 -atime +$TMP_DAYS -not -name '.X*-lock' -not -name '.ICE-unix' -exec rm -rf {} \; 2>/dev/null
+    echo "  /tmp cleaned up"
+  fi
+  if [ "$log_old" -gt 0 ]; then
+    sudo find /var/log -type f -mtime +$LOG_DAYS -exec rm -f {} \; 2>/dev/null && echo "  /var/log cleaned up" || echo "  /var/log: sudo nodig"
+  fi
+  if [ "$cache_old" -gt 0 ]; then
+    sudo apt-get autoclean -q 2>/dev/null && echo "  APT-cache cleaned up" || echo "  APT autoclean: sudo nodig"
+  fi
+fi
+
+echo ""
+echo "── Samenvatting ───────────────────────────────────"
+for note in "${NOTES[@]}"; do
+  echo "  • $note"
+done
+echo ""
+if [ ${#ALERTS[@]} -gt 0 ]; then
+  echo "⚠️  ALERTS:"
+  for alert in "${ALERTS[@]}"; do
+    echo "  ⚠️  $alert"
+  done
+else
+  echo "✅ Alles OK - no bijwithoutheden"
+fi

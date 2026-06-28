@@ -28,12 +28,12 @@ def cmd_list(args):
 
 def cmd_prime(args):
     output = ["# Opencode Session Prime", ""]
-    output.append("## Recent Memories (Memanto)")
+    output.append("## Recente Memories (Memanto)")
     recent = brain.recall("", limit=10)
     for m in recent:
         output.append(f"- [{m['category']}] (conf:{m['confidence']:.2f}) {m['text']}")
     if not recent:
-        output.append("- No active memories.")
+        output.append("- No actieve herinneringen.")
     output.append("")
     output.append("## Learned Lessons Index")
     if os.path.isdir(LESSONS_DIR):
@@ -63,7 +63,7 @@ def cmd_prime(args):
     if os.path.exists(sp):
         with open(sp) as f:
             c = f.read()
-        fm = re.search(r"## \U0001f680 Active Focus(.*?)(?=\n##)", c, re.DOTALL)
+        fm = re.search(r"## \U0001f680 Actieve Focus(.*?)(?=\n##)", c, re.DOTALL)
         if fm:
             output.append(f"## Active Focus (STATE.md)\n{fm.group(1).strip()}")
     print("\n".join(output))
@@ -86,24 +86,24 @@ def cmd_distill(args):
     print(f"File: {fp}\nMemanto ID: {mid}")
 
 def cmd_prune(args):
-    """Flow-through: remove decayed working-memory entries (default: Event < 0.2).
-    Curated categories (Learning/Preference/Fact) are never touched."""
+    """Doorstroom: ruim uitgedoofde werkgeheugen-entries op (default: Event < 0.2).
+    Curatie-categorieen (Learning/Preference/Fact) worden nooit geraakt."""
     PROTECTED = {"Learning", "Preference", "Fact"}
     cats = [c.strip() for c in args.category.split(",")] if args.category else ["Event"]
     if any(c in PROTECTED for c in cats):
-        print(f"REFUSED: curated category {PROTECTED & set(cats)} may not be pruned.")
+        print(f"WEIGERING: gecureerde categorie {PROTECTED & set(cats)} mag not geprunet worden.")
         sys.exit(1)
     before = list(brain.memories)
     doomed = [m for m in before
               if m.get("category") in cats and m.get("confidence", 1.0) < args.threshold]
     keep = [m for m in before if m not in doomed]
-    print(f"Store: {len(before)} entries | removing: {len(doomed)} ({','.join(cats)} < {args.threshold}) | keeping: {len(keep)}")
+    print(f"Store: {len(before)} entries | weg: {len(doomed)} ({','.join(cats)} < {args.threshold}) | blijft: {len(keep)}")
     for m in doomed[:10]:
         print(f"  - conf={m.get('confidence', 0):.2f} | {m.get('text', '')[:60]}")
     if len(doomed) > 10:
-        print(f"  ... +{len(doomed) - 10} more")
+        print(f"  ... +{len(doomed) - 10} meer")
     if args.dry_run:
-        print("(dry-run: nothing written)")
+        print("(dry-run: niets geschreven)")
         return
     if not doomed:
         return
@@ -112,13 +112,13 @@ def cmd_prune(args):
         json.dump(before, f, ensure_ascii=False, indent=2)
     brain.memories = keep
     brain._save_memories()
-    # Rotate backups: let them flow through instead of piling up — keep only the newest KEEP_BAKS.
+    # Roteer backups: zelf doorstromen i.p.v. opstapelen — save enkel de nieuwste KEEP_BAKS.
     KEEP_BAKS = 3
     import glob
     olds = sorted(glob.glob(MEMORY_FILE + ".bak-*"))
     for stale in olds[:-KEEP_BAKS]:
         os.remove(stale)
-    print(f"Pruned. Backup: {bak} (keeping last {KEEP_BAKS}, removed {max(0, len(olds) - KEEP_BAKS)} old)")
+    print(f"Cleaned up. Backup: {bak} (save laatste {KEEP_BAKS}, {max(0, len(olds) - KEEP_BAKS)} oude removed)")
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(prog="memanto", description="Memanto + Librarian CLI")
@@ -143,10 +143,10 @@ if __name__ == "__main__":
     dp = sub.add_parser("distill")
     dp.add_argument("title"); dp.add_argument("content"); dp.add_argument("--category")
 
-    prn = sub.add_parser("prune", help="Remove decayed working-memory entries (default: Event < 0.2)")
-    prn.add_argument("--category", help="Comma-separated categories (default: Event)")
-    prn.add_argument("--threshold", type=float, default=0.2, help="Remove entries with confidence < threshold")
-    prn.add_argument("--dry-run", action="store_true", help="Show what would be removed, write nothing")
+    prn = sub.add_parser("prune", help="Ruim uitgedoofde werkgeheugen-entries op (default: Event < 0.2)")
+    prn.add_argument("--category", help="Komma-gescheiden categorieen (default: Event)")
+    prn.add_argument("--threshold", type=float, default=0.2, help="Remove entries met confidence < drempel")
+    prn.add_argument("--dry-run", action="store_true", help="Toon wat zou wegvallen, schrijf niets")
 
     args = p.parse_args()
     {"remember": cmd_remember, "recall": cmd_recall, "answer": cmd_answer, "list": cmd_list, "prime": cmd_prime, "distill": cmd_distill, "prune": cmd_prune}[args.command](args)

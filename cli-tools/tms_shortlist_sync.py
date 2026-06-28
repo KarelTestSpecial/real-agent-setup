@@ -9,7 +9,7 @@ import re
 import os
 import sys
 
-# Dutch/English stopwords that carry no semantic value for matching
+# Nederlandse/Engelse stopwoorden die no semantische waarde hebben voor matching
 STOPWORDS = {
     "de", "het", "een", "en", "van", "voor", "met", "aan", "bij", "naar", "uit",
     "te", "in", "op", "of", "dat", "die", "dit", "deze", "is", "zijn", "wordt",
@@ -22,8 +22,8 @@ def significant_words(text):
 
 
 def stem_overlap(words_a, words_b):
-    """Counts semantic matches incl. compounds: 'tax' matches
-    'taxregister', 'pay' matches 'payment' (stem = first 5 chars)."""
+    """Telt semantische matches incl. samenstellingen: 'belasting' matcht
+    'belastingregister', 'betalen' matcht 'uitbetaling' (stam = eerste 5 tekens)."""
     count = 0
     for a in words_a:
         stem_a = a[:5] if len(a) >= 5 else a
@@ -36,10 +36,10 @@ def stem_overlap(words_a, words_b):
 
 
 def load_synonym_groups():
-    """Optional, private synonym groups (domain knowledge belongs in data, not code).
-    Format: one group per line, comma-separated. If the file is absent, the
-    script simply runs without synonyms."""
-    path = os.path.expanduser("~/BRAIN/policies/shortlist-synonyms.txt")
+    """Optionele, private synoniem-groepen (domeinkennis hoort in data, not in code).
+    Formaat: één groep per regel, komma-gescheiden. Ontbreekt het file, dan
+    werkt het script gewoon without synoniemen."""
+    path = os.path.expanduser("~/BRAIN/policies/shortlist-synoniemen.txt")
     groups = []
     if os.path.exists(path):
         with open(path, 'r') as f:
@@ -98,13 +98,13 @@ def main():
     if not shortlist_todos:
         print("🟢 No [todo] items found in SHORTLIST.md.")
         sys.exit(0)
-
+        
     tms_tasks = load_tms_tasks(todo_paths)
-
-    print("📋 TMS Shortlist Sync Report")
+    
+    print("📋 TMS Shortlist Sync Rapport")
     print("==================================================")
-    print(f"Number of [todo] items in SHORTLIST.md: {len(shortlist_todos)}")
-    print(f"Number of active TMS tasks: {len(tms_tasks)}")
+    print(f"Aantal [todo] items in SHORTLIST.md: {len(shortlist_todos)}")
+    print(f"Aantal actieve TMS-taken: {len(tms_tasks)}")
     print("--------------------------------------------------\n")
     
     discrepancies = 0
@@ -131,8 +131,8 @@ def main():
             elif todo_lower in task_lower or task_lower in todo_lower:
                 is_match = True
             else:
-                # Private synonym groups (from ~/BRAIN/policies/shortlist-synonyms.txt):
-                # shortlist item and task that each contain a term from the same group = match
+                # Private synoniem-groepen (uit ~/BRAIN/policies/shortlist-synoniemen.txt):
+                # shortlist-item en taak die elk een term uit dezelfde groep bevatten = match
                 for group in synonym_groups:
                     if any(t in todo_lower for t in group) and any(t in task_lower for t in group):
                         is_match = True
@@ -142,21 +142,21 @@ def main():
                 matches.append(task)
                 
         if matches:
-            print("   ✅ Matches found in TMS:")
+            print("   ✅ Found matches in TMS:")
             for m in matches:
-                status_str = "Done" if m["status"] == "x" else "In progress" if m["status"] == "/" else "To do"
+                status_str = "Completed" if m["status"] == "x" else "In uitvoering" if m["status"] == "/" else "Te doen"
                 print(f"      • [{m['file']}] ({status_str}): {m['content']}")
         else:
-            print("   ⚠️  NO MATCH FOUND IN todo.md OR in-progress.md!")
+            print("   ⚠️  NO MATCH FOUND IN todo.md OF in-progress.md!")
             discrepancies += 1
-
+            
         print("")
-
+        
     if discrepancies > 0:
-        print(f"❌ Sync failed: {discrepancies} item(s) not represented in TMS.")
+        print(f"❌ Synchronisatie failed: {discrepancies} item(s) not vertegenwoordigd in TMS.")
         sys.exit(1)
     else:
-        print("🟢 Sync OK: All [todo] items are covered in TMS.")
+        print("🟢 Synchronisatie OK: Alle [todo] items zijn gedekt in TMS.")
         sys.exit(0)
 
 if __name__ == "__main__":

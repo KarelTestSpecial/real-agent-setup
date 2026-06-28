@@ -134,6 +134,12 @@ Set-and-forget disaster recovery for the entire knowledge base:
 - **Key stays local**: generated once into `~/.config/maccha/backup.key` (keep an off-device copy); plain restore instructions are written next to the backups — without the key.
 - **Zero overhead**: triggered automatically (throttled, once per 7 days) by `session-startup`.
 
+### 🧰 6. Bundled AI & Productivity Tools
+MACCHA comes with a suite of pre-configured tools designed to extend your agent's capabilities beyond simple code editing:
+- **Himalaya Email CLI (`~/.local/bin/himalaya`)**: An optional, safe terminal-based email client. The `setup.sh` script can automatically compile and configure this for you, allowing agents to draft emails (subject to the strict HITL rules before sending).
+- **Google Drive Integration (`INFRA/mydrive-access-tool.js` & `INFRA/gdrive-markdown-uploader.js`)**: Bridge tools that allow your CLI agents to securely read and parse your Google Docs/Drive files, as well as automatically convert and upload local markdown documents to Google Drive.
+- **AI Waterfall / Deep Research (`INFRA/run_deep_research.js`)**: A powerful asynchronous research script that agents can trigger to perform deep web scraping and analysis, dropping the results back into the workspace.
+
 ---
 
 ## 📂 Repository Directory Map
