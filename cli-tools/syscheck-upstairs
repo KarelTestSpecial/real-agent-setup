@@ -65,14 +65,14 @@ echo "👤 Andere users in /home:"
 other_users=0
 for dir in /home/*/; do
   user=$(basename "$dir")
-  if [ "$user" != "kareltestspecial" ]; then
+  if [ "$user" != "$USER" ]; then
     echo "  ⚠️  $user"
     ALERTS+=("Onbekende user in /home: $user")
     other_users=$((other_users + 1))
   fi
 done
 if [ "$other_users" -eq 0 ]; then
-  echo "  No (alleen kareltestspecial)"
+  echo "  No (alleen $USER)"
 fi
 
 # ── 6. Optional --clean ──
