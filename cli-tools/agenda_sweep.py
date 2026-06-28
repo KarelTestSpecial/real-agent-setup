@@ -8,7 +8,7 @@ agenda-bron en bundelt alles in één overzicht. Volledigheid is gegarandeerd
 door constructie:
   * de 3 TMS-fileen (todo.md, in-progress.md, shortlist.md), en
   * EVERY stakeholder overview via glob INFO/owner/**/00_*.md
-    (Elias, bewindvoerder, Smart.be, en elk toekomstig 00_*.md automatisch).
+    (stakeholder_1, stakeholder_2, platform_X, and any future 00_*.md automatically).
 
 Output (INFO/owner/deze_week.md + stdout):
   - ⏰ Komende datums (vandaag .. +14 dagen) uit alle bronnen
