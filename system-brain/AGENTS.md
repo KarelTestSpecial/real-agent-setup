@@ -33,7 +33,7 @@
 
 ## 🚀 Mandatory Session Startup Protocol
 
-The agent runs the full checklist **on request** (or when a session starts without a clear task). When the owner opens with a concrete question or task, get straight to work instead. When run, perform the steps **in order**:
+The agent MUST ALWAYS run the full checklist proactively at the beginning of every new conversation/session. This is critical to ensure you have the full context before starting work. Perform the steps **in order**:
 
 ### Step 1: Load Situation
 ```
