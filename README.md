@@ -2,7 +2,7 @@
 
 > **Turn Antigravity, OpenCode, Claude Code, or any other AI coding assistant into a fully contextualized, highly secure, self-improving Real-World Digital Assistant.**
 
-**MACCHA is a lightweight file architecture, a set of intelligent markdown templates, and a suite of maintenance scripts that live in your home directory. It acts as a universal, persistent "brain" that any local AI agent can plug into.**
+**MACCHA is a lightweight file architecture, a set of intelligent markdown templates, and a suite of tools and maintenance scripts that live in your home directory. It acts as a universal, persistent "brain" that any local AI agent can plug into.**
 
 ---
 
