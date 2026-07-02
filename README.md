@@ -121,6 +121,7 @@ A sophisticated, 13-category temporal memory bank (`Instruction`, `Fact`, `Decis
 - **Exponential Confidence Decay**: Automatically reduces the confidence scores of transient situational facts over time while preserving stable, core facts.
 - **AI-Powered Semantic Conflict Detection**: Scans proposed memory inserts against existing ones to catch and supersede contradictions automatically (compatible with Gemini 3.0 Thought Signatures).
 - **Hybrid Search Recaller**: Batched cosine-similarity vector embeddings combined with Jaccard keyword overlap fallbacks.
+- **Runs on a free API key**: uses a Google AI Studio key (`GEMINI_API_KEY` or `GOOGLE_API_KEY`, read from the environment or `~/.gemini/.env`) — the free tier is sufficient; no paid subscription required. Falls back to keyless Vertex AI (ADC) when a Google Cloud project is configured.
 
 ### 📊 2. MACCHA Storage Manager (`infrastructure/storage-manager.js`)
 An advanced diagnostics utility specifically engineered to maintain system health on resource-limited systems (such as Chromebooks running Crostini):
@@ -142,7 +143,7 @@ Automatic, script-driven maintenance keeps your daily workspace organized withou
 
 ### 🗄️ 5. Encrypted Weekly Backup (`cli-tools/maccha-backup`)
 Set-and-forget disaster recovery for the entire knowledge base:
-- **AES-256 encrypted tar** of your personal zones (`INFO/ PLAN/ BRAIN/ …`) written to a mounted cloud drive, with a 4-backup rotation and an automatic decrypt-and-list integrity check.
+- **AES-256 encrypted tar** of your personal zones (`INFO/ PLAN/ BRAIN/ …`) written to a mounted cloud drive, with rotated retention and an automatic decrypt-and-list integrity check. How many backups are kept is set by the `KEEP` variable at the top of `cli-tools/maccha-backup` — adjust to taste (e.g. `KEEP=1` keeps only the most recent, `KEEP=4` a month of weekly history).
 - **Key stays local**: generated once into `~/.config/maccha/backup.key` (keep an off-device copy); plain restore instructions are written next to the backups — without the key.
 - **Zero overhead**: triggered automatically (throttled, once per 7 days) by `session-startup`.
 

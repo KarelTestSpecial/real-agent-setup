@@ -9,6 +9,7 @@ DRIVE=/mnt/chromeos/GoogleDrive/MyDrive
 DEST_DIR="$DRIVE/MACCHA-backups"
 KEY_FILE="$H/.config/maccha/backup.key"
 MARKER="$H/BRAIN/.last_backup"
+# How many rotated backups to keep (1 = only the most recent).
 KEEP=4
 STAMP=$(date +%Y%m%d-%H%M)
 OUT="$DEST_DIR/maccha-backup-$STAMP.tar.gz.enc"
@@ -42,7 +43,7 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:"$KEY_FILE" -in "$OU
 SIZE=$(du -h "$OUT" | cut -f1)
 echo "✅ Backup OK: $OUT ($SIZE)"
 
-# Rotatie: save de laatste $KEEP
+# Rotation: keep only the newest $KEEP backups
 ls -1t "$DEST_DIR"/maccha-backup-*.tar.gz.enc 2>/dev/null | tail -n +$((KEEP+1)) | xargs -r rm -v
 
 # Restore-instructies naast de backups (without key!)
