@@ -17,7 +17,7 @@ HOME = Path.home()
 SRC = HOME / "BRAIN" / "tms" / "todo.md"
 OUT = HOME / "INFO" / "owner" / "todo_overzicht.md"
 
-STATUS = {" ": "⬜ Open", "/": "🔄 In progress", "x": "✅ Done"}
+STATUS = {" ": "Open", "/": "In progress", "x": "Done"}
 
 # Vriendelijkere sectienamen in de uitvoer.
 SECTION_RENAME = {"Cron Jobs": "Terugkerend"}
@@ -118,11 +118,12 @@ def render(rows) -> str:
 
     for sec in order:
         out.append(f"\n## {sec}\n")
-        out.append("| | Taak | Status | Toelichting |")
-        out.append("|---|---|---|---|")
+        out.append("| Taak | Status | Toelichting |")
+        out.append("|---|---|---|")
         for r in groups[sec]:
             desc = r["desc"] or "—"
-            out.append(f"| {r['urgent']} | {r['title']} | {r['status']} | {desc} |")
+            mark = "! " if r["urgent"] else ""
+            out.append(f"| {mark}{r['title']} | {r['status']} | {desc} |")
     out.append("")
     return "\n".join(out)
 
