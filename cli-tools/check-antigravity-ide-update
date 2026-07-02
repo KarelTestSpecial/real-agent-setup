@@ -2,11 +2,11 @@
 # ==============================================================================
 # Script: check-antigravity-ide-update
 # Goal: Checks the current version of Antigravity IDE against the
-#       laatst beschikbare stabiele release, en biedt de optie om de upgrade
-#       direct en veilig uit te voeren.
+#       latest available stable release, and offers the option to run the
+#       upgrade immediately and safely.
 # ==============================================================================
 
-# Kleuren voor UI
+# UI colors
 CYAN="\e[36m"
 GREEN="\e[32m"
 YELLOW="\e[33m"
@@ -18,65 +18,65 @@ RESET="\e[0m"
 echo -e "${CYAN}${BOLD}🔍 Antigravity IDE Update Checker & Installer${RESET}"
 echo -e "======================================================================"
 
-# 1. Bepaal de installede versie
+# 1. Determine the installed version
 PRODUCT_JSON="/opt/antigravity-ide/resources/app/product.json"
 INSTALLED_VERSION="Not installed"
 
 if [ -f "$PRODUCT_JSON" ]; then
-    # Lees ideVersion of fallback naar version
+    # Read ideVersion, falling back to version
     INSTALLED_VERSION=$(jq -r '.ideVersion // .version' "$PRODUCT_JSON")
 fi
 
-echo -e "${BLUE}Geïnstalleerde versie:${RESET} ${BOLD}${INSTALLED_VERSION}${RESET}"
+echo -e "${BLUE}Installed version:${RESET} ${BOLD}${INSTALLED_VERSION}${RESET}"
 
-# 2. Haal de laatste beschikbare versie op via de API
+# 2. Fetch the latest available version via the API
 API_URL="https://antigravity-ide-auto-updater-974169037036.us-central1.run.app/releases"
 echo -e "${BLUE}Fetching release information...${RESET}"
 
 RELEASES_JSON=$(curl -sL "$API_URL")
 
 if [ -z "$RELEASES_JSON" ] || [ "$RELEASES_JSON" == "[]" ]; then
-    echo -e "${RED}❌ Fout: Failed to connect to the update server or no releases found.${RESET}"
+    echo -e "${RED}❌ Error: Failed to connect to the update server or no releases found.${RESET}"
     exit 1
 fi
 
-# De API geeft een gesorteerde JSON array terug. De eerste entry is de nieuwste release.
+# The API returns a sorted JSON array. The first entry is the newest release.
 LATEST_VERSION=$(echo "$RELEASES_JSON" | jq -r '.[0].version')
 EXEC_ID=$(echo "$RELEASES_JSON" | jq -r '.[0].execution_id')
 
-echo -e "${BLUE}Laatste beschikbare versie:${RESET} ${BOLD}${LATEST_VERSION}${RESET}"
+echo -e "${BLUE}Latest available version:${RESET} ${BOLD}${LATEST_VERSION}${RESET}"
 
 if [ "$INSTALLED_VERSION" == "Not installed" ]; then
     echo -e "${YELLOW}⚠️ Antigravity IDE is currently not correctly installed at /opt/antigravity-ide.${RESET}"
-    echo -e "Je kunt de nieuwste versie installeren met:"
-    echo -e "  ${GREEN}update-antigravityide <pad-naar-tar.gz>${RESET}"
+    echo -e "You can install the latest version with:"
+    echo -e "  ${GREEN}update-antigravityide <path-to-tar.gz>${RESET}"
     exit 0
 fi
 
-# 3. Vergelijken en Rapporteren
+# 3. Compare and report
 if [ "$INSTALLED_VERSION" == "$LATEST_VERSION" ]; then
     echo -e "======================================================================"
     echo -e "${GREEN}✅ You are completely up-to-date! No action required.${RESET}"
-    echo -e "Current version ${BOLD}${INSTALLED_VERSION}${RESET} is de nieuwste stabiele release."
+    echo -e "Current version ${BOLD}${INSTALLED_VERSION}${RESET} is the latest stable release."
     echo -e "======================================================================"
     exit 0
 fi
 
 echo -e "======================================================================"
 echo -e "${YELLOW}🚀 UPDATE AVAILABLE!${RESET}"
-echo -e "Er is een nieuwe stabiele release van Antigravity IDE available."
+echo -e "A new stable release of Antigravity IDE is available."
 echo -e "  • Current version : ${RED}${INSTALLED_VERSION}${RESET}"
-echo -e "  • Nieuwe versie  : ${GREEN}${LATEST_VERSION}${RESET} (Build: ${EXEC_ID})"
+echo -e "  • New version   : ${GREEN}${LATEST_VERSION}${RESET} (Build: ${EXEC_ID})"
 echo ""
 
-# Genereer de download-URL
+# Generate the download URL
 DOWNLOAD_URL="https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${LATEST_VERSION}-${EXEC_ID}/linux-x64/Antigravity%20IDE.tar.gz"
 
-echo -e "${BLUE}Officiële Google CDN download-link:${RESET}"
+echo -e "${BLUE}Official Google CDN download link:${RESET}"
 echo -e "  ${CYAN}${DOWNLOAD_URL}${RESET}"
 echo "======================================================================"
 
-# Bied interactieve optie aan om de update direct uit te voeren
+# Offer an interactive option to run the update immediately
 read -p "Do you want to automatically download and install this update now? (y/n): " CONFIRM
 CONFIRM=$(echo "$CONFIRM" | tr '[:upper:]' '[:lower:]')
 
@@ -97,17 +97,17 @@ if [[ "$CONFIRM" == "j" || "$CONFIRM" == "ja" || "$CONFIRM" == "y" || "$CONFIRM"
             exit 1
         fi
         
-        echo -e "${BLUE}>> Clean up van tijdelijk archieffile...${RESET}"
+        echo -e "${BLUE}>> Cleaning up temporary archive file...${RESET}"
         rm -f "$TEMP_ARCHIVE"
-        echo -e "${GREEN}>> Opslag opgeruimd. Systeem is weer spik en span!${RESET}"
-        echo -e "\n${GREEN}🎉 Antigravity IDE is successfully geüpgraded naar versie ${LATEST_VERSION}!${RESET}"
+        echo -e "${GREEN}>> Storage cleaned up. System is spick and span again!${RESET}"
+        echo -e "\n${GREEN}🎉 Antigravity IDE was successfully upgraded to version ${LATEST_VERSION}!${RESET}"
     else
         echo -e "${RED}❌ Error: Downloading update failed.${RESET}"
         rm -f "$TEMP_ARCHIVE"
         exit 1
     fi
 else
-    echo -e "\n${YELLOW}Upgrade skipped.${RESET} Je kunt dit later handmatig doen met:"
+    echo -e "\n${YELLOW}Upgrade skipped.${RESET} You can do this manually later with:"
     echo -e "  ${GREEN}wget -O ~/Downloads/Antigravity_IDE.tar.gz \"${DOWNLOAD_URL}\"${RESET}"
     echo -e "  ${GREEN}update-antigravityide ~/Downloads/Antigravity_IDE.tar.gz${RESET}"
     echo -e "  ${GREEN}rm ~/Downloads/Antigravity_IDE.tar.gz${RESET}"

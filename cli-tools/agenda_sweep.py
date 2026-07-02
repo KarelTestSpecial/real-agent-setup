@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
-"""agenda_sweep.py — EXHAUSTIEVE 'vandaag/deze week'-agenda-sweep.
+"""agenda_sweep.py — EXHAUSTIVE 'today/this week' agenda sweep.
 
-Codewoord-trigger: "DEZE WEEK".
+Code-word trigger: "DEZE WEEK" ("this week").
 
-Doel: nooit meer een hele bron overslaan. Het script sweept MECHANISCH élke
-agenda-bron en bundelt alles in één overzicht. Volledigheid is gegarandeerd
-door constructie:
-  * de 3 TMS-fileen (todo.md, in-progress.md, shortlist.md), en
+Goal: never silently skip an agenda source again. The script MECHANICALLY
+sweeps every agenda source and bundles everything into one overview.
+Completeness is guaranteed by construction:
+  * the 3 TMS files (todo.md, in-progress.md, shortlist.md), and
   * EVERY stakeholder overview via glob INFO/owner/**/00_*.md
     (stakeholder_1, stakeholder_2, platform_X, and any future 00_*.md automatically).
 
 Output (INFO/owner/deze_week.md + stdout):
-  - ⏰ Komende datums (vandaag .. +14 dagen) uit alle bronnen
-  - 📋 TMS — open taken per file
-  - 🤝 Stakeholder-overzichten — actie-essentie per 00_*.md
-  - voettekst "Bronnen gesweept: …" als volledigheids-bewijs
-Files met een afwijkend formaat krijgen de vlag [FORMAAT AFWIJKEND →
-volledig openen] zodat ze nooit stil wegvallen.
+  - ⏰ upcoming dates (today .. +14 days) from all sources
+  - 📋 TMS — open tasks per file
+  - 🤝 stakeholder overviews — action essence per 00_*.md
+  - footer "Bronnen gesweept: …" (sources swept) as proof of completeness
+Files with a deviating format get flagged [FORMAAT AFWIJKEND] ("format
+deviates — open in full") so they never drop out silently.
 
-AFGELEIDE WEERGAVE (CLAUDE.md regel 1.b): wijzig taken in hun eigen bron,
-not hier; draai dit script opnieuw.
+Note: this tool parses and renders Dutch — the owner's TMS and agenda
+language (month/weekday names, section headers). Adapt the word tables
+below for another language.
+
+DERIVED VIEW (CLAUDE.md rule 1.b): edit tasks in their own source file,
+not here; then re-run this script.
 """
 import re
 import sys
@@ -69,8 +73,9 @@ def clean(text: str, limit: int = 200) -> str:
 
 
 def parse_recurring(line, today, horizon):
-    """Zet terugkerende patronen om naar concrete datums in [today, horizon].
-    Vangt 'elke week op zaterdag' (weekdag) en 'maandelijks rond de Ne'."""
+    """Expand recurring patterns into concrete dates within [today, horizon].
+    Catches Dutch 'elke week op zaterdag' (weekday) and 'maandelijks rond de Ne'
+    ("every week on Saturday" / "monthly around the Nth")."""
     if not RE_RECUR.search(line):
         return []
     out, low = [], line.lower()
@@ -97,7 +102,7 @@ def parse_recurring(line, today, horizon):
 
 
 def parse_dates(line, today, horizon):
-    """Geef alle (date, kort-label) uit een regel die in [today, horizon] valt."""
+    """Return every date found in a line that falls within [today, horizon]."""
     hits = []
     for m in RE_DATE_WORD.finditer(line):
         day, mon = int(m.group(1)), MONTHS[m.group(2).lower()]
@@ -138,12 +143,12 @@ def open_tasks(path):
 
 
 def stakeholder_essence(path):
-    """Beste-inspanning actie-essentie + vlag bij afwijkend formaat."""
+    """Best-effort action essence + flag when the format deviates."""
     lines = path.read_text(encoding="utf-8").splitlines()
     title = next((RE_TITLE.match(l).group(1) for l in lines if RE_TITLE.match(l)),
                  path.name)
     block, arrows, checks = [], [], []
-    # 1) "Snelle status"-blok (de gecureerde at-a-glance agenda)
+    # 1) "Snelle status" (quick status) block — the curated at-a-glance agenda
     for i, l in enumerate(lines):
         if RE_SNELLE.match(l):
             for nxt in lines[i + 1:]:
@@ -152,7 +157,7 @@ def stakeholder_essence(path):
                 if nxt.strip():
                     block.append(nxt.rstrip())
             break
-    # 2) expliciete actieregels door het hele file
+    # 2) explicit action lines throughout the file
     for l in lines:
         if "→ Met" in l:
             arrows.append(clean(l))
@@ -180,7 +185,7 @@ def build():
         f"> *Automatisch gegenereerd op {datetime.datetime.now():%Y-%m-%d %H:%M} "
         "door `~/bin/agenda_sweep.py` (codewoord: \"DEZE WEEK\"). Sweept ALLE "
         "agenda sources: 3 TMS files + every `INFO/owner/**/00_*.md`. "
-        "NOT handmatig bewerken — wijzig in de bron, draai opnieuw.*\n")
+        "Do NOT edit by hand — change the source and re-run.*\n")
 
     # --- TMS ---
     tms_blocks = []
@@ -200,7 +205,7 @@ def build():
     stake = []
     for path in sorted(STAKEHOLDER_ROOT.rglob("00_*.md")):
         if path.name.lower().startswith("00_index"):
-            continue  # mappenindex, no stakeholder-overzicht
+            continue  # folder index, not a stakeholder overview
         swept.append(str(path.relative_to(STAKEHOLDER_ROOT)))
         ess = stakeholder_essence(path)
         for raw in path.read_text(encoding="utf-8").splitlines():
@@ -224,7 +229,7 @@ def build():
         for d, txt in uniq:
             out.append(f"- **{d:%a %d/%m}** — {txt}")
     else:
-        out.append("*(no expliciete datums in de bronnen voor dit venster)*")
+        out.append("*(no explicit dates in the sources for this window)*")
 
     # --- 📋 TMS ---
     out.append("\n## 📋 TMS — open taken\n")
@@ -238,7 +243,7 @@ def build():
         out.append(f"\n### {ess['title']}  ·  `{path.relative_to(STAKEHOLDER_ROOT)}`\n")
         if ess["flagged"]:
             out.append("> ⚠️ **[FORMAAT AFWIJKEND → volledig openen]** — no "
-                       "snelle-status/actieregels found; ruwe lijstregels:")
+                       "quick-status/action lines found; raw list lines:")
             out.extend(f"- {t}" for t in ess["fallback"])
         else:
             if ess["block"]:
@@ -251,7 +256,7 @@ def build():
                 out.append("\n**Open checkboxes:**")
                 out.extend(f"- {c}" for c in ess["checks"])
 
-    # --- voettekst: volledigheids-bewijs ---
+    # --- footer: proof of completeness ---
     out.append("\n---\n")
     out.append(f"**Bronnen gesweept ({len(swept)}):** " + " · ".join(swept))
     out.append("")
@@ -265,7 +270,7 @@ def main():
         return
     OUT.write_text(text, encoding="utf-8")
     print(text)
-    print(f"\n[geschreven: {OUT}]", file=sys.stderr)
+    print(f"\n[written: {OUT}]", file=sys.stderr)
 
 
 if __name__ == "__main__":

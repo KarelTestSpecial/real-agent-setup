@@ -3,8 +3,8 @@ import subprocess
 import re
 from datetime import datetime
 
-# Alle paden relatief aan HOME zodat dit script onchanged mee kan naar de
-# publieke real-agent-setup capsule (PII-vrij, no machine-specifieke paden).
+# All paths relative to HOME so this script travels unchanged into the
+# public real-agent-setup capsule (PII-free, no machine-specific paths).
 HOME = os.path.expanduser("~")
 BRAIN = os.path.join(HOME, "BRAIN")
 TMS_DIR = os.path.join(BRAIN, "tms")
@@ -82,7 +82,7 @@ def check_workspace_activity(tms_content):
         if filename in [".run_counter", "status.md", "README.md", "heartbeat.pulse", "VETTED_BOUNTIES.md"] or filename.endswith(".json") or filename.endswith(".pyc"):
             continue
 
-        # Match op filesnaam of op projectmap (eerste segment onder workspace/)
+        # Match on filename or on project folder (first segment under workspace/)
         rel = os.path.relpath(file_path, WORKSPACE_DIR)
         project = rel.split(os.sep)[0].lower()
         if filename.lower() not in tms_content and project not in tms_content:
@@ -123,7 +123,7 @@ def check_learned_lessons_integrity():
 
 
 def check_index_coverage():
-    """Librarian-check: elk lesfile moet vermeld staan in de INDEX.md van zijn categorie."""
+    """Librarian check: every lesson file must be listed in its category INDEX.md."""
     print("🗂️ Checking INDEX.md coverage of learned-lessons...")
     issues = []
 
@@ -154,8 +154,9 @@ def check_index_coverage():
 
 
 def parse_guardrails():
-    """Leest het guardrails-register (BRAIN/policies/guardrails.md).
-    Elk '## Guardrail:'-blok wordt een dict van zijn '- key: waarde'-regels."""
+    """Reads the guardrails register (BRAIN/policies/guardrails.md).
+    Each '## Guardrail:' block becomes a dict of its '- key: value' lines.
+    Note: register keys are Dutch by contract (naam/bron/sectie/actief)."""
     if not os.path.exists(GUARDRAILS_FILE):
         return []
     with open(GUARDRAILS_FILE, "r") as f:
@@ -174,15 +175,16 @@ def parse_guardrails():
 
 
 def check_forbidden_terms_in_active_tms(rule):
-    """Regeltype 'verboden-termen-in-actieve-tms': vetgedrukte items uit de
-    opgegeven sectie van het bronfile mogen not in todo.md/in-progress.md staan."""
+    """Rule type 'verboden-termen-in-actieve-tms' (forbidden terms in active TMS):
+    bold items from the given section of the source file must not appear in
+    todo.md/in-progress.md."""
     source = os.path.expanduser(rule.get("bron", ""))
     section_heading = rule.get("sectie", "")
     if not source or not section_heading:
-        print(f"⚠️ Guardrail '{rule['naam']}': 'bron' of 'sectie' ontbreekt — skipped.")
+        print(f"⚠️ Guardrail '{rule['naam']}': 'bron' or 'sectie' key missing — skipped.")
         return True
     if not os.path.exists(source):
-        print(f"⚠️ Guardrail '{rule['naam']}': bron {source} not found — skipped.")
+        print(f"⚠️ Guardrail '{rule['naam']}': source {source} not found — skipped.")
         return True
 
     with open(source, "r") as f:
@@ -190,15 +192,15 @@ def check_forbidden_terms_in_active_tms(rule):
 
     section = re.search(re.escape(section_heading) + r".*?(?=\n## |$)", content, re.DOTALL)
     if not section:
-        print(f"⚠️ Guardrail '{rule['naam']}': sectie '{section_heading}' not found in {source} — skipped.")
+        print(f"⚠️ Guardrail '{rule['naam']}': section '{section_heading}' not found in {source} — skipped.")
         return True
 
-    # Entries als "- **SecureBananaLabs (PR #7 & #214)**:" → zoekterm "securebananalabs"
+    # Entries like "- **SecureBananaLabs (PR #7 & #214)**:" → search term "securebananalabs"
     raw_items = re.findall(r"-\s+\*\*([^*]+)\*\*", section.group(0))
     targets = [item.split("(")[0].strip().lower() for item in raw_items]
     targets = [t for t in targets if t]
     if not targets:
-        print(f"✅ Guardrail '{rule['naam']}': no termen in bronsectie.")
+        print(f"✅ Guardrail '{rule['naam']}': no terms in the source section.")
         return True
 
     issues = []
@@ -210,13 +212,13 @@ def check_forbidden_terms_in_active_tms(rule):
             active_text = f.read().lower()
         for target in targets:
             if target in active_text:
-                issues.append(f"Guardrail '{rule['naam']}': verboden term '{target}' found in actieve {name}")
+                issues.append(f"Guardrail '{rule['naam']}': forbidden term '{target}' found in active {name}")
 
     if issues:
         for issue in issues:
             print(f"❌ {issue}")
         return False
-    print(f"✅ Guardrail '{rule['naam']}': OK ({len(targets)} termen gecontroleerd tegen actieve TMS).")
+    print(f"✅ Guardrail '{rule['naam']}': OK ({len(targets)} terms checked against the active TMS).")
     return True
 
 
@@ -226,23 +228,23 @@ RULE_TYPES = {
 
 
 def check_guardrails():
-    """Generieke handhaving van het guardrails-register. Domeinkennis leeft in
-    BRAIN/policies/guardrails.md (en de bronfileen waarnaar dat verwijst),
-    nooit in deze code."""
+    """Generic enforcement of the guardrails register. Domain knowledge lives in
+    BRAIN/policies/guardrails.md (and the source files it points to),
+    never in this code."""
     print("🛡️ Checking guardrails (BRAIN/policies/guardrails.md)...")
     guardrails = parse_guardrails()
     if not guardrails:
-        print("✅ No guardrails-register (of leeg) — check skipped.")
+        print("✅ No guardrails register (or empty) — check skipped.")
         return True
 
     all_ok = True
     for rule in guardrails:
         if rule.get("actief", "ja").lower() in ("nee", "no", "false"):
-            print(f"⏸️ Guardrail '{rule['naam']}': inactief — skipped.")
+            print(f"⏸️ Guardrail '{rule['naam']}': inactive — skipped.")
             continue
         handler = RULE_TYPES.get(rule.get("type", ""))
         if handler is None:
-            print(f"⚠️ Guardrail '{rule['naam']}': onbekend type '{rule.get('type')}' — skipped (typfout in register?).")
+            print(f"⚠️ Guardrail '{rule['naam']}': unknown type '{rule.get('type')}' — skipped (typo in the register?).")
             continue
         if not handler(rule):
             all_ok = False

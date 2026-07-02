@@ -7,7 +7,7 @@
  * to "Anyone with the link can view".
  *
  * CREDENTIALS & TOKEN PATHS:
- * - Credentials: ~/.config/maccha/credentials.json (symlink naar het client_secret-file)
+ * - Credentials: ~/.config/maccha/credentials.json (symlink to the client_secret file)
  * - Token: ~/.config/maccha/google-drive-token.json (canoniek)
  */
 
@@ -35,7 +35,7 @@ async function main() {
     ];
 
 
-    console.log('\n=== Start van de upload en conversie naar Google Docs ===\n');
+    console.log('\n=== Starting upload and conversion to Google Docs ===\n');
 
     const results = {};
 
@@ -48,7 +48,7 @@ async function main() {
         console.log(`📤 Uploaden en converteren: "${path.basename(item.localPath)}"...`);
         
         try {
-            // 1. Upload & converteren naar Google Doc
+            // 1. Upload & convert to Google Doc
             const fileMetadata = {
                 name: item.title,
                 mimeType: 'application/vnd.google-apps.document'
@@ -67,7 +67,7 @@ async function main() {
             const fileId = file.data.id;
             let webViewLink = file.data.webViewLink;
 
-            // Sommige accounts vereisen een expliciete get om de volledige link te krijgen
+            // Some accounts require an explicit get to obtain the full link
             if (!webViewLink) {
                 const getRes = await drive.files.get({
                     fileId: fileId,
@@ -76,7 +76,7 @@ async function main() {
                 webViewLink = getRes.data.webViewLink;
             }
 
-            // 2. Machtigingen instellen op "Iedereen met de link kan lezen"
+            // 2. Set permissions to "Anyone with the link can view"
             await drive.permissions.create({
                 fileId: fileId,
                 resource: {
@@ -89,7 +89,7 @@ async function main() {
             console.log(`   🔗 Google Doc Link: ${webViewLink}\n`);
             results[path.basename(item.localPath)] = webViewLink;
         } catch (error) {
-            console.error(`❌ Upload failed voor ${path.basename(item.localPath)}:`, error.message);
+            console.error(`❌ Upload failed for ${path.basename(item.localPath)}:`, error.message);
         }
     }
 
@@ -130,10 +130,10 @@ function getNewToken(oAuth2Client) {
     });
 
     console.log('\n🚀 VISUAL ACTION REQUIRED FOR GOOGLE DRIVE ACCESS:');
-    console.log('1. Open deze URL in je browser (klik of kopieer):');
+    console.log('1. Open this URL in your browser (click or copy):');
     console.log(authUrl);
     console.log('\n2. Geef toestemming met je Google Account.');
-    console.log('3. Plak de VOLLEDIGE redirect URL (http://localhost/?code=...) hieronder:\n');
+    console.log('3. Paste the FULL redirect URL (http://localhost/?code=...) below:\n');
 
     const rl = readline.createInterface({
         input: process.stdin,
@@ -141,11 +141,11 @@ function getNewToken(oAuth2Client) {
     });
 
     return new Promise((resolve, reject) => {
-        rl.question('Voer de volledige redirect URL in: ', (url) => {
+        rl.question('Enter the full redirect URL: ', (url) => {
             rl.close();
             try {
                 const code = new URL(url).searchParams.get('code');
-                if (!code) throw new Error("No autorisatiecode found in de URL.");
+                if (!code) throw new Error("No authorization code found in the URL.");
 
                 oAuth2Client.getToken(code, (err, token) => {
                     if (err) return reject(console.error('❌ Error fetching OAuth token:', err));

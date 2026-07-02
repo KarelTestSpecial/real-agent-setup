@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""lange_termijn.py — LANGE-TERMIJN-overzicht (codewoord: "LANGE TERMIJN").
+"""lange_termijn.py — LONG-TERM overview (code word: "LANGE TERMIJN").
 
-Tegenhanger van agenda_sweep.py (het weekoverzicht). Rendert:
-  * de masterplan-kern (DEEL 2: tijdlijn-ankers + 4 domeinen) uit
-    PLAN/masterplan_2026_2032.md, en
-  * de lange-horizon TMS-secties uit BRAIN/tms/todo.md
+Counterpart of agenda_sweep.py (the weekly overview). Renders:
+  * the masterplan core (DEEL 2: timeline anchors + 4 domains) from
+    PLAN/masterplan_2026_2032.md, and
+  * the long-horizon TMS sections from BRAIN/tms/todo.md
     (Masterplan / Real Life Long Term / Bounty Hunting / Film).
 Output to INFO/owner/lange_termijn.md and stdout.
 
-AFGELEIDE WEERGAVE (CLAUDE.md regel 1.b): wijzig de masterplan of de TMS,
-not dit file; draai het script opnieuw.
+Note: renders Dutch — the owner's masterplan/TMS language.
+
+DERIVED VIEW (CLAUDE.md rule 1.b): edit the masterplan or the TMS,
+not this file; then re-run this script.
 
 Usage: lange_termijn.py            -> write file + print
-          lange_termijn.py --stdout   -> alleen printen
+          lange_termijn.py --stdout   -> print only
 """
 import re
 import sys
@@ -94,7 +96,7 @@ def build():
         f"> *Gegenereerd {datetime.datetime.now():%Y-%m-%d %H:%M} door "
         "`~/bin/lange_termijn.py` (codewoord: \"LANGE TERMIJN\"). Bron: "
         "PLAN/masterplan_2026_2032.md + lange-horizon TMS-secties. "
-        "NOT handmatig bewerken — wijzig in de bron, draai opnieuw.*\n")
+        "Do NOT edit by hand — change the source and re-run.*\n")
     out.append("\n## 🗺️ Masterplan (6 jaar)\n")
     out += masterplan_core()
     out.append("\n## ✅ Lange-horizon taken (TMS)\n")
@@ -115,7 +117,7 @@ def main():
         return
     OUT.write_text(text, encoding="utf-8")
     print(text)
-    print(f"\n[geschreven: {OUT}]", file=sys.stderr)
+    print(f"\n[written: {OUT}]", file=sys.stderr)
 
 
 if __name__ == "__main__":

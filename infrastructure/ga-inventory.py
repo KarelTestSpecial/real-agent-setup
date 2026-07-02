@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-ga-inventory.py — read-only inventaris/audit van Google Analytics (GA4).
+ga-inventory.py — read-only inventory/audit of Google Analytics (GA4).
 
-Gebruikt een dedicated service-account key (RS256 JWT, ondertekend via openssl;
-no externe Python-libs nodig) om de GA Admin API + Data API te bevragen:
-  - alle accounts + properties (account summaries)
-  - per property: details (aanmaakdatum, tijdzone, serviceLevel, industrie)
+Uses a dedicated service-account key (RS256 JWT, signed via openssl;
+no external Python libs needed) to query the GA Admin API + Data API:
+  - all accounts + properties (account summaries)
+  - per property: details (creation date, time zone, serviceLevel, industry)
   - per property: data streams (web/app, measurementId, URL)
-  - per property: laatste dag met data + 90d/365d activiteit (Data API)
+  - per property: last day with data + 90d/365d activity (Data API)
 
-De service account moet als (minimaal) Viewer op accountniveau in GA toegevoegd
-zijn, anders ziet hij niets.
+The service account must be added as (at least) Viewer at the GA account level,
+otherwise it sees nothing.
 
 Auth: SA-key in ~/.config/maccha/secrets/sa_analytics_*.json
 Scope: https://www.googleapis.com/auth/analytics.readonly
 
 Usage:
-  python3 ga-inventory.py                 # tekst-overzicht naar stdout
-  python3 ga-inventory.py --json out.json # ruwe data ook als JSON wegschrijven
-  python3 ga-inventory.py --key <pad>     # andere SA-key
+  python3 ga-inventory.py                 # text overview to stdout
+  python3 ga-inventory.py --json out.json # also write raw data as JSON
+  python3 ga-inventory.py --key <path>    # different SA key
 """
 import base64
 import datetime as dt
@@ -201,8 +201,8 @@ def main():
 
     summaries = list_account_summaries(token)
     if not summaries:
-        print("No accounts zichtbaar. Is de service account al als Viewer "
-              "toegevoegd op accountniveau?")
+        print("No accounts visible. Has the service account been added as Viewer "
+              "at the account level?")
         return
 
     report = []

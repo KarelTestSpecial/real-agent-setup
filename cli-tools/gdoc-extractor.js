@@ -125,7 +125,7 @@
   `;
   
   const copyBtn = document.createElement('button');
-  copyBtn.textContent = 'Copy naar klembord';
+  copyBtn.textContent = 'Copy to clipboard';
   copyBtn.style.cssText = `
     padding: 8px 16px;
     background: #007acc;
@@ -143,7 +143,7 @@
     copyBtn.textContent = '✓ Copied!';
     copyBtn.style.background = '#28a745';
     setTimeout(() => {
-      copyBtn.textContent = 'Copy naar klembord';
+      copyBtn.textContent = 'Copy to clipboard';
       copyBtn.style.background = '#007acc';
     }, 2000);
   };
