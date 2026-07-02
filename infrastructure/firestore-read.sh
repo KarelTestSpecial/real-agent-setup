@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Read-only dump van een Firestore-collectie in het kdc-apps-project.
-# De firebase CLI heeft no simpel "lees document"-commando; dit usaget
-# een gcloud-OAuth-token tegen de Firestore REST-API.
+# Read-only dump of a Firestore collection in the kdc-apps project.
+# The firebase CLI has no simple "read document" command; this uses
+# a gcloud OAuth token against the Firestore REST API.
 #
 # Usage:  firestore-read.sh <collection> [pageSize]
 #           RAW=1 firestore-read.sh <collection>      # rauwe JSON i.p.v. tabel
 #           FIRESTORE_PROJECT=ander-project firestore-read.sh <collection>
 #
 # Auth: gcloud user-creds (<je-gcloud-email>) met toegang tot kdc-apps.
-#       Read-only. Schrijven (PATCH/DELETE) bewust NOT in dit script (HITL).
+#       Read-only. Writing (PATCH/DELETE) deliberately NOT in this script (HITL).
 set -euo pipefail
 PROJECT="${FIRESTORE_PROJECT:-kdc-apps}"
 COLL="${1:?Usage: firestore-read.sh <collection> [pageSize]}"

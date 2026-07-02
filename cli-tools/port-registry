@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # Script: port-registry
-# Beschrijving: Beheert de poort-toewijzingen in de centrale registry.
+# Description: Manages the port assignments in the central registry.
 # ==============================================================================
 
 exec python3 "${HOME}/INFRA/port-manager/scripts/manage_ports.py" "$@"

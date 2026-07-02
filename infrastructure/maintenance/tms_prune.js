@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Conform AGENTS.md regel 1.b: done.md archiveert per kwartaal naar
+// Per AGENTS.md rule 1.b: done.md archives quarterly into
 // BRAIN/archive/tms/<jaar>-Q<x>.md. Fysieke paden onder BRAIN/ (no symlinks).
 const TMS_DIR = path.join(os.homedir(), 'BRAIN', 'tms');
 const DONE_PATH = path.join(TMS_DIR, 'done.md');
@@ -22,7 +22,7 @@ function pruneDone() {
 
     const lines = fs.readFileSync(DONE_PATH, 'utf8').split('\n');
     if (lines.length <= MAX_DONE_LINES) {
-        console.log(`TMS Hygiene: done.md is ${lines.length} regels (limiet ${MAX_DONE_LINES}), no prune nodig.`);
+        console.log(`TMS Hygiene: done.md is ${lines.length} lines (limit ${MAX_DONE_LINES}), no prune needed.`);
         return;
     }
 
@@ -35,7 +35,7 @@ function pruneDone() {
     fs.appendFileSync(archivePath, header + toArchive.join('\n') + '\n');
     fs.writeFileSync(DONE_PATH, toKeep.join('\n').trim() + '\n');
 
-    console.log(`TMS Hygiene: ${toArchive.length} regels verplaatst naar ${archivePath}.`);
+    console.log(`TMS Hygiene: ${toArchive.length} lines moved to ${archivePath}.`);
 }
 
 pruneDone();

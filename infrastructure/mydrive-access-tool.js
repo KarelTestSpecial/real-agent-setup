@@ -56,7 +56,7 @@ async function main() {
         if (fs.existsSync(SERVICE_ACCOUNT_PATH)) {
             const sa = JSON.parse(fs.readFileSync(SERVICE_ACCOUNT_PATH));
             console.log(`🤖 Service account: ${sa.client_email}`);
-            console.log(`   (project: ${sa.project_id}) — deel sheets met dit adres als Bewerker.`);
+            console.log(`   (project: ${sa.project_id}) — share sheets with this address as Editor.`);
         } else {
             console.log('👤 OAuth user-flow token (no service account ingesteld).');
             console.log('   E-mail not uitleesbaar: token heeft no "email"-scope.');

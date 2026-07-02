@@ -86,12 +86,12 @@ def cmd_distill(args):
     print(f"File: {fp}\nMemanto ID: {mid}")
 
 def cmd_prune(args):
-    """Doorstroom: ruim uitgedoofde werkgeheugen-entries op (default: Event < 0.2).
-    Curatie-categorieen (Learning/Preference/Fact) worden nooit geraakt."""
+    """Flow-through: clean up decayed working-memory entries (default: Event < 0.2).
+    Curated categories (Learning/Preference/Fact) are never touched."""
     PROTECTED = {"Learning", "Preference", "Fact"}
     cats = [c.strip() for c in args.category.split(",")] if args.category else ["Event"]
     if any(c in PROTECTED for c in cats):
-        print(f"WEIGERING: gecureerde categorie {PROTECTED & set(cats)} mag not geprunet worden.")
+        print(f"REFUSED: curated category {PROTECTED & set(cats)} must not be pruned.")
         sys.exit(1)
     before = list(brain.memories)
     doomed = [m for m in before
@@ -112,13 +112,13 @@ def cmd_prune(args):
         json.dump(before, f, ensure_ascii=False, indent=2)
     brain.memories = keep
     brain._save_memories()
-    # Roteer backups: zelf doorstromen i.p.v. opstapelen — save enkel de nieuwste KEEP_BAKS.
+    # Rotate backups: flow through instead of piling up — keep only the newest KEEP_BAKS.
     KEEP_BAKS = 3
     import glob
     olds = sorted(glob.glob(MEMORY_FILE + ".bak-*"))
     for stale in olds[:-KEEP_BAKS]:
         os.remove(stale)
-    print(f"Cleaned up. Backup: {bak} (save laatste {KEEP_BAKS}, {max(0, len(olds) - KEEP_BAKS)} oude removed)")
+    print(f"Cleaned up. Backup: {bak} (keeping newest {KEEP_BAKS}, removed {max(0, len(olds) - KEEP_BAKS)} old)")
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(prog="memanto", description="Memanto + Librarian CLI")
