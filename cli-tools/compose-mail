@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""compose-mail — build a correct outgoing e-mail and save it as a Gmail draft via himalaya.
+
+WHY THIS EXISTS
+    Hand-rolling raw .eml messages for `himalaya message save` repeatedly caused
+    two failure modes:
+      1. Long plain-text lines got truncated by Gmail's SMTP on send.
+      2. Plain-text bodies render in a narrow, "cut-off"-looking column in Gmail.
+    This tool removes the hand-work: it ALWAYS produces
+        multipart/mixed[ multipart/alternative[ text/plain(QP), text/html ], <attachments> ]
+    so the body reflows wide (HTML) and never truncates (quoted-printable), with
+    attachments embedded and correct reply threading.
+
+    It ONLY saves a DRAFT (never sends) — sending stays a human action (HITL).
+
+USAGE
+    compose-mail --account gmail-personal \
+        --to someone@example.com \
+        --subject "Onderwerp" \
+        --body-file /path/body.txt \
+        [--attach /abs/path/file.pdf ...] \
+        [--in-reply-to '<message-id>'] [--reply] \
+        [--from you@example.com] [--folder '[Gmail]/Concepten']
+
+    Body: paragraphs separated by blank lines; single newlines inside a paragraph
+    become <br> (handy for signatures). Pass either --body-file or --body.
+"""
+import argparse
+import mimetypes
+import shutil
+import subprocess
+import sys
+from email.message import EmailMessage
+from html import escape
+from pathlib import Path
+
+# Stable account -> From address map (see CLAUDE.md Himalaya section).
+ACCOUNT_FROM = {
+    "gmail-personal": "personal@example.com",
+    "gmail-fpc": "userdfpc@gmail.com",
+    "gmail-test": "test@example.com",
+}
+
+
+def find_himalaya() -> str:
+    local = Path.home() / ".local/bin/himalaya"
+    if local.is_file():
+        return str(local)
+    found = shutil.which("himalaya")
+    if found:
+        return found
+    sys.exit("ERROR: himalaya binary not found (looked in ~/.local/bin and PATH).")
+
+
+def build_html(body: str) -> str:
+    paragraphs = [p for p in body.split("\n\n")]
+    html_paras = []
+    for p in paragraphs:
+        if not p.strip():
+            continue
+        html_paras.append("<p>" + "<br>".join(escape(line) for line in p.split("\n")) + "</p>")
+    return (
+        '<html><body style="font-family:Arial,sans-serif;font-size:14px;color:#222;">\n'
+        + "\n".join(html_paras)
+        + "\n</body></html>\n"
+    )
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Build an HTML+QP e-mail and save it as a himalaya draft.")
+    ap.add_argument("--account", required=True, help="himalaya account (e.g. gmail-personal)")
+    ap.add_argument("--to", required=True)
+    ap.add_argument("--subject", required=True)
+    ap.add_argument("--from", dest="from_addr", help="From address (default: derived from --account)")
+    g = ap.add_mutually_exclusive_group(required=True)
+    g.add_argument("--body")
+    g.add_argument("--body-file")
+    ap.add_argument("--attach", action="append", default=[], help="absolute path to an attachment (repeatable)")
+    ap.add_argument("--in-reply-to", help="Message-ID of the mail being replied to (enables threading)")
+    ap.add_argument("--references", help="References header (default: same as --in-reply-to)")
+    ap.add_argument("--reply", action="store_true", help='prepend "Re: " to the subject if absent')
+    ap.add_argument("--folder", default="[Gmail]/Concepten")
+    ap.add_argument("--print-eml", action="store_true", help="write the .eml to stdout instead of saving")
+    args = ap.parse_args()
+
+    from_addr = args.from_addr or ACCOUNT_FROM.get(args.account)
+    if not from_addr:
+        sys.exit(f"ERROR: no --from given and account '{args.account}' is not in the known map.")
+
+    body = Path(args.body_file).read_text(encoding="utf-8") if args.body_file else args.body
+    subject = args.subject
+    if args.reply and not subject.lower().startswith("re:"):
+        subject = "Re: " + subject
+
+    msg = EmailMessage()
+    msg["From"] = from_addr
+    msg["To"] = args.to
+    msg["Subject"] = subject
+    if args.in_reply_to:
+        msg["In-Reply-To"] = args.in_reply_to
+        msg["References"] = args.references or args.in_reply_to
+
+    msg.set_content(body, subtype="plain", charset="utf-8")      # QP fallback, no truncation
+    msg.add_alternative(build_html(body), subtype="html", charset="utf-8")  # wide reflow in Gmail
+
+    for a in args.attach:
+        p = Path(a)
+        if not p.is_file():
+            sys.exit(f"ERROR: attachment not found: {a}")
+        ctype, _ = mimetypes.guess_type(p.name)
+        maintype, subtype = (ctype.split("/", 1) if ctype else ("application", "octet-stream"))
+        msg.add_attachment(p.read_bytes(), maintype=maintype, subtype=subtype, filename=p.name)
+
+    raw = bytes(msg)
+    if args.print_eml:
+        sys.stdout.buffer.write(raw)
+        return
+
+    him = find_himalaya()
+    res = subprocess.run(
+        [him, "message", "save", "-a", args.account, "--folder", args.folder],
+        input=raw, capture_output=True,
+    )
+    out = (res.stdout + res.stderr).decode("utf-8", "replace").strip()
+    if res.returncode != 0:
+        sys.exit(f"ERROR: himalaya message save failed:\n{out}")
+    print(out or "Draft saved.")
+    print(f"[compose-mail] HTML+QP draft with {len(args.attach)} attachment(s) saved to {args.folder} ({args.account}). NOT sent (HITL).")
+
+
+if __name__ == "__main__":
+    main()

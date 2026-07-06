@@ -70,11 +70,7 @@ fi
 
 echo ""
 
-echo ""
-echo "=== Shortlist Sync Check ==="
-if [ -f ~/bin/tms_shortlist_sync.py ]; then
-  python3 ~/bin/tms_shortlist_sync.py
-fi
+
 
 # Refresh the human-readable todo view (derived from todo.md; silent unless it fails).
 if [ -f ~/bin/tms_human_view.py ]; then
