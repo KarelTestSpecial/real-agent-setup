@@ -1,8 +1,8 @@
 #!/bin/bash
 # Session Closeout: prune TMS + method-improver + integrity check
-MEMANTO=~/bin/memanto_cli.py
+MEMANTO=~/bin/maccha/memanto_cli.py
 TMS_PRUNE=~/INFRA/maintenance/tms_prune.js
-INTEGRITY=~/bin/tms_integrity_hook.py
+INTEGRITY=~/bin/maccha/tms_integrity_hook.py
 
 echo "========================================"
 echo " SESSION CLOSEOUT"

@@ -90,7 +90,7 @@ if [[ "$CONFIRM" == "j" || "$CONFIRM" == "ja" || "$CONFIRM" == "y" || "$CONFIRM"
         echo -e "${GREEN}>> Download completed!${RESET}"
         
         echo -e "${BLUE}>> Starting installation via update-antigravityide...${RESET}"
-        if ~/bin/update-antigravityide "$TEMP_ARCHIVE"; then
+        if ~/bin/maccha/update-antigravityide "$TEMP_ARCHIVE"; then
             echo -e "${GREEN}>> Installation completed successfully!${RESET}"
         else
             echo -e "${RED}❌ Error: Installation via update-antigravityide failed.${RESET}"
