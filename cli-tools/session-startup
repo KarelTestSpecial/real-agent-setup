@@ -1,6 +1,6 @@
 #!/bin/bash
 # Session Startup: prime context + verify state
-MEMANTO=~/bin/memanto_cli.py
+MEMANTO=~/bin/maccha/memanto_cli.py
 echo "=== PRIME: loading context ==="
 "$MEMANTO" prime 2>/dev/null
 echo ""
@@ -39,7 +39,7 @@ if (( NOW - LAST > 604800 )); then
   echo "$NOW" > "$SWEEP_MARKER"
   node ~/INFRA/maintenance/tms_prune.js
   echo "🧠 Pruning Memanto working memory (decayed Event noise)..."
-  ~/bin/memanto_cli.py prune 2>/dev/null | grep -E 'Store:|Cleaned up' || true
+  ~/bin/maccha/memanto_cli.py prune 2>/dev/null | grep -E 'Store:|Cleaned up' || true
   echo "⚠️  Weekly sweep due — manual steps for the agent:"
   echo "   move [x] items from todo/in-progress to done.md as single lines;"
   echo "   remove duplicates; in-progress.md max ±10 items; enforce the label format."
@@ -63,7 +63,7 @@ BK_MARKER=~/BRAIN/.last_backup
 LASTB=$(cat "$BK_MARKER" 2>/dev/null || echo 0)
 if (( NOW - LASTB > 604800 )); then
   echo "Backup due — starting in the background (log: ~/scratch/maccha-backup.log)"
-  nohup ~/bin/maccha-backup > ~/scratch/maccha-backup.log 2>&1 &
+  nohup ~/bin/maccha/maccha-backup > ~/scratch/maccha-backup.log 2>&1 &
 else
   echo "Last backup $(( (NOW - LASTB) / 86400 )) day(s) ago — OK."
 fi
@@ -73,6 +73,6 @@ echo ""
 
 
 # Refresh the human-readable todo view (derived from todo.md; silent unless it fails).
-if [ -f ~/bin/tms_human_view.py ]; then
-  python3 ~/bin/tms_human_view.py > /dev/null 2>&1 || echo "⚠️  tms_human_view.py failed"
+if [ -f ~/bin/maccha/tms_human_view.py ]; then
+  python3 ~/bin/maccha/tms_human_view.py > /dev/null 2>&1 || echo "⚠️  tms_human_view.py failed"
 fi
