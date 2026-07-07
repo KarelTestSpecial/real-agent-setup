@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+const XLSX = require('xlsx');
+const fs = require('fs');
+const path = require('path');
+
+if (process.argv.length < 3) {
+    console.error("Usage: excel-to-csv <input.xlsx> [output.csv]");
+    process.exit(1);
+}
+
+// Resolve paths relative to the current working directory where the user runs the command
+const inputFile = path.resolve(process.cwd(), process.argv[2]);
+const outputFile = process.argv[3] ? path.resolve(process.cwd(), process.argv[3]) : path.join(path.dirname(inputFile), path.basename(inputFile, path.extname(inputFile)) + '.csv');
+
+if (!fs.existsSync(inputFile)) {
+    console.error(`File not found: ${inputFile}`);
+    process.exit(1);
+}
+
+try {
+    const workbook = XLSX.readFile(inputFile);
+    const sheetName = workbook.SheetNames[0];
+    const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+
+    fs.writeFileSync(outputFile, csv);
+    console.log(`✅ Successfully converted to ${outputFile}`);
+} catch (error) {
+    console.error(`Error during conversion: ${error.message}`);
+    process.exit(1);
+}
