@@ -36,9 +36,28 @@ else
   echo "tms_integrity_hook.py not found"
 fi
 
-# 4 Memanto: remember session summary
+# 4 Scratch Cleanup
 echo ""
-echo "=== Step 4: Session Memory ==="
+echo "=== Step 4: Scratch Cleanup ==="
+if [ -d "$HOME/scratch" ] && [ -n "$HOME" ]; then
+  if [ "$(ls -A "$HOME/scratch" 2>/dev/null)" ]; then
+    if [[ "$*" == *"--wipe-scratch"* ]]; then
+      rm -rf "$HOME/scratch"
+      mkdir -p "$HOME/scratch"
+      echo "Scratch directory wiped clean"
+    else
+      echo "⚠️  WARNING: Scratch directory is not empty. Pass the --wipe-scratch flag to wipe it."
+    fi
+  else
+    echo "Scratch directory is already empty."
+  fi
+else
+  echo "Scratch directory not found or HOME variable unset"
+fi
+
+# 5 Memanto: remember session summary
+echo ""
+echo "=== Step 5: Session Memory ==="
 "$MEMANTO" remember "Session closed at $(date '+%Y-%m-%d %H:%M')" --category Event --source closeout 2>/dev/null
 echo "Session recorded in Memanto"
 
