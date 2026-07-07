@@ -56,15 +56,15 @@ mkdir -p "$HOME_DIR/INFRA/agents-brain/data"
 # === CLI Tools ===
 echo ""
 echo -e "${CYAN}${BOLD}🛠️  [2/6] CLI Utilities${RESET}"
-mkdir -p "$HOME_DIR/bin"
+mkdir -p "$HOME_DIR/bin/maccha"
 for script in "$REPO_DIR"/cli-tools/*; do
     name=$(basename "$script")
-    if [ ! -f "$HOME_DIR/bin/$name" ]; then
-        cp "$script" "$HOME_DIR/bin/$name"
-        chmod +x "$HOME_DIR/bin/$name"
-        echo -e "  ${GREEN}✓${RESET} $name -> bin/"
+    if [ ! -f "$HOME_DIR/bin/maccha/$name" ]; then
+        cp "$script" "$HOME_DIR/bin/maccha/$name"
+        chmod +x "$HOME_DIR/bin/maccha/$name"
+        echo -e "  ${GREEN}✓${RESET} $name -> bin/maccha/"
     else
-        echo -e "  ${YELLOW}~${RESET} bin/$name exists, skipping"
+        echo -e "  ${YELLOW}~${RESET} bin/maccha/$name exists, skipping"
     fi
 done
 
@@ -198,7 +198,7 @@ echo -e "     - ${BLUE}~/AGENTS.md${RESET}         (Master Bootstrap profile)"
 echo -e "     - ${BLUE}~/IMPROVEMENT.md${RESET}    (Long-Term Auto-Improvement configuration)"
 echo -e "     - ${BLUE}~/ALIASES.md${RESET}        (Productivity shell shortcuts)"
 echo -e "  ${YELLOW}2.${RESET} Add the bin folder to your PATH profile (e.g. in ${BLUE}~/.bash_aliases${RESET}):"
-echo -e "     ${BOLD}export PATH=\"\$HOME/bin:\$PATH\"${RESET}"
+echo -e "     ${BOLD}export PATH=\"\$HOME/bin/maccha:\$PATH\"${RESET}"
 echo -e "  ${YELLOW}3.${RESET} Start your AI assistant (Antigravity, OpenCode, Claude Code, etc.)"
 echo -e "     It will read ${BLUE}~/AGENTS.md${RESET} first and be immediately operational!"
 echo -e "  ${YELLOW}4.${RESET} To publish local improvements back to your repo:"

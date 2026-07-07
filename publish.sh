@@ -15,19 +15,7 @@ DRY_RUN=false
 
 # Local-only file exclusions (gitignored): one filename or glob per line, '#' comments.
 # Keeps personal/one-off filenames out of the committed publish.sh itself.
-SKIP_FILE="$REPO_DIR/.publish-skip"
-is_skipped() {
-    local name="$1" pat
-    [ -f "$SKIP_FILE" ] || return 1
-    while IFS= read -r pat; do
-        [ -z "$pat" ] && continue
-        case "$pat" in \#*) continue ;; esac
-        # shellcheck disable=SC2254
-        case "$name" in $pat) return 0 ;; esac
-    done < "$SKIP_FILE"
-    return 1
-}
-
+# (No skipping logic needed as we use explicit directories)
 # Premium ANSI Terminal Colors
 CYAN="\033[36m"
 GREEN="\033[32m"
@@ -62,12 +50,6 @@ copy_dir_flat() {
         [ -f "$item" ] || continue  # skip dirs
         local name=$(basename "$item")
         
-        # PII Protection: skip personal / one-off local files listed in .publish-skip.
-        if is_skipped "$name"; then
-            echo "  ⚠️  Skipping local-only file: $name"
-            continue
-        fi
-        
         if $DRY_RUN; then
             echo "  [DRY] cp $item -> $dst/$name"
         else
@@ -94,8 +76,8 @@ copy_dir_recursive() {
 
 echo ""
 echo -e "${CYAN}${BOLD}🧠 [1/4] Syncing CLI Tools...${RESET}"
-copy_dir_flat "$HOME_DIR/bin" "cli-tools"
-echo -e "  ${YELLOW}(Note: antigravity scripts are skipped — local only)${RESET}"
+copy_dir_flat "$HOME_DIR/bin/maccha" "cli-tools"
+echo -e "  ${YELLOW}(Note: Personal scripts in ~/bin are safely ignored)${RESET}"
 
 echo ""
 echo -e "${CYAN}${BOLD}📂 [2/4] Syncing Infrastructure Bridges...${RESET}"
