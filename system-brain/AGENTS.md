@@ -43,7 +43,7 @@ This is the central reference document about the owner (personal, legal, financi
 
 ### Step 2: Prime Context
 ```
-Run: ~/bin/session-startup   → prime context check (backup marker, INBOX count, watchers)
+Run: ~/bin/maccha/session-startup   → prime context check (backup marker, INBOX count, watchers)
 ```
 In some harnesses this runs automatically via a SessionStart hook; there, only verify the prime output is present. Otherwise run the script yourself.
 
@@ -73,7 +73,7 @@ Consult: ~/BRAIN/learned-lessons/   → Specific curated lessons
 
 1. **LTAIS:** review and, if warranted, record Learned Lessons in `IMPROVEMENT.md`.
 2. **TMS sync:** update `todo.md` / `in-progress.md` / `done.md`; refresh the situation document only on structural changes.
-3. **Run `~/bin/session-closeout`:** TMS prune, method-improver self-reflection + distill, TMS integrity check, session event in working memory.
+3. **Run `~/bin/maccha/session-closeout`:** TMS prune, method-improver self-reflection + distill, TMS integrity check, session event in working memory.
 
 > **Significance threshold (Anti-Bloat Mandate):** only store a lesson that is (1) unique, (2) high-impact (>15 min saved or critical error prevention), and (3) generically valuable.
 
