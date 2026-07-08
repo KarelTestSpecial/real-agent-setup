@@ -107,7 +107,7 @@ def render(rows) -> str:
     out.append(
         f"> *Automatisch gegenereerd op {now} uit `todo.md` — "
         "Do NOT edit by hand. Change tasks in the TMS and re-run "
-        "`~/bin/tms_human_view.py`.*\n"
+        "`~/bin/maccha/tms_human_view.py`.*\n"
     )
     # Group per section, in order of first appearance.
     order = []

@@ -1,7 +1,7 @@
 # 🛡️ Guardrails Register (MACCHA) — Template
 
 This file is the register of **machine-enforced guardrails**: rules that are
-automatically checked by `~/bin/tms_integrity_hook.py` at every
+automatically checked by `~/bin/maccha/tms_integrity_hook.py` at every
 session-closeout / SessionEnd (works for all agents: Claude Code,
 Gemini/Antigravity, OpenCode).
 

@@ -201,7 +201,7 @@ bash setup.sh
 > **Safe Installation:** `setup.sh` is completely non-destructive. It carefully copies templates to your home folder without overwriting *any* of your existing files or configurations.
 
 **What the setup script accomplishes:**
-1. Installs all standard **CLI utilities** in `~/bin/` — including the `session-startup` and `session-closeout` lifecycle scripts.
+1. Installs all standard **CLI utilities** in `~/bin/maccha/` — including the `session-startup` and `session-closeout` lifecycle scripts.
 2. Configures **Infrastructure Bridges** (storage manager, cloud-drive access, deep-research runner) in `~/INFRA/`.
 3. Copies MACCHA **PII-free templates** (`AGENTS.md`, `IMPROVEMENT.md`, etc.) to your home folder `~/`.
 4. Offers an optional interactive prompt to download, compile, and configure the local **Himalaya CLI** email client in `~/.local/bin/`.
