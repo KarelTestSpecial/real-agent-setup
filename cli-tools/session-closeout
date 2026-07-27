@@ -55,12 +55,6 @@ else
   echo "Scratch directory not found or HOME variable unset"
 fi
 
-# 5 Memanto: remember session summary
-echo ""
-echo "=== Step 5: Session Memory ==="
-"$MEMANTO" remember "Session closed at $(date '+%Y-%m-%d %H:%M')" --category Event --source closeout 2>/dev/null
-echo "Session recorded in Memanto"
-
 echo ""
 echo "========================================"
 echo " CLOSEOUT COMPLETED"

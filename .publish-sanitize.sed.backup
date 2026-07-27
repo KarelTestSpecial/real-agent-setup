@@ -1,0 +1,20 @@
+s#over-karel#over-owner#g
+s#voor-karel#voor-owner#g
+s#aan-karel#aan-owner#g
+s#INFO/karel#INFO/owner#g
+s#INFO" / "karel"#INFO" / "owner"#g
+1s|^#!/home/.*/python3$|#!/usr/bin/env python3|
+s#karel\.decherf@gmail\.com#personal@example.com#g
+s#karel\.test\.special@gmail\.com#test@example.com#g
+s#Karel#User#g
+s#karel#user#g
+s#ERROR: doc niet gevonden of geen toegang:#ERROR: doc not found or no access:#g
+s#(geen velden)#(no fields)#g
+s#>> VERWIJDEREN...#>> DELETING...#g
+s#>> DRY RUN — er is NIETS verwijderd.#>> DRY RUN — NOTHING was deleted.#g
+s#>> OK: document verwijderd#>> OK: document deleted#g
+s#HITL-guardrail: zonder --yes gebeurt er niets destructiefs\. De agent toont eerst#HITL-guardrail: without --yes nothing destructive happens. The agent shows first#g
+s#Upsert: maakt het document aan als het nog niet bestaat, of werkt het bij\.#Upsert: creates the document if it does not exist, or updates it.#g
+s#Geen veld=waarde paren opgegeven\.#No field=value pairs provided.#g
+s#Ongeldig paar (geen '='):#Invalid pair (no '='):#g
+s#HITL-guardrail: zonder --yes gebeurt er niets; de agent toont eerst de payload\.#HITL-guardrail: without --yes nothing happens; the agent shows the payload first.#g

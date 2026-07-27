@@ -69,7 +69,27 @@ else
 fi
 
 echo ""
+echo "=== Weekly link check (throttled, 1x per 7 days) ==="
+# Guards knowledge files against link rot after folder reorganizations.
+LC_MARKER=~/BRAIN/.last_linkcheck
+LASTL=$(cat "$LC_MARKER" 2>/dev/null || echo 0)
+if (( NOW - LASTL > 604800 )); then
+  echo "$NOW" > "$LC_MARKER"
+  LC_TARGETS=(~/BRAIN/AGENTS.md ~/BRAIN/tms/todo.md ~/BRAIN/tms/in-progress.md)
+  node ~/BRAIN/hooks/link-check.cjs "${LC_TARGETS[@]}" 2>/dev/null || echo "⚠️  link-check.cjs failed"
+else
+  echo "Last link check $(( (NOW - LASTL) / 86400 )) day(s) ago — OK."
+fi
 
+echo ""
+
+echo ""
+echo "=== Solucious weekly reminder (Saturday only) ==="
+if [ "$(date +%u)" -eq 6 ]; then
+  echo "🛒 Reminder: check Solucious order!"
+else
+  echo "Not Saturday — OK."
+fi
 
 
 # Refresh the human-readable todo view (derived from todo.md; silent unless it fails).

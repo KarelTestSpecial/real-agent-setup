@@ -5,7 +5,7 @@
 #   - /var/log size
 #   - unexpected users in /home
 # Usage: syscheck-upstairs [--clean]  (--clean clears old tmp/log/apt files)
-# Location: ~/bin/maccha/syscheck-upstairs
+# Location: ~/bin/syscheck-upstairs
 
 THRESHOLD_PCT=80
 TMP_DAYS=7
