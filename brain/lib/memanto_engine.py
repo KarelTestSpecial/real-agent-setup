@@ -44,14 +44,14 @@ def _load_env_manually():
 
 # Predefined 13 Memanto Memory Categories
 MEMANTO_CATEGORIES = {
-    "Instruction": {"stable": True, "decay_rate": 0.0},
-    "Fact": {"stable": True, "decay_rate": 0.0},
-    "Decision": {"stable": True, "decay_rate": 0.0},
-    "Goal": {"stable": True, "decay_rate": 0.0},
-    "Commitment": {"stable": True, "decay_rate": 0.02},  # Low decay over time
-    "Preference": {"stable": True, "decay_rate": 0.0},
+    "Instruction": {"stable": True, "decay_rate": 0.0005},  # Very slow decay; pin essential entries
+    "Fact": {"stable": True, "decay_rate": 0.0005},         # ~1400d to confidence 0.5; pin essential entries
+    "Decision": {"stable": True, "decay_rate": 0.001},
+    "Goal": {"stable": True, "decay_rate": 0.001},
+    "Commitment": {"stable": True, "decay_rate": 0.02},
+    "Preference": {"stable": True, "decay_rate": 0.0005},   # Very slow decay; pin essential entries
     "Relationship": {"stable": True, "decay_rate": 0.01},
-    "Context": {"stable": False, "decay_rate": 0.05},    # Faster decay for transient situational data
+    "Context": {"stable": False, "decay_rate": 0.05},
     "Event": {"stable": False, "decay_rate": 0.03},
     "Learning": {"stable": True, "decay_rate": 0.0},
     "Observation": {"stable": False, "decay_rate": 0.02},
@@ -111,11 +111,12 @@ class MemantoMemory:
             print(f"[Memanto] Error writing memory file: {e}")
 
     def _apply_temporal_decay(self):
-        """Calculates and applies confidence decay based on elapsed time."""
+        """Calculates and applies confidence decay based on elapsed time.
+        Pinned entries are immune to decay."""
         now = datetime.datetime.now()
         updated = False
         for item in self.memories:
-            if item.get("superseded_by") or item.get("confidence", 0.0) <= 0.0:
+            if item.get("pinned") or item.get("superseded_by") or item.get("confidence", 0.0) <= 0.0:
                 continue
             
             created_at = datetime.datetime.fromisoformat(item["created_at"])
@@ -191,6 +192,25 @@ class MemantoMemory:
                 print(f"[Conflict Detector] Contradiction check failed: {e}")
         return None
 
+    # ─── Pin / Unpin ────────────────────────────────────────────────────────
+    def pin_memory(self, memory_id: str) -> bool:
+        """Pin a memory entry — confidence becomes permanent (no decay)."""
+        for item in self.memories:
+            if item["id"] == memory_id:
+                item["pinned"] = True
+                self._save_memories()
+                return True
+        return False
+
+    def unpin_memory(self, memory_id: str) -> bool:
+        """Unpin a memory entry — decay resumes from current confidence."""
+        for item in self.memories:
+            if item["id"] == memory_id:
+                item["pinned"] = False
+                self._save_memories()
+                return True
+        return False
+
     # ─── Core Primitive 1: REMEMBER ──────────────────────────────────────────
     def remember(
         self, 
@@ -227,7 +247,8 @@ class MemantoMemory:
             "last_accessed": timestamp,
             "access_count": 0,
             "metadata": metadata or {},
-            "superseded_by": None
+            "superseded_by": None,
+            "pinned": False
         }
         
         self.memories.append(new_memory)
@@ -266,8 +287,8 @@ class MemantoMemory:
             try:
                 candidate_texts = [c["text"] for c in candidates]
                 # Embed candidates in batch.
-                # gemini-embedding-2 reads a list of bare strings as a single document;
-                # explicit Content objects force one embedding per text.
+                # gemini-embedding-2 leest een lijst kale strings als één document;
+                # expliciete Content-objecten dwingen één embedding per tekst af.
                 candidates_emb = self.client.models.embed_content(
                     model=self.embedding_model,
                     contents=[types.Content(parts=[types.Part(text=t)]) for t in candidate_texts]
