@@ -119,7 +119,13 @@ class MemantoMemory:
             if item.get("pinned") or item.get("superseded_by") or item.get("confidence", 0.0) <= 0.0:
                 continue
             
-            created_at = datetime.datetime.fromisoformat(item["created_at"])
+            ts = item["created_at"]
+        try:
+            created_at = datetime.datetime.fromisoformat(ts)
+        except (TypeError, ValueError):
+            created_at = datetime.datetime.now()
+        if created_at.tzinfo is not None:
+            created_at = created_at.replace(tzinfo=None)
             days_elapsed = (now - created_at).total_seconds() / (24 * 3600)
             
             category = item.get("category", "Context")

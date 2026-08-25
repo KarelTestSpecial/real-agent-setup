@@ -36,15 +36,38 @@ sudo tar -xzf "$ARCHIVE_PATH" -C "$TARGET_DIR" --strip-components=1
 echo ">> Registering binary executables in /usr/bin..."
 if [[ -f "$TARGET_DIR/bin/$BIN_NAME" ]]; then
     sudo ln -sf "$TARGET_DIR/bin/$BIN_NAME" "/usr/bin/$BIN_NAME"
-else
+elif [[ -f "$TARGET_DIR/$BIN_NAME" ]]; then
     sudo ln -sf "$TARGET_DIR/$BIN_NAME" "/usr/bin/$BIN_NAME"
+elif [[ -f "$TARGET_DIR/antigravity" ]]; then
+    sudo ln -sf "$TARGET_DIR/antigravity" "/usr/bin/$BIN_NAME"
 fi
 
-# 5. System security: configure kernel-level sandboxing
+# 5. Setup application icon for desktop integration
+if [[ -f "$TARGET_DIR/resources/app/resources/linux/code.png" ]]; then
+    sudo cp "$TARGET_DIR/resources/app/resources/linux/code.png" "$TARGET_DIR/icon.png"
+    sudo cp "$TARGET_DIR/resources/app/resources/linux/code.png" "/usr/share/pixmaps/antigravity-ide.png" 2>/dev/null || true
+elif [[ -f "$TARGET_DIR/resources/app.asar" ]]; then
+    echo ">> Extracting app icon from app.asar..."
+    TMP_ICON_DIR=$(mktemp -d)
+    (
+        cd "$TMP_ICON_DIR"
+        npx --yes asar extract-file "$TARGET_DIR/resources/app.asar" icon.png >/dev/null 2>&1 || true
+        if [[ -f "$TMP_ICON_DIR/icon.png" ]]; then
+            sudo cp "$TMP_ICON_DIR/icon.png" "$TARGET_DIR/icon.png"
+            sudo cp "$TMP_ICON_DIR/icon.png" "/usr/share/pixmaps/antigravity-ide.png" 2>/dev/null || true
+        fi
+    )
+    rm -rf "$TMP_ICON_DIR"
+fi
+
+# 6. System security: configure kernel-level sandboxing
 if [[ -f "$TARGET_DIR/chrome-sandbox" ]]; then
     echo ">> Configuring root privileges for the nsjail / chrome-sandbox..."
     sudo chown root:root "$TARGET_DIR/chrome-sandbox"
     sudo chmod 4755 "$TARGET_DIR/chrome-sandbox"
 fi
+
+# 7. Refresh desktop database
+sudo update-desktop-database /usr/share/applications/ 2>/dev/null || true
 
 echo ">> SUCCESS: Installation of $APP_NAME completed."
