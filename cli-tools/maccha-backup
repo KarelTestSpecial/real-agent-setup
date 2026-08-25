@@ -1,5 +1,5 @@
 #!/bin/bash
-# MACCHA encrypted backup of INFO/ PLAN/ BRAIN/ creatief/ to Google Drive.
+# MACCHA encrypted backup of INFO/ PLAN/ BRAIN/ C/ (creatief) to Google Drive.
 # Triggered weekly via session-startup (marker ~/BRAIN/.last_backup);
 # manual runs are always possible: ~/bin/maccha-backup
 set -euo pipefail
@@ -11,6 +11,9 @@ KEY_FILE="$H/.config/maccha/backup.key"
 MARKER="$H/BRAIN/.last_backup"
 # How many rotated backups to keep (1 = only the most recent).
 KEEP=4
+# >>> LOCAL-ONLY
+KEEP=1
+# <<< LOCAL-ONLY
 STAMP=$(date +%Y%m%d-%H%M)
 OUT="$DEST_DIR/maccha-backup-$STAMP.tar.gz.enc"
 
@@ -34,7 +37,7 @@ tar -C "$H" -czf - \
   --exclude='node_modules' --exclude='*/node_modules' \
   --exclude='BRAIN/archive/2026-06-mappenstructuur' \
   --exclude='.vite' \
-  INFO PLAN BRAIN creatief \
+  INFO PLAN BRAIN C \
 | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass file:"$KEY_FILE" -out "$OUT"
 
 echo "🔍 Integrity check (decrypt + list tar contents)..."
@@ -50,7 +53,7 @@ ls -1t "$DEST_DIR"/maccha-backup-*.tar.gz.enc 2>/dev/null | tail -n +$((KEEP+1))
 cat > "$DEST_DIR/RESTORE.md" <<'EOF'
 # Restoring a MACCHA backup
 
-Contents: ~/INFO, ~/PLAN, ~/BRAIN, ~/creatief (without node_modules and old backups).
+Contents: ~/INFO, ~/PLAN, ~/BRAIN, ~/C — creative work (without node_modules and old backups).
 
 1. Put the key back on the (new) device:
    mkdir -p ~/.config/maccha && nano ~/.config/maccha/backup.key   # paste the 64-char hex key

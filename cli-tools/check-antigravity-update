@@ -24,16 +24,17 @@ INSTALLED_VERSION=$(node -e "
 const fs = require('fs');
 try {
     const fd = fs.openSync('/opt/antigravity/resources/app.asar', 'r');
-    const sizeBuf = Buffer.alloc(16);
-    fs.readSync(fd, sizeBuf, 0, 16, 0);
-    const jsonSize = sizeBuf.readUInt32LE(12);
+    const buf = Buffer.alloc(16);
+    fs.readSync(fd, buf, 0, 16, 0);
+    const headerSize = buf.readUInt32LE(4);
+    const jsonSize = buf.readUInt32LE(12);
     const headerBuf = Buffer.alloc(jsonSize);
     fs.readSync(fd, headerBuf, 0, jsonSize, 16);
     const header = JSON.parse(headerBuf.toString('utf8'));
     const pkgNode = header.files['package.json'];
     const offset = parseInt(pkgNode.offset, 10);
     const size = parseInt(pkgNode.size, 10);
-    const payloadStart = 16 + jsonSize;
+    const payloadStart = 8 + headerSize;
     const fileBuf = Buffer.alloc(size);
     fs.readSync(fd, fileBuf, 0, size, payloadStart + offset);
     fs.closeSync(fd);

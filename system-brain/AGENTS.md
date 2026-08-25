@@ -27,7 +27,7 @@
 
 **Routing rule:** A fact lives in exactly one layer. Priority: Tier 0 > Tier 1 > Tier 2.
 
-**Zone model (home directory):** `~/BRAIN/` is exclusively the *technical* MACCHA capsule (mandates, memory, TMS, hooks, policies, system-info, archive). Personal content lives in the root zones: `~/INFO/` (dossiers & knowledge base), `~/PLAN/` (plans), `~/INBOX/` (owner → agent drop-off channel: every item gets processed to its owner location, then the folder is emptied). Code lives in `~/workspace/`, temporary files in `~/scratch/`. Convenience access to single files from the root only via symlinks. **Every scaffolding change must keep the `BRAIN/` capsule simple and PII-free to copy into the public `real-agent-setup` repo.**
+**Zone model (home directory):** `~/BRAIN/` is exclusively the *technical* MACCHA capsule (mandates, memory, TMS, hooks, policies, system-info, archive). Personal content lives in the root zones: `~/INFO/` (dossiers & knowledge base), `~/PLAN/` (plans), `~/INBOX/` (owner → agent drop-off channel: items are triaged with a proposal; instruction-type items are NEVER executed without explicit owner confirmation — HITL per item; pure archival material flows straight to its owner location, then the folder is emptied). Code lives in `~/workspace/`, temporary files in `~/scratch/`. Convenience access to single files from the root only via symlinks. **Every scaffolding change must keep the `BRAIN/` capsule simple and PII-free to copy into the public `real-agent-setup` repo.**
 
 ---
 
@@ -169,7 +169,7 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 |---|---|
 | Owner situation | `~/INFO/over-owner/SITUATIE_OVERZICHT.md` |
 | Plans | `~/PLAN/` |
-| Inbox (owner → agent drop-off) | `~/INBOX/` (process every item to its owner location, then empty) |
+| Inbox (owner → agent drop-off) | `~/INBOX/` (triage + propose; instruction items only after owner confirmation — HITL; archival material flows directly) |
 | Task flow (TMS) | `~/BRAIN/tms/` (symlinks: `~/todo.md`, `~/in-progress.md`, `~/done.md`) |
 | Guardrails register (machine-enforced) | `~/BRAIN/policies/guardrails.md` |
 | Session protocol (detailed) | `~/BRAIN/AGENTS.md` |
