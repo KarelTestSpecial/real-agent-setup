@@ -136,6 +136,22 @@ def cmd_unpin(args):
         print(f"Entry {args.id[:8]} not found")
         sys.exit(1)
 
+def cmd_forget(args):
+    """Soft-delete a memory entry (excluded from recall; kept in store)."""
+    if brain.forget_memory(args.id):
+        print(f"Forgotten {args.id[:8]}")
+    else:
+        print(f"Entry {args.id[:8]} not found")
+        sys.exit(1)
+
+def cmd_update(args):
+    """Replace the text of an existing memory entry."""
+    if brain.update_memory(args.id, args.text):
+        print(f"Updated {args.id[:8]}")
+    else:
+        print(f"Entry {args.id[:8]} not found")
+        sys.exit(1)
+
 def cmd_export(args):
     """Export all entries to a human-readable text file."""
     import datetime as dt
@@ -199,12 +215,19 @@ if __name__ == "__main__":
     upn = sub.add_parser("unpin", help="Unpin entry — resume decay")
     upn.add_argument("id", help="Entry ID (or first 8 characters)")
 
+    fg = sub.add_parser("forget", help="Soft-delete entry — excluded from recall, kept in store")
+    fg.add_argument("id", help="Entry ID (or first 8 characters)")
+
+    upd = sub.add_parser("update", help="Replace the text of an existing entry")
+    upd.add_argument("id", help="Entry ID (or first 8 characters)")
+    upd.add_argument("text", help="New text")
+
     ep = sub.add_parser("export", help="Export entries to readable txt file")
     ep.add_argument("--file", help="Output pad (default: ~/BRAIN/memanto/memanto_export.txt)")
 
     args = p.parse_args()
     # Resolve partial ID (first 8 chars) to full ID
-    if args.command in ("pin", "unpin"):
+    if args.command in ("pin", "unpin", "forget", "update"):
         full_id = args.id
         matches = [m["id"] for m in brain.memories if m["id"].startswith(args.id)]
         if len(matches) == 1:
@@ -212,4 +235,4 @@ if __name__ == "__main__":
         elif len(matches) > 1:
             print(f"Ambiguous ID '{args.id}': {len(matches)} matches. Provide more characters.")
             sys.exit(1)
-    {"remember": cmd_remember, "recall": cmd_recall, "answer": cmd_answer, "list": cmd_list, "prime": cmd_prime, "distill": cmd_distill, "prune": cmd_prune, "pin": cmd_pin, "unpin": cmd_unpin, "export": cmd_export}[args.command](args)
+    {"remember": cmd_remember, "recall": cmd_recall, "answer": cmd_answer, "list": cmd_list, "prime": cmd_prime, "distill": cmd_distill, "prune": cmd_prune, "pin": cmd_pin, "unpin": cmd_unpin, "forget": cmd_forget, "update": cmd_update, "export": cmd_export}[args.command](args)
