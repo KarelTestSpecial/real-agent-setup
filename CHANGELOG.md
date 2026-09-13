@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.4] - 2026-09-13
+### Added
+- GitHub Actions **Gates** workflow: shell/JS/Python syntax checks plus the publish sanitization/PII/language gates (`publish.sh --check-only`) on every push and pull request — a regression net for the public repo.
+
 ## [1.1.3] - 2026-09-13
 ### Fixed
 - README accuracy: removed the documented-but-unimplemented `.publish-skip` config (now correctly "two" config files), corrected the `learned-lessons/` description (it ships a curated public mirror, not "never pushed"), and fixed the directory map (dropped the untracked `ALIASES.md`; added `hooks/` and `policies/`).
