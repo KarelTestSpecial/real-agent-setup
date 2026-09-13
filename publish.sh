@@ -13,6 +13,7 @@ shopt -s nullglob
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOME_DIR="${HOME:-/home/$(whoami)}"
 DRY_RUN=false
+CHECK_ONLY=false
 
 # Local-only file exclusions (gitignored): one filename or glob per line, '#' comments.
 # Keeps personal/one-off filenames out of the committed publish.sh itself.
@@ -26,9 +27,19 @@ RED="\033[31m"
 BOLD="\033[1m"
 RESET="\033[0m"
 
-if [ "${1:-}" = "--dry-run" ]; then
-    DRY_RUN=true
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run)    DRY_RUN=true ;;
+        --check-only) CHECK_ONLY=true ;;
+        *) echo -e "${RED}${BOLD}Unknown option: $arg${RESET} (use --dry-run or --check-only)"; exit 2 ;;
+    esac
+done
+
+if $DRY_RUN; then
     echo -e "${YELLOW}${BOLD}>>> DRY RUN — No files will actually be copied <<<${RESET}"
+fi
+if $CHECK_ONLY; then
+    echo -e "${YELLOW}${BOLD}>>> CHECK-ONLY — gates run, nothing is copied or committed <<<${RESET}"
 fi
 
 echo -e "${CYAN}${BOLD}======================================================${RESET}"
@@ -92,6 +103,7 @@ copy_dir_recursive() {
     fi
 }
 
+if ! $CHECK_ONLY; then
 echo ""
 echo -e "${CYAN}${BOLD}🧠 [1/4] Syncing CLI Tools...${RESET}"
 copy_dir_flat "$HOME_DIR/bin/maccha" "cli-tools"
@@ -112,6 +124,7 @@ echo -e "${CYAN}${BOLD}📚 [4/4] Learned Lessons Policy Registry${RESET}"
 echo -e "  ${YELLOW}⚠️  PII-WARNING:${RESET} Learned lessons are ${BOLD}NOT${RESET} automatically copied."
 echo -e "     If you have sanitised lessons to publish, copy them manually:"
 echo -e "     ${BOLD}cp -r ~/learned-lessons/technical/ repo/learned-lessons/${RESET}"
+fi
 
 echo ""
 echo -e "${YELLOW}${BOLD}⚠️  PRIVATE DATA SECURITY GATES${RESET}"
@@ -208,6 +221,13 @@ if [ "$NL" -ne 0 ]; then
     exit 1
 fi
 echo -e "  ${GREEN}✓${RESET} No Dutch marker words in synced content."
+
+# === Check-only mode: stop here ===
+if $CHECK_ONLY; then
+    echo ""
+    echo -e "${GREEN}${BOLD}✅ CHECK-ONLY COMPLETED — all gates passed, nothing copied or committed.${RESET}"
+    exit 0
+fi
 
 # === Git ===
 echo ""
