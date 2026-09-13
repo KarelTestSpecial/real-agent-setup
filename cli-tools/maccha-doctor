@@ -1,0 +1,102 @@
+#!/bin/bash
+# maccha-doctor — one-shot health check for the MACCHA harness.
+# Exit code: 0 = healthy (warnings allowed), 1 = at least one hard failure.
+# Optional components (vdab-swipe, real-agent-setup) are skipped when absent.
+set -uo pipefail
+
+H="${HOME:-/home/$(whoami)}"
+FAIL=0
+WARN=0
+
+ok()      { printf '  \033[32m✓\033[0m %s\n' "$1"; }
+warn()    { printf '  \033[33m⚠\033[0m %s\n' "$1"; WARN=$((WARN+1)); }
+bad()     { printf '  \033[31m✗\033[0m %s\n' "$1"; FAIL=$((FAIL+1)); }
+section() { printf '\n\033[1m%s\033[0m\n' "$1"; }
+
+printf '\033[1m======================================================\033[0m\n'
+printf '\033[1m  🩺 MACCHA DOCTOR\033[0m\n'
+printf '\033[1m======================================================\033[0m\n'
+
+section "Core zones"
+for d in BRAIN INFO PLAN INBOX; do
+  if [ -d "$H/$d" ]; then ok "$d/ present"; else bad "$d/ missing"; fi
+done
+
+section "Root symlinks"
+for s in AGENTS.md IMPROVEMENT.md todo.md in-progress.md done.md; do
+  if [ -L "$H/$s" ]; then
+    if [ -e "$H/$s" ]; then ok "$s -> $(readlink "$H/$s")"; else bad "$s is a broken symlink"; fi
+  elif [ -e "$H/$s" ]; then warn "$s is a regular file (not a symlink)"; else warn "$s missing"; fi
+done
+
+section "Backup"
+MARK="$H/BRAIN/.last_backup"
+KEY="$H/.config/maccha/backup.key"
+if [ -f "$MARK" ]; then
+  AGE=$(( ( $(date +%s) - $(cat "$MARK" 2>/dev/null || echo 0) ) / 86400 ))
+  if [ "$AGE" -le 8 ]; then ok "last backup ${AGE}d ago"
+  elif [ "$AGE" -le 14 ]; then warn "last backup ${AGE}d ago (>7d)"
+  else bad "last backup ${AGE}d ago (>14d)"; fi
+else warn "no backup marker yet"; fi
+if [ -f "$KEY" ]; then ok "backup key present"; else warn "backup key missing"; fi
+if [ -d /mnt/chromeos/GoogleDrive/MyDrive ]; then ok "Google Drive mounted"; else warn "Google Drive not mounted (backup target unavailable)"; fi
+
+section "Secret permissions"
+CFG="$H/.config/maccha"
+if [ -d "$CFG" ]; then
+  P=$(stat -c '%a' "$CFG" 2>/dev/null)
+  if [ "$P" = "700" ]; then ok "$CFG is 700"; else warn "$CFG is ${P:-?} (want 700)"; fi
+fi
+if [ -f "$KEY" ]; then
+  P=$(stat -c '%a' "$KEY" 2>/dev/null)
+  if [ "$P" = "600" ]; then ok "backup.key is 600"; else warn "backup.key is ${P:-?} (want 600)"; fi
+fi
+
+section "TMS integrity"
+HOOK="$H/bin/maccha/tms_integrity_hook.py"
+if [ -f "$HOOK" ]; then
+  if python3 "$HOOK" >/dev/null 2>&1; then ok "TMS integrity clean"; else bad "TMS integrity reported issues"; fi
+else warn "tms_integrity_hook.py not found"; fi
+
+section "Supply chain"
+if [ -f "$H/.npmrc" ] && grep -q 'minimum-release-age' "$H/.npmrc"; then ok "minimum-release-age configured"; else warn "minimum-release-age not found in ~/.npmrc"; fi
+
+section "Disk space"
+FREE_KB=$(df -Pk "$H" 2>/dev/null | awk 'NR==2{print $4}')
+if [ -n "${FREE_KB:-}" ]; then
+  FREE_GB=$((FREE_KB / 1024 / 1024))
+  if [ "$FREE_GB" -ge 2 ]; then ok "${FREE_GB}G free"; else warn "${FREE_GB}G free (<2G)"; fi
+fi
+
+section "VDAB job-hunt (optional)"
+V="$H/workspace/vdab-swipe"
+if [ -d "$V" ]; then
+  if [ -L "$V/data" ]; then ok "data/ is a symlink -> $(readlink "$V/data")"; else warn "data/ is not a symlink (expected the backed-up store)"; fi
+  if [ -f "$V/selftest.mjs" ]; then
+    if (cd "$V" && node selftest.mjs >/dev/null 2>&1); then ok "pipeline selftest OK"; else bad "pipeline selftest FAILED"; fi
+  else warn "selftest.mjs not found"; fi
+else ok "vdab-swipe not installed (skipped)"; fi
+
+section "real-agent-setup (optional)"
+R="$H/real-agent-setup"
+if [ -d "$R/.git" ]; then
+  if git -C "$R" diff --quiet && git -C "$R" diff --cached --quiet; then ok "working tree clean"; else warn "uncommitted changes present"; fi
+  if git -C "$R" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+    AHEAD=$(git -C "$R" rev-list --count '@{u}..HEAD')
+    BEHIND=$(git -C "$R" rev-list --count 'HEAD..@{u}')
+    if [ "$AHEAD" = "0" ] && [ "$BEHIND" = "0" ]; then ok "in sync with origin"; else warn "diverged (ahead $AHEAD, behind $BEHIND)"; fi
+  fi
+else ok "real-agent-setup not installed (skipped)"; fi
+
+section "Broken symlinks in \$HOME (top level)"
+BROKEN=$(find "$H" -maxdepth 1 -xtype l 2>/dev/null)
+if [ -z "$BROKEN" ]; then ok "none"; else warn "found:"; printf '%s\n' "$BROKEN" | sed 's/^/     /'; fi
+
+printf '\n\033[1m======================================================\033[0m\n'
+if [ "$FAIL" -eq 0 ]; then
+  printf '\033[32m\033[1m  ✅ HEALTH: OK\033[0m (%d warning(s))\n' "$WARN"
+else
+  printf '\033[31m\033[1m  ✗ HEALTH: %d FAILURE(S)\033[0m (%d warning(s))\n' "$FAIL" "$WARN"
+fi
+printf '\033[1m======================================================\033[0m\n'
+exit $(( FAIL > 0 ))
