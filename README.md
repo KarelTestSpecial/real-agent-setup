@@ -162,16 +162,16 @@ real-agent-setup/
 ├── system-brain/                  # MACCHA templates (PII-free, ready to customize)
 │   ├── AGENTS.md                  #   Root bootstrap — fill with your own context
 │   ├── IMPROVEMENT.md             #   LTAIS auto-improvement loop
-│   ├── ALIASES.md                 #   Your aliases and shortcuts
-│   ├── todo.md                    #   Task tracker
-│   ├── in-progress.md             #   Current work
-│   └── done.md                    #   Accomplishments
+│   ├── todo.md / in-progress.md / done.md   # TMS trackers
+│   ├── hooks/                     #   Agent hooks (startup-lessons, tms-integrity, test-enforcer)
+│   └── policies/guardrails.md     #   Machine-enforced guardrails
 ├── brain/                         # Memory engine
 │   ├── lib/memanto_engine.py      #   13-category working memory (Memanto)
 │   └── README.md
 ├── cli-tools/                     # Shared CLI utilities (AI models, storage, cleanup)
 ├── infrastructure/                # Shared bridges and session maintenance scripts
-├── learned-lessons/               # Runtime directory (populated locally, never pushed)
+├── learned-lessons/               # Curated, sanitized lesson mirror (public subset);
+│   ├── security/ technical/       #   your full local set stays in ~/BRAIN/learned-lessons/
 │   └── README.md
 ├── setup.sh                       # Install script for new machines
 └── publish.sh                     # Publish local improvements back to repo
@@ -242,8 +242,9 @@ To push local improvements, bug fixes, or performance refinements to the shared 
 
 ```bash
 cd ~/real-agent-setup
-bash publish.sh           # Interactively copies, commits, and pushes
-bash publish.sh --dry-run # Review changes before committing
+bash publish.sh              # Interactively copies, commits, and pushes
+bash publish.sh --dry-run    # Preview what would be copied (no changes)
+bash publish.sh --check-only # Run sanitization + PII + language gates only (no copy/commit; exit 1 on a leak)
 ```
 
 > [!WARNING]
@@ -251,11 +252,10 @@ bash publish.sh --dry-run # Review changes before committing
 
 ### 🔒 Local-only sanitization config (gitignored)
 
-`publish.sh` copies your working scripts verbatim, so a few personal details can ride along (a home-folder name, a one-off local tool). To keep those out of the public repo **without ever writing them into the committed `publish.sh` itself**, the publish step is driven by three optional, **gitignored** config files in the repo root. They live only on your machine; if a file is absent, that step is simply skipped.
+`publish.sh` copies your working scripts verbatim, so a few personal details can ride along (a home-folder name, a one-off local tool). To keep those out of the public repo **without ever writing them into the committed `publish.sh` itself**, the publish step is driven by two optional, **gitignored** config files in the repo root. They live only on your machine; if a file is absent, that step is simply skipped.
 
 | File | Purpose | Example line |
 |---|---|---|
-| `.publish-skip` | Filenames/globs to exclude from publishing entirely (one per line, `#` comments, globs allowed). | `my-personal-tool.js` |
 | `.publish-sanitize.sed` | `sed` rewrite rules applied to every copied file — turn personal tokens into the public `*-owner` standard. | `s#over-myname#over-owner#g` |
 | `.publish-pii-words` | Wordlist for the **hard PII gate**: if any of these words (or a hardcoded `/home/<user>/` path) survives into the synced content, the publish **aborts before committing**. | `myname` |
 
@@ -268,7 +268,7 @@ In addition, you can wrap any personal, non-generic block inside an otherwise-sh
 ```
 
 > [!NOTE]
-> These three files are listed in `.gitignore`, so they are never tracked or pushed. Create them from scratch on each machine you publish from. New contributors adopting the framework simply add their own.
+> These two files are listed in `.gitignore`, so they are never tracked or pushed. Create them from scratch on each machine you publish from. New contributors adopting the framework simply add their own.
 
 ---
 
