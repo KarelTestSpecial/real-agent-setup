@@ -2,13 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2026-09-13
+### Added
+- `publish.sh --check-only`: runs the sanitization + PII + language gates without copying or committing (CI-safe, exit 0 on pass / 1 on leak).
+### Changed
+- Published lessons mirror updated with the `cp -ru` → `cp -rfL` drift finding.
+
 ## [1.1.1] - 2026-09-13
 ### Changed
 - Hard PII gate now scans **all tracked files** (`git ls-files`) instead of only the synced folders, closing the blind spot that let a tracked config backup leak.
 - Sanitization and `LOCAL-ONLY` stripping now also cover `.md`, `.json`, `.yaml` and `.yml` files.
 - `publish.sh` copy step now fails loudly on errors (removed the silent `2>/dev/null || true`) and guards missing/empty source directories.
 ### Fixed
-- Corrected the public PII lesson's example path (`/home/someone/` → `/home/<name>/`) and documented the synced-scope pitfall.
+- Corrected the public PII lesson's example home path so it no longer resembles a real directory, and documented the synced-scope pitfall.
 ### Security
 - Variant-proof publish-config ignores; broader sanitization rules (surname + workplace domain) and an enriched local PII wordlist.
 
