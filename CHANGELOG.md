@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2026-09-13
+### Fixed
+- README accuracy: removed the documented-but-unimplemented `.publish-skip` config (now correctly "two" config files), corrected the `learned-lessons/` description (it ships a curated public mirror, not "never pushed"), and fixed the directory map (dropped the untracked `ALIASES.md`; added `hooks/` and `policies/`).
+- `ga-inventory.py` is now executable (it carries a shebang).
+### Added
+- Documented `publish.sh --check-only` in the publishing guide.
+
 ## [1.1.2] - 2026-09-13
 ### Added
 - `publish.sh --check-only`: runs the sanitization + PII + language gates without copying or committing (CI-safe, exit 0 on pass / 1 on leak).
