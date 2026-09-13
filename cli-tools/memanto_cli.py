@@ -36,28 +36,26 @@ def cmd_prime(args):
         output.append("- No active memories.")
     output.append("")
     output.append("## Learned Lessons Index")
+    # Compact summary instead of the full list: the index lives in
+    # learned-lessons/<cat>/INDEX.md (owner, rule 1.b). Repeating the full list
+    # here cost ~1700 tokens per session and, due to the frontmatter
+    # (first line = "---"), only ever rendered "---" anyway.
     if os.path.isdir(LESSONS_DIR):
+        counts = []
         for entry in sorted(os.listdir(LESSONS_DIR)):
             ep = os.path.join(LESSONS_DIR, entry)
-            if entry == "archive":
+            if entry == "archive" or not os.path.isdir(ep):
                 continue
-            if os.path.isdir(ep):
-                files = []
-                for root, dirs, filenames in os.walk(ep):
-                    for f in filenames:
-                        if f.endswith(".md") and f != "INDEX.md":
-                            files.append(os.path.relpath(os.path.join(root, f), ep))
-                if files:
-                    output.append(f"\n### {entry.capitalize()}")
-                    for f in sorted(files):
-                        fp = os.path.join(ep, f)
-                        with open(fp) as fh:
-                            fl = fh.readline().strip().lstrip("# ")
-                        output.append(f"- **{f.replace('.md','')}**: {fl}")
-            elif entry.endswith(".md"):
-                with open(ep) as fh:
-                    fl = fh.readline().strip().lstrip("# ")
-                output.append(f"- **{entry.replace('.md','')}**: {fl}")
+            n = sum(
+                1
+                for root, _dirs, files in os.walk(ep)
+                for f in files
+                if f.endswith(".md") and f != "INDEX.md"
+            )
+            if n:
+                counts.append(f"**{entry}** {n}")
+        output.append("Full list per category in `learned-lessons/<cat>/INDEX.md` (owner).")
+        output.append(("Lessons: " + " · ".join(counts)) if counts else "Lessons: none.")
     output.append("")
     sp = os.path.expanduser("~/BRAIN/STATE.md")
     if os.path.exists(sp):

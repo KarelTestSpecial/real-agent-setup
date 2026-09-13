@@ -67,6 +67,7 @@ def check_workspace_activity(tms_content):
         f"find {WORKSPACE_DIR} -mmin -120 -type f"
         " -not -path '*/node_modules/*' -not -path '*/.venv/*'"
         " -not -path '*/__pycache__/*' -not -path '*/.git/*'"
+        " -not -path '*/build/*' -not -path '*/dist/*'"
     )
     modified_files = run_command(cmd)
 

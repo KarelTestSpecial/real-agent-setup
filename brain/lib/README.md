@@ -36,7 +36,7 @@ This is a custom implementation of a memory engine for AI agents, inspired by th
 
 ## Maintenance
 - **Last Updated:** 2026-07-27
-- **Maintainer:** MACCHA project (MACCHA project)
+- **Maintainer:** MACCHA project
 - **Source Location:** `~/INFRA/agents-brain/lib/memanto_engine.py`
 - **Synced to:** `real-agent-setup/brain/lib/` via `publish.sh`
 

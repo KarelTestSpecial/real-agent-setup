@@ -68,8 +68,11 @@ copy_dir_recursive() {
     if $DRY_RUN; then
         echo "  [DRY] cp -r $src/* -> $dst/"
     else
-        # rsync-achtig: kopieer alles, maar overschrijf alleen wat nieuwer is
-        cp -ru "$src"/* "$dst/" 2>/dev/null || true
+        # Publish semantics: local is the source of truth here — always refresh,
+        # and dereference symlinks so the repo never receives a personal absolute
+        # symlink target. (Previously 'cp -ru' silently skipped files whose local
+        # mtime was older than the sanitized repo copy, causing stale drift.)
+        cp -rfL "$src"/* "$dst/" 2>/dev/null || true
         echo "  ✓ $dst_repo/ (gesynchroniseerd)"
     fi
 }
@@ -148,14 +151,14 @@ for d in "${SYNC_DIRS[@]}"; do [ -d "$REPO_DIR/$d" ] && GATE_DIRS+=("$REPO_DIR/$
 LEAK=0
 # 1) Hardcoded home paths in any synced file. -r scans all files (incl. extension-less
 #    scripts like session-startup); -I skips binaries. Reliable single-grep exit code.
-if grep -rnIE "/home/[a-z0-9_-]+/" "${GATE_DIRS[@]}" 2>/dev/null; then
+if grep -rnIE --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git "/home/[a-z0-9_-]+/" "${GATE_DIRS[@]}" 2>/dev/null; then
     LEAK=1
 fi
 # 2) Personal identifiers listed in the local wordlist.
 if [ -f "$PII_WORDS" ]; then
     while IFS= read -r word; do
         [ -z "$word" ] && continue
-        if grep -rniw "$word" "${GATE_DIRS[@]}" 2>/dev/null; then LEAK=1; fi
+        if grep -rniw --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git "$word" "${GATE_DIRS[@]}" 2>/dev/null; then LEAK=1; fi
     done < "$PII_WORDS"
 fi
 if [ "$LEAK" -ne 0 ]; then
@@ -174,7 +177,7 @@ echo -e "${CYAN}${BOLD}🌐 Hard Language Gate (English-only)${RESET}"
 DUTCH_WORDS="niet geen bestand bestanden geheugen wekelijks wekelijkse verwijder verwijderen verwijderd opschonen opgeschoond voltooid mislukt gevonden sleutel gebruiker overgeslagen waarschuwing melding gekopieerd kopiëren onderzoek handleiding telefoon succesvol afgerond leegmaken bewaar zonder analyseren verlopen pagina gewijzigd beschikbaar huidige downloaden installatie verbinding bezig ophalen opslaan bijwerken controleert controleren vereist voorbeeld geïnstalleerd geinstalleerd aanmaken starten gebruik"
 NL=0
 for word in $DUTCH_WORDS; do
-    if grep -rnwIiE "$word" "${GATE_DIRS[@]}" 2>/dev/null; then NL=1; fi
+    if grep -rnwIiE --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git "$word" "${GATE_DIRS[@]}" 2>/dev/null; then NL=1; fi
 done
 if [ "$NL" -ne 0 ]; then
     echo -e "  ${RED}${BOLD}✗ DUTCH DETECTED — aborting (translate the lines above to English before publishing).${RESET}"

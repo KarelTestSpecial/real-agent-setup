@@ -36,28 +36,26 @@ def cmd_prime(args):
         output.append("- No active memories.")
     output.append("")
     output.append("## Learned Lessons Index")
+    # Compact summary instead of the full list: the index lives in
+    # learned-lessons/<cat>/INDEX.md (owner, rule 1.b). Repeating the full list
+    # here cost ~1700 tokens per session and, due to the frontmatter
+    # (first line = "---"), only ever rendered "---" anyway.
     if os.path.isdir(LESSONS_DIR):
+        counts = []
         for entry in sorted(os.listdir(LESSONS_DIR)):
             ep = os.path.join(LESSONS_DIR, entry)
-            if entry == "archive":
+            if entry == "archive" or not os.path.isdir(ep):
                 continue
-            if os.path.isdir(ep):
-                files = []
-                for root, dirs, filenames in os.walk(ep):
-                    for f in filenames:
-                        if f.endswith(".md") and f != "INDEX.md":
-                            files.append(os.path.relpath(os.path.join(root, f), ep))
-                if files:
-                    output.append(f"\n### {entry.capitalize()}")
-                    for f in sorted(files):
-                        fp = os.path.join(ep, f)
-                        with open(fp) as fh:
-                            fl = fh.readline().strip().lstrip("# ")
-                        output.append(f"- **{f.replace('.md','')}**: {fl}")
-            elif entry.endswith(".md"):
-                with open(ep) as fh:
-                    fl = fh.readline().strip().lstrip("# ")
-                output.append(f"- **{entry.replace('.md','')}**: {fl}")
+            n = sum(
+                1
+                for root, _dirs, files in os.walk(ep)
+                for f in files
+                if f.endswith(".md") and f != "INDEX.md"
+            )
+            if n:
+                counts.append(f"**{entry}** {n}")
+        output.append("Full list per category in `learned-lessons/<cat>/INDEX.md` (owner).")
+        output.append(("Lessons: " + " · ".join(counts)) if counts else "Lessons: none.")
     output.append("")
     sp = os.path.expanduser("~/BRAIN/STATE.md")
     if os.path.exists(sp):
@@ -136,6 +134,22 @@ def cmd_unpin(args):
         print(f"Entry {args.id[:8]} not found")
         sys.exit(1)
 
+def cmd_forget(args):
+    """Soft-delete a memory entry (excluded from recall; kept in store)."""
+    if brain.forget_memory(args.id):
+        print(f"Forgotten {args.id[:8]}")
+    else:
+        print(f"Entry {args.id[:8]} not found")
+        sys.exit(1)
+
+def cmd_update(args):
+    """Replace the text of an existing memory entry."""
+    if brain.update_memory(args.id, args.text):
+        print(f"Updated {args.id[:8]}")
+    else:
+        print(f"Entry {args.id[:8]} not found")
+        sys.exit(1)
+
 def cmd_export(args):
     """Export all entries to a human-readable text file."""
     import datetime as dt
@@ -199,12 +213,19 @@ if __name__ == "__main__":
     upn = sub.add_parser("unpin", help="Unpin entry — resume decay")
     upn.add_argument("id", help="Entry ID (or first 8 characters)")
 
+    fg = sub.add_parser("forget", help="Soft-delete entry — excluded from recall, kept in store")
+    fg.add_argument("id", help="Entry ID (or first 8 characters)")
+
+    upd = sub.add_parser("update", help="Replace the text of an existing entry")
+    upd.add_argument("id", help="Entry ID (or first 8 characters)")
+    upd.add_argument("text", help="New text")
+
     ep = sub.add_parser("export", help="Export entries to readable txt file")
     ep.add_argument("--file", help="Output pad (default: ~/BRAIN/memanto/memanto_export.txt)")
 
     args = p.parse_args()
     # Resolve partial ID (first 8 chars) to full ID
-    if args.command in ("pin", "unpin"):
+    if args.command in ("pin", "unpin", "forget", "update"):
         full_id = args.id
         matches = [m["id"] for m in brain.memories if m["id"].startswith(args.id)]
         if len(matches) == 1:
@@ -212,4 +233,4 @@ if __name__ == "__main__":
         elif len(matches) > 1:
             print(f"Ambiguous ID '{args.id}': {len(matches)} matches. Provide more characters.")
             sys.exit(1)
-    {"remember": cmd_remember, "recall": cmd_recall, "answer": cmd_answer, "list": cmd_list, "prime": cmd_prime, "distill": cmd_distill, "prune": cmd_prune, "pin": cmd_pin, "unpin": cmd_unpin, "export": cmd_export}[args.command](args)
+    {"remember": cmd_remember, "recall": cmd_recall, "answer": cmd_answer, "list": cmd_list, "prime": cmd_prime, "distill": cmd_distill, "prune": cmd_prune, "pin": cmd_pin, "unpin": cmd_unpin, "forget": cmd_forget, "update": cmd_update, "export": cmd_export}[args.command](args)

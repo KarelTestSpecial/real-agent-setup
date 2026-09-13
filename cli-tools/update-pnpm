@@ -1,7 +1,101 @@
 #!/bin/bash
 # ==============================================================================
 # Script: update-pnpm
-# Beschrijving: Updatet pnpm via corepack.
+# Description: Updates pnpm, respecting the 7-day cooldown from .npmrc.
+#              On cooldown blocking: inform the user and offer alternatives.
 # ==============================================================================
 
-corepack use pnpm@latest && pnpm -v
+set -euo pipefail
+
+CURRENT=$(pnpm -v 2>/dev/null || echo "unknown")
+
+echo "Current pnpm version: $CURRENT"
+echo "Checking available versions..."
+
+# Fetch all versions, newest first
+LATEST=$(npm view pnpm version 2>/dev/null || echo "")
+if [ -z "$LATEST" ]; then
+  echo "ERROR: Cannot fetch pnpm versions from the npm registry."
+  exit 1
+fi
+
+echo "Latest pnpm version: $LATEST"
+
+if [ "$CURRENT" = "$LATEST" ]; then
+  echo "You already have the latest version ($LATEST). No update needed."
+  exit 0
+fi
+
+# Try the update — capture cooldown blocking
+OUTPUT=$(npm install -g "pnpm@$LATEST" 2>&1) && SUCCESS=true || SUCCESS=false
+
+if [ "$SUCCESS" = true ]; then
+  echo "Successfully updated to pnpm $(pnpm -v)"
+  exit 0
+fi
+
+# Check whether the failure is caused by the cooldown
+if echo "$OUTPUT" | grep -q "does not meet the minimumReleaseAge constraint"; then
+  echo ""
+  echo "=========================================="
+  echo "  PNPM $LATEST IS BLOCKED BY COOLDOWN"
+  echo "=========================================="
+  echo ""
+  echo "  Version $LATEST is less than 7 days old."
+  echo "  Your .npmrc enforces a minimum-release-age of 7 days"
+  echo "  as protection against supply-chain attacks."
+  echo ""
+  echo "  OPTIONS:"
+  echo ""
+  echo "  1. WAIT — update again after the cooldown period."
+  echo "     The block disappears automatically."
+  echo ""
+  echo "  2. INSTALL AN OLDER STABLE VERSION —"
+  echo "     the newest version that does pass the cooldown:"
+  echo ""
+
+  # Find the newest version that is old enough
+  OLDEST_OK=$(npm view pnpm versions --json 2>/dev/null | \
+    node -e "
+      const versions = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+      const cutoff = Date.now() - 7*24*60*60*1000;
+      const valid = versions
+        .filter(v => !v.includes('-'))
+        .filter(v => {
+          try {
+            const d = new Date(require('child_process')
+              .execSync('npm view pnpm@'+v time --json 2>/dev/null)
+              .toString());
+            return d.getTime() < cutoff;
+          } catch { return false; }
+        });
+      console.log(valid[valid.length-1] || 'unknown');
+    " 2>/dev/null || echo "")
+
+  if [ -n "$OLDEST_OK" ] && [ "$OLDEST_OK" != "unknown" ]; then
+    echo "     → pnpm@$OLDEST_OK"
+    echo ""
+    read -p "  Install? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      npm install -g "pnpm@$OLDEST_OK" && echo "Installed: pnpm $(pnpm -v)"
+    else
+      echo "Cancelled."
+    fi
+  else
+    echo "     (Could not find a valid older version)"
+  fi
+
+  echo ""
+  echo "  3. MANUAL OVERRIDE (not recommended) —"
+  echo "     Add to ~/.npmrc:"
+  echo "       minimum-release-age-exclude[]=pnpm"
+  echo "     and run again: update-pnpm"
+  echo ""
+  exit 1
+fi
+
+# Unexpected error
+echo "ERROR: Unexpected error while updating:"
+echo "$OUTPUT"
+exit 1

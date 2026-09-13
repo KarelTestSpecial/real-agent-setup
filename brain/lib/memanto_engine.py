@@ -16,6 +16,7 @@ import json
 import uuid
 import datetime
 import math
+import re
 from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
@@ -148,7 +149,7 @@ class MemantoMemory:
             self._save_memories()
 
     def detect_conflicts(self, new_text: str, category: str) -> Optional[str]:
-        """Scans existing active memories of the same category for semantic contradictions."""
+        """Scans existing active memories of the same category for semantic contradictions (single batched LLM call)."""
         if category not in ["Decision", "Preference", "Fact", "Instruction"]:
             return None # Static categories are checked; transient events/contexts are not
 
@@ -162,41 +163,74 @@ class MemantoMemory:
         if not active_memories or not self.client:
             return None
 
-        for old_memory in active_memories:
-            prompt = f"""
-            You are the core conflict-detection subsystem of the Memanto Sovereign Active Memory layer.
-            Analyze the relationship between the existing memory and a newly proposed memory in the '{category}' category.
+        listing = "\n".join(f'M{i + 1}: "{m["text"]}"' for i, m in enumerate(active_memories))
+        prompt = f"""
+        You are the core conflict-detection subsystem of the Memanto Sovereign Active Memory layer.
+        Compare a newly proposed memory against a numbered list of existing memories in the '{category}' category.
 
-            [Existing Memory]
-            "{old_memory['text']}"
+        [Existing Memories]
+        {listing}
 
-            [Newly Proposed Memory]
-            "{new_text}"
+        [Newly Proposed Memory]
+        "{new_text}"
 
-            Determine if these two memories conflict:
-            - CONTRADICTS: The new memory directly conflicts or negates the existing memory.
-            - UPDATES: The new memory is a direct update, refinement, or revision of the existing one (e.g., changing version numbers, status updates).
-            - COMPATIBLE: The memories are complementary or completely independent.
+        Determine for each existing memory whether the proposed memory:
+        - CONTRADICTS: directly conflicts or negates the existing one.
+        - UPDATES: is a direct update, refinement, or revision of the existing one (e.g. changing version numbers, status updates).
+        - COMPATIBLE: complementary or completely independent.
 
-            Respond with EXACTLY one of these three uppercase words: CONTRADICTS, UPDATES, or COMPATIBLE. Do not output any other character or explanation.
-            """
-            try:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt
-                )
+        Respond with EXACTLY one token: "NONE" if every existing memory is COMPATIBLE,
+        otherwise "<label> <RELATION>" (e.g. "M3 UPDATES") for the FIRST conflicting memory.
+        Do not output any other character or explanation.
+        """
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
                 
-                # Thought Signatures Compliance: Extract text safely
-                parts = response.candidates[0].content.parts if response.candidates else []
-                text_part = next((p.text for p in parts if p.text), "")
-                decision = text_part.strip().upper() if text_part else (response.text.strip().upper() if response.text else "COMPATIBLE")
+            # Thought Signatures Compliance: Extract text safely
+            parts = response.candidates[0].content.parts if response.candidates else []
+            text_part = next((p.text for p in parts if p.text), "")
+            decision = text_part.strip().upper() if text_part else ""
 
-                if "CONTRADICTS" in decision or "UPDATES" in decision:
-                    print(f"🧠 [Conflict Detector] New memory in '{category}' {decision} existing memory: '{old_memory['text']}'")
+            if decision and decision != "NONE":
+                tokens = decision.replace(":", " ").split()
+                label = next((t for t in tokens if re.fullmatch(r"M\d+", t)), None)
+                relation = next((t for t in tokens if t in ("CONTRADICTS", "UPDATES")), "UPDATES")
+                match = re.fullmatch(r"M(\d+)", label) if label else None
+                if match and 1 <= int(match.group(1)) <= len(active_memories):
+                    old_memory = active_memories[int(match.group(1)) - 1]
+                    print(f"🧠 [Conflict Detector] New memory in '{category}' {relation} existing memory: '{old_memory['text']}'")
                     return old_memory["id"]
-            except Exception as e:
+        except Exception as e:
+            msg = str(e)
+            if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower():
+                print("[Conflict Detector] Skipped: Gemini API quota exhausted (429). Entry stored WITHOUT conflict check.")
+            else:
                 print(f"[Conflict Detector] Contradiction check failed: {e}")
         return None
+
+    # ─── Update / Forget ─────────────────────────────────────────────────────
+    def update_memory(self, memory_id: str, text: str) -> bool:
+        """Replace the text of an existing memory entry."""
+        for item in self.memories:
+            if item["id"] == memory_id:
+                item["text"] = text
+                item["last_updated"] = datetime.datetime.now().isoformat()
+                self._save_memories()
+                return True
+        return False
+
+    def forget_memory(self, memory_id: str) -> bool:
+        """Soft-delete a memory entry (excluded from recall/prime; kept in store as history)."""
+        for item in self.memories:
+            if item["id"] == memory_id:
+                item["superseded_by"] = "manual-forget"
+                item["pinned"] = False
+                self._save_memories()
+                return True
+        return False
 
     # ─── Pin / Unpin ────────────────────────────────────────────────────────
     def pin_memory(self, memory_id: str) -> bool:

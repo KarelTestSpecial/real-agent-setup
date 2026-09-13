@@ -11,9 +11,6 @@ KEY_FILE="$H/.config/maccha/backup.key"
 MARKER="$H/BRAIN/.last_backup"
 # How many rotated backups to keep (1 = only the most recent).
 KEEP=4
-# >>> LOCAL-ONLY
-KEEP=1
-# <<< LOCAL-ONLY
 STAMP=$(date +%Y%m%d-%H%M)
 OUT="$DEST_DIR/maccha-backup-$STAMP.tar.gz.enc"
 

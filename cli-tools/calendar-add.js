@@ -107,7 +107,7 @@ function showHelp() {
   --auth    Re-authenticate (browser login)
 
 Examples:
-  calendar-add.js fpc@example.com "Dentist appointment" "2026-07-16T11:00:00+02:00" "2026-07-16T12:00:00+02:00" "Annual checkup confirmed by phone"
+  calendar-add.js primary "Dentist appointment" "2026-07-16T11:00:00+02:00" "2026-07-16T12:00:00+02:00" "Annual checkup confirmed by phone"
   `);
 }
 
