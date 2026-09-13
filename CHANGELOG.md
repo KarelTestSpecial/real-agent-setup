@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.5] - 2026-09-13
+### Changed
+- Bumped the CI checkout action to `actions/checkout@v7` (Node 20 deprecation on GitHub runners).
+
 ## [1.1.4] - 2026-09-13
 ### Added
 - GitHub Actions **Gates** workflow: shell/JS/Python syntax checks plus the publish sanitization/PII/language gates (`publish.sh --check-only`) on every push and pull request — a regression net for the public repo.
