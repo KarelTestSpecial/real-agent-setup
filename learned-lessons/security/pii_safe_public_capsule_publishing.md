@@ -23,11 +23,12 @@ Keep all personal tokens out of tracked files by driving the publish pipeline th
 
 Also: wrap personal, non-generic blocks inside a shared script with `# >>> LOCAL-ONLY … # <<< LOCAL-ONLY`; the publish strips everything between.
 
-**Hard gate before commit** (aborts on a leak): scan the synced folders for (a) every word from the PII list and (b) hardcoded `/home/<user>/` paths. Two pitfalls seen live:
+**Hard gate before commit** (aborts on a leak): scan the tracked repo for (a) every word from the PII list and (b) hardcoded `/home/<user>/` paths. Three pitfalls seen live:
 1. `grep --include="*.sh"` skips **extension-less** scripts (like `session-startup`) → use `grep -rnI` without `--include`, or `find` over all files.
 2. `if find … | xargs grep` has **unreliable exit codes** (xargs returns 123 on a no-match) → false alarm. Use a single `grep -rnI` (reliable exit) or capture the output and test for emptiness.
+3. Scoping the scan to the **synced folders** misses tracked files elsewhere — a leftover `.backup` of a gitignored config, a `system-brain/` template, or any root file. Enumerate **all `git ls-files`** (which also keeps the gitignored local config out of scope), and make ignore patterns **variant-proof** (`.publish-*`, not just the exact filename).
 
-Always test the gate functionally with an injected leak (a bare name and a `/home/someone/` path in an extension-less file) — not with a token the sanitizer would scrub anyway.
+Always test the gate functionally with an injected leak (a bare name and a `/home/<name>/` path in an extension-less file) — not with a token the sanitizer would scrub anyway.
 
 ## 3. Actually cleaning existing history
 - `git filter-repo --replace-text` scrubs tokens from all blobs but leaves **`refs/replace/*`** that keep the old commits locally reachable → `git replace -d` them, then `reflog expire --expire=now --all` + `gc --prune=now`.

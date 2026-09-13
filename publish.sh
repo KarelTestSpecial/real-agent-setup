@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+shopt -s nullglob
 
 # ============================================================
 # MACCHA — Sync and Publish Local Improvements back to GitHub
@@ -44,6 +45,10 @@ echo ""
 copy_dir_flat() {
     local src="$1" dst_repo="$2"
     local dst="$REPO_DIR/$dst_repo"
+    if [ ! -d "$src" ]; then
+        echo -e "  ${YELLOW}⚠️  Source not found: $src (skipped)${RESET}"
+        return
+    fi
     mkdir -p "$dst"
     
     for item in "$src"/*; do
@@ -63,7 +68,16 @@ copy_dir_flat() {
 copy_dir_recursive() {
     local src="$1" dst_repo="$2"
     local dst="$REPO_DIR/$dst_repo"
+    if [ ! -d "$src" ]; then
+        echo -e "  ${YELLOW}⚠️  Source not found: $src (skipped)${RESET}"
+        return
+    fi
     mkdir -p "$dst"
+    local items=("$src"/*)
+    if [ "${#items[@]}" -eq 0 ]; then
+        echo -e "  ${YELLOW}⚠️  No files in $src (skipped)${RESET}"
+        return
+    fi
     
     if $DRY_RUN; then
         echo "  [DRY] cp -r $src/* -> $dst/"
@@ -72,7 +86,8 @@ copy_dir_recursive() {
         # and dereference symlinks so the repo never receives a personal absolute
         # symlink target. (Previously 'cp -ru' silently skipped files whose local
         # mtime was older than the sanitized repo copy, causing stale drift.)
-        cp -rfL "$src"/* "$dst/" 2>/dev/null || true
+        # Fail loud: a copy error must abort the publish, never be swallowed.
+        cp -rfL "${items[@]}" "$dst/"
         echo "  ✓ $dst_repo/ (gesynchroniseerd)"
     fi
 }
@@ -125,7 +140,7 @@ echo -e "${CYAN}${BOLD}🧼 PII Sanitization Pass${RESET}"
 if [ -f "$SANITIZE_RULES" ]; then
     for d in "${SYNC_DIRS[@]}"; do
         [ -d "$REPO_DIR/$d" ] || continue
-        find "$REPO_DIR/$d" -type f \( -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.mjs" -o -name "*.txt" -o ! -name "*.*" \) -print0 \
+        find "$REPO_DIR/$d" -type f \( -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.mjs" -o -name "*.txt" -o -name "*.md" -o -name "*.json" -o -name "*.yaml" -o -name "*.yml" -o ! -name "*.*" \) -print0 \
             | xargs -0 -r sed -i -f "$SANITIZE_RULES"
     done
     echo -e "  ${GREEN}✓${RESET} Applied rules from .publish-sanitize.sed"
@@ -137,35 +152,44 @@ fi
 # Wrap such a block locally with:  # >>> LOCAL-ONLY  ...  # <<< LOCAL-ONLY
 for d in "${SYNC_DIRS[@]}"; do
     [ -d "$REPO_DIR/$d" ] || continue
-    find "$REPO_DIR/$d" -type f \( -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.mjs" -o -name "*.txt" -o ! -name "*.*" \) -print0 \
+    find "$REPO_DIR/$d" -type f \( -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.mjs" -o -name "*.txt" -o -name "*.md" -o -name "*.json" -o -name "*.yaml" -o -name "*.yml" -o ! -name "*.*" \) -print0 \
         | xargs -0 -r sed -i '/# >>> LOCAL-ONLY/,/# <<< LOCAL-ONLY/d'
 done
 echo -e "  ${GREEN}✓${RESET} Stripped any LOCAL-ONLY blocks."
 
 # === Hard PII Gate ===
 # Abort before any commit if a personal identifier or hardcoded home path survived.
+# Scans ALL tracked files — not just the synced dirs. A stale tracked file outside
+# the sync scope (e.g. a leftover .backup of a gitignored config, or a system-brain
+# template) is exactly how a leak slipped through before. Enumerating via git keeps
+# the gitignored local config (.publish-sanitize.sed etc.) out of scope.
 echo ""
 echo -e "${CYAN}${BOLD}🚨 Hard PII Gate${RESET}"
 GATE_DIRS=()
 for d in "${SYNC_DIRS[@]}"; do [ -d "$REPO_DIR/$d" ] && GATE_DIRS+=("$REPO_DIR/$d"); done
+cd "$REPO_DIR"
+mapfile -t GATE_FILES < <(git ls-files)
 LEAK=0
-# 1) Hardcoded home paths in any synced file. -r scans all files (incl. extension-less
-#    scripts like session-startup); -I skips binaries. Reliable single-grep exit code.
-if grep -rnIE --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git "/home/[a-z0-9_-]+/" "${GATE_DIRS[@]}" 2>/dev/null; then
-    LEAK=1
-fi
-# 2) Personal identifiers listed in the local wordlist.
-if [ -f "$PII_WORDS" ]; then
-    while IFS= read -r word; do
-        [ -z "$word" ] && continue
-        if grep -rniw --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git "$word" "${GATE_DIRS[@]}" 2>/dev/null; then LEAK=1; fi
-    done < "$PII_WORDS"
+if [ "${#GATE_FILES[@]}" -eq 0 ]; then
+    echo -e "  ${YELLOW}⚠️  No tracked files found — skipping PII scan.${RESET}"
+else
+    # 1) Hardcoded home paths in any tracked file. -I skips binaries.
+    if grep -InIE "/home/[a-z0-9_-]+/" "${GATE_FILES[@]}" 2>/dev/null; then
+        LEAK=1
+    fi
+    # 2) Personal identifiers listed in the local wordlist (whole-word, case-insensitive).
+    if [ -f "$PII_WORDS" ]; then
+        while IFS= read -r word; do
+            [ -z "$word" ] && continue
+            if grep -IniwE "$word" "${GATE_FILES[@]}" 2>/dev/null; then LEAK=1; fi
+        done < "$PII_WORDS"
+    fi
 fi
 if [ "$LEAK" -ne 0 ]; then
     echo -e "  ${RED}${BOLD}✗ PII LEAK DETECTED — aborting before commit (see lines above).${RESET}"
     exit 1
 fi
-echo -e "  ${GREEN}✓${RESET} No personal identifiers or hardcoded home paths in synced content."
+echo -e "  ${GREEN}✓${RESET} No personal identifiers or hardcoded home paths in tracked files."
 
 # === Hard Language Gate ===
 # The public repo must stay English. publish.sh copies local scripts verbatim and
