@@ -1,0 +1,43 @@
+name: Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Shell syntax
+        run: |
+          fail=0
+          for f in $(git ls-files '*.sh' publish.sh setup.sh uninstall.sh); do
+            bash -n "$f" || { echo "shell syntax FAIL: $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: JavaScript syntax
+        run: |
+          fail=0
+          for f in $(git ls-files '*.js' '*.mjs' '*.cjs'); do
+            node --check "$f" || { echo "js syntax FAIL: $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: Python syntax
+        run: |
+          fail=0
+          for f in $(git ls-files '*.py'); do
+            python3 -m py_compile "$f" || { echo "python syntax FAIL: $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: Publish gates (sanitization + PII + language)
+        run: bash publish.sh --check-only
