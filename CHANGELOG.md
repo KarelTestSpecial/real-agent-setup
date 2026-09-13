@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.6] - 2026-09-13
+### Added
+- `maccha-doctor`: one-shot harness health check (core zones, root symlinks, backup freshness, secret permissions, TMS integrity, supply chain, disk space, optional vdab-swipe/repo checks, broken symlinks). Exit 0 = healthy, 1 = failure.
+### Security
+- Tightened `~/.config/maccha` and `~/.config/maccha/secrets` to `700` (secret files `600`) after the new doctor flagged overly broad permissions.
+
 ## [1.1.5] - 2026-09-13
 ### Changed
 - Bumped the CI checkout action to `actions/checkout@v7` (Node 20 deprecation on GitHub runners).
