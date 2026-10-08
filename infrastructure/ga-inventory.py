@@ -127,7 +127,7 @@ def list_account_summaries(token):
             url += "&pageToken=" + page
         data = api_get(token, url)
         if "_error" in data:
-            sys.exit("accountSummaries fout %s: %s" % (data["_error"], data["_body"]))
+            sys.exit("accountSummaries error %s: %s" % (data["_error"], data["_body"]))
         out += data.get("accountSummaries", [])
         page = data.get("nextPageToken")
         if not page:

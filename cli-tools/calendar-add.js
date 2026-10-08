@@ -81,9 +81,9 @@ function getNewToken(oAuth2Client) {
     scope: SCOPES,
     prompt: 'consent'
   });
-  console.log('🔑 Open deze link in de browser:');
+  console.log('🔑 Open this link in your browser:');
   console.log(authUrl);
-  console.log('\nPlak hier de authorization code:');
+  console.log('\nPaste the authorization code here:');
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve, reject) => {

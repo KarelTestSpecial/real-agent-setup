@@ -46,7 +46,7 @@ if (!apiKey) {
 }
 
 if (!apiKey) {
-    console.error('\x1b[31m❌ Fout: No GEMINI_API_KEY found!\x1b[0m');
+    console.error('\x1b[31m❌ Error: No GEMINI_API_KEY found!\x1b[0m');
     console.error('Make sure GEMINI_API_KEY is set in your environment: export GEMINI_API_KEY="your-key"');
     console.error('Or add it to a .env file.');
     process.exit(1);
@@ -215,7 +215,7 @@ async function main() {
 
         console.log(`\n==============================================================================`);
         console.log(`\x1b[32m✨ DEEP RESEARCH RAPPORT GEGENEREERD!\x1b[0m`);
-        console.log(`📂 Opgeslagen als: \x1b[1m${outputPath}\x1b[22m`);
+        console.log(`📂 Saved to: \x1b[1m${outputPath}\x1b[22m`);
         console.log(`==============================================================================\n`);
 
         // Print first 800 chars of the report to the terminal
@@ -223,7 +223,7 @@ async function main() {
         console.log(finalReport.substring(0, 800) + (finalReport.length > 800 ? '\n\n[... report continues in the saved file ...]' : ''));
 
     } catch (e) {
-        console.error(`\n\x1b[31m❌ Fout tijdens Deep Research:\x1b[0m ${e.message}`);
+        console.error(`\n\x1b[31m❌ Error during Deep Research:\x1b[0m ${e.message}`);
         process.exit(1);
     }
 }

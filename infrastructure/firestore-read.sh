@@ -7,7 +7,7 @@
 #           RAW=1 firestore-read.sh <collection>      # rauwe JSON i.p.v. tabel
 #           FIRESTORE_PROJECT=ander-project firestore-read.sh <collection>
 #
-# Auth: gcloud user-creds (<je-gcloud-email>) met toegang tot kdc-apps.
+# Auth: gcloud user-creds (<your-gcloud-email>) with access to kdc-apps.
 #       Read-only. Writing (PATCH/DELETE) deliberately NOT in this script (HITL).
 set -euo pipefail
 PROJECT="${FIRESTORE_PROJECT:-kdc-apps}"

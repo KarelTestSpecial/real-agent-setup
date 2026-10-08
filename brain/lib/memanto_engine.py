@@ -327,8 +327,8 @@ class MemantoMemory:
             try:
                 candidate_texts = [c["text"] for c in candidates]
                 # Embed candidates in batch.
-                # gemini-embedding-2 leest een lijst kale strings als één document;
-                # expliciete Content-objecten dwingen één embedding per tekst af.
+                # gemini-embedding-2 reads a list of bare strings as a single document;
+                # explicit Content objects force one embedding per text.
                 candidates_emb = self.client.models.embed_content(
                     model=self.embedding_model,
                     contents=[types.Content(parts=[types.Part(text=t)]) for t in candidate_texts]

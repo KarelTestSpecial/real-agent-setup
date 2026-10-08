@@ -268,10 +268,17 @@ echo -e "  ${GREEN}✓${RESET} No personal identifiers or hardcoded home paths i
 # (Words are distinctly Dutch and chosen not to collide with English; tune as needed.)
 echo ""
 echo -e "${CYAN}${BOLD}🌐 Hard Language Gate (English-only)${RESET}"
-DUTCH_WORDS="niet geen bestand bestanden geheugen wekelijks wekelijkse verwijder verwijderen verwijderd opschonen opgeschoond voltooid mislukt gevonden sleutel gebruiker overgeslagen waarschuwing melding gekopieerd kopiëren onderzoek handleiding telefoon succesvol afgerond leegmaken bewaar zonder analyseren verlopen pagina gewijzigd beschikbaar huidige downloaden installatie verbinding bezig ophalen opslaan bijwerken controleert controleren vereist voorbeeld geïnstalleerd geinstalleerd aanmaken starten gebruik"
+DUTCH_WORDS="niet geen bestand bestanden geheugen wekelijks wekelijkse verwijder verwijderen verwijderd opschonen opgeschoond voltooid mislukt gevonden sleutel gebruiker overgeslagen waarschuwing melding gekopieerd kopiëren onderzoek handleiding telefoon succesvol afgerond leegmaken bewaar zonder analyseren verlopen pagina gewijzigd beschikbaar huidige downloaden installatie verbinding bezig ophalen opslaan bijwerken controleert controleren vereist voorbeeld geïnstalleerd geinstalleerd aanmaken starten gebruik enkel alleen bestaat bestaan overslaan overslaat paden oudste nieuwste fysieke uitleesbaar ingesteld gearchiveerd wordt deze zijn maar ook naar heeft haar hun onze tot nog als hier moeten kunnen alle elke veel meer een het geeft lijst kale veld velden regel regels systeem fout fouten meldingen"
+# The marker list is a proxy, not a curator: it cannot know every Dutch word.
+# What it CAN do is make the exception explicit instead of accidental.
+# tms_shortlist_sync.py ships a Dutch stopword list for Dutch-language text
+# analysis — that is its function, not a leftover. One file, by name.
+GATE_EXCLUDE_FILES=(tms_shortlist_sync.py)
+GATE_EXCLUDE_ARGS=()
+for f in "${GATE_EXCLUDE_FILES[@]}"; do GATE_EXCLUDE_ARGS+=(--exclude="$f"); done
 NL=0
 for word in $DUTCH_WORDS; do
-    if grep -rnwIiE --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git "$word" "${GATE_DIRS[@]}" 2>/dev/null; then NL=1; fi
+    if grep -rnwIiE "${GATE_EXCLUDE_ARGS[@]}" --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git "$word" "${GATE_DIRS[@]}" 2>/dev/null; then NL=1; fi
 done
 if [ "$NL" -ne 0 ]; then
     echo -e "  ${RED}${BOLD}✗ DUTCH DETECTED — aborting (translate the lines above to English before publishing).${RESET}"

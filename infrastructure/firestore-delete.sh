@@ -5,11 +5,11 @@
 # works with User's own gcloud creds — no service account needed.
 #
 # Usage:
-#   firestore-delete.sh <collection> <docId>          # DRY RUN: toont het doc, verwijdert NIETS
-#   firestore-delete.sh <collection> <docId> --yes    # voert de verwijdering ECHT uit
+#   firestore-delete.sh <collection> <docId>          # DRY RUN: prints the doc, deletes NOTHING
+#   firestore-delete.sh <collection> <docId> --yes    # actually performs the delete
 #
-# HITL-guardrail: without --yes nothing destructive happens. The agent shows first
-#   de dry-run, User bevestigt in de chat, pas daarna volgt de --yes-uitvoering.
+# HITL guardrail: without --yes nothing destructive happens. The agent shows the
+#   dry run first, gets confirmation, and only then runs it with --yes.
 set -euo pipefail
 PROJECT="${FIRESTORE_PROJECT:-kdc-apps}"
 COLL="${1:?Usage: firestore-delete.sh <collection> <docId> [--yes]}"
@@ -19,7 +19,7 @@ BASE="https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default
 URL="${BASE}/${COLL}/${DOCID}"
 TOKEN="$(gcloud auth print-access-token)"
 
-echo "== Doeldocument: ${PROJECT}/${COLL}/${DOCID} =="
+echo "== Target document: ${PROJECT}/${COLL}/${DOCID} =="
 DOC="$(curl -s -H "Authorization: Bearer ${TOKEN}" "$URL")"
 printf '%s' "$DOC" | python3 -c '
 import json,sys
@@ -35,7 +35,7 @@ for k in sorted(f):
 if [[ "$CONFIRM" != "--yes" ]]; then
   echo
   echo ">> DRY RUN — NOTHING was deleted."
-  echo ">> Uitvoeren met:  firestore-delete.sh ${COLL} ${DOCID} --yes"
+  echo ">> Run it with:  firestore-delete.sh ${COLL} ${DOCID} --yes"
   exit 0
 fi
 
@@ -47,6 +47,6 @@ BODY="$(printf '%s' "$RESP" | sed '$d')"
 if [[ "$CODE" == "200" ]]; then
   echo ">> OK: document deleted (HTTP ${CODE})."
 else
-  echo ">> FOUT (HTTP ${CODE}): ${BODY}"
+  echo ">> ERROR (HTTP ${CODE}): ${BODY}"
   exit 1
 fi

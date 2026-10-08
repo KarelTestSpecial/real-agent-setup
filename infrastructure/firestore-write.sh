@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
 # Guarded write/update of ONE Firestore document in the kdc-apps project.
 # Same auth as firestore-read.sh (gcloud user OAuth token; IAM bypasses rules).
-# Upsert: creates the document if it does not exist, or updates it.
-# Alleen de opgegeven velden veranderen (updateMask); andere velden blijven staan.
+# Upsert: creates the document when it does not exist yet, or updates it.
+# Only the given fields change (updateMask); other fields stay as they are.
 #
 # Usage:
-#   firestore-write.sh <collection> <docId> veld=waarde [veld=waarde ...]         # DRY RUN
-#   firestore-write.sh <collection> <docId> veld=waarde [...] --yes               # voert ECHT uit
+#   firestore-write.sh <collection> <docId> field=value [field=value ...]         # DRY RUN
+#   firestore-write.sh <collection> <docId> field=value [...] --yes               # actually runs
 #
-# Type-inferentie per waarde:
-#   geheel getal   -> integerValue      (bv.  count=81)
-#   kommagetal     -> doubleValue       (bv.  bedrag=184.00)
+# Type inference per value:
+#   integer        -> integerValue      (e.g.  count=81)
+#   decimal        -> doubleValue       (e.g.  amount=184.00)
 #   true / false   -> booleanValue
 #   null           -> nullValue
-#   anders         -> stringValue
-# Forceer expliciet met een prefix:  s:  (string)   d:  (double)   i:  (integer)
-#   bv.  bedrag=s:184,00   |   koers=d:0.92   |   jaar=i:2026
+#   anything else  -> stringValue
+# Force a type with an explicit prefix:  s:  (string)   d:  (double)   i:  (integer)
+#   e.g.  amount=s:184,00  |   rate=d:0.92    |   year=i:2026
 #
-# HITL-guardrail: without --yes nothing happens; the agent shows the payload first.
+# HITL guardrail: without --yes nothing happens; the agent shows the payload first.
 set -euo pipefail
 PROJECT="${FIRESTORE_PROJECT:-kdc-apps}"
-COLL="${1:?Usage: firestore-write.sh <collection> <docId> veld=waarde ... [--yes]}"; shift
-DOCID="${1:?Usage: firestore-write.sh <collection> <docId> veld=waarde ... [--yes]}"; shift
+COLL="${1:?Usage: firestore-write.sh <collection> <docId> field=value ... [--yes]}"; shift
+DOCID="${1:?Usage: firestore-write.sh <collection> <docId> field=value ... [--yes]}"; shift
 
 PAIRS=(); CONFIRM=""
 for a in "$@"; do
   if [[ "$a" == "--yes" ]]; then CONFIRM="--yes"; else PAIRS+=("$a"); fi
 done
-[[ ${#PAIRS[@]} -gt 0 ]] || { echo "No field=value pairs provided." >&2; exit 1; }
+[[ ${#PAIRS[@]} -gt 0 ]] || { echo "No field=value pairs given." >&2; exit 1; }
 
 BASE="https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents"
 TOKEN="$(gcloud auth print-access-token)"
@@ -57,13 +57,13 @@ PY
 URL="${BASE}/${COLL}/${DOCID}?${MASK}"
 
 echo "== Doeldocument: ${PROJECT}/${COLL}/${DOCID} =="
-echo "== Payload (alleen deze velden worden gezet) =="
+echo "== Payload (only these fields will be set) =="
 python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["fields"], indent=2, ensure_ascii=False))' "$TMP"
 
 if [[ "$CONFIRM" != "--yes" ]]; then
   echo
   echo ">> DRY RUN — er is NIETS geschreven."
-  echo ">> Uitvoeren door dezelfde regel te herhalen met  --yes  erachter."
+  echo ">> Run it by repeating the same line with  --yes  appended."
   exit 0
 fi
 
@@ -77,6 +77,6 @@ BODY="$(printf '%s' "$RESP" | sed '$d')"
 if [[ "$CODE" == "200" ]]; then
   echo ">> OK: document geschreven (HTTP ${CODE})."
 else
-  echo ">> FOUT (HTTP ${CODE}): ${BODY}"
+  echo ">> ERROR (HTTP ${CODE}): ${BODY}"
   exit 1
 fi

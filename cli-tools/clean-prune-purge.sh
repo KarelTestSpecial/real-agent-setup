@@ -11,7 +11,7 @@ if [ "$(uname -s)" != "Linux" ]; then
     exit 0
 fi
 
-echo "🧹 Clean up van systeem en pnpm store..."
+echo "🧹 Cleaning up the system and the pnpm store..."
 
 # Apt clean
 sudo apt autoremove --purge -y
@@ -35,4 +35,4 @@ if [ -d "$TRASH_DIR" ]; then
     fi
 fi
 
-echo "✅ Systeem is cleaned up."
+echo "✅ System cleaned up."
