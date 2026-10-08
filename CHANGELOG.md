@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - `.publish-allowlist`: tracked, fail-closed publish curation. Every destination path that may ship is listed explicitly; anything else in `~/bin/maccha` or `~/INFRA` is skipped *and reported by name*. Publishing a tool now requires adding and committing a line instead of happening as a side effect of a blind copy. A missing allowlist aborts the copy phase (exit 1) rather than reverting to "copy everything".
+- `requirements.txt` (`google-genai==2.11.0`): `brain/lib/memanto_engine.py` imports the SDK at module level and `setup.sh` installs no Python dependencies, so a clean clone crashed on first Memanto use. The prerequisite is now stated in the README.
+
+### Changed
+- Quick Start clones over **HTTPS** instead of SSH. The documented SSH remote requires a GitHub key on the target machine, which a fresh demo laptop does not have.
+- `maccha-doctor`: the personal/job-hunt section now requires `--local`. A screen-shared health check no longer prints job-search status by default. `--help` added; unknown options exit 2.
+- `setup.sh`: the remaining Dutch prompts and messages are English. Non-interactive runs were already safe (`[ -t 0 ]` guard) and stay that way.
 
 ### Fixed
 - **Hard PII gate missed files that were not tracked yet.** It enumerated `git ls-files`, but a file this run had just copied in is untracked at gate time — so a brand-new personal script sailed past the PII gate (and only a coincidental Dutch marker in the language gate stopped it). The gate now scans `git ls-files --cached --others --exclude-standard`, covering new files while still excluding gitignored local config. Proven with a probe file: the old enumeration returned 0 hits, the new one aborts with `PII LEAK DETECTED`.

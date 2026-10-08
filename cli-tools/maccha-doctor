@@ -2,11 +2,27 @@
 # maccha-doctor — one-shot health check for the MACCHA harness.
 # Exit code: 0 = healthy (warnings allowed), 1 = at least one hard failure.
 # Optional components (vdab-swipe, real-agent-setup) are skipped when absent.
+#
+# By default only harness-health sections are printed. Personal sections
+# (job-hunt status, local project paths) require --local, so a screen-shared
+# health check does not spill private context by accident.
 set -uo pipefail
 
 H="${HOME:-/home/$(whoami)}"
 FAIL=0
 WARN=0
+SHOW_LOCAL=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --local) SHOW_LOCAL=1 ;;
+    -h|--help)
+      printf 'Usage: maccha-doctor [--local]\n'
+      printf '  --local   also print personal/job-hunt sections (hidden by default)\n'
+      exit 0 ;;
+    *) printf 'Unknown option: %s (try --help)\n' "$arg"; exit 2 ;;
+  esac
+done
 
 ok()      { printf '  \033[32m✓\033[0m %s\n' "$1"; }
 warn()    { printf '  \033[33m⚠\033[0m %s\n' "$1"; WARN=$((WARN+1)); }
@@ -75,6 +91,7 @@ if [ -n "${FREE_KB:-}" ]; then
   if [ "$FREE_GB" -ge 2 ]; then ok "${FREE_GB}G free"; else warn "${FREE_GB}G free (<2G)"; fi
 fi
 
+if [ "$SHOW_LOCAL" -eq 1 ]; then
 section "VDAB job-hunt (vdab-swipe)"
 V="$H/workspace/vdab-swipe"
 if [ -d "$V" ]; then
@@ -115,6 +132,9 @@ if [ -d "$V" ]; then
 else
   # Not "skipped" any more: this project IS the jobhunt. A missing folder is a problem.
   warn "vdab-swipe missing — no job search, no swiping, no learning"
+fi
+else
+  printf '\n\033[2m  (personal sections hidden — run "maccha-doctor --local" to include them)\033[0m\n'
 fi
 
 section "real-agent-setup (optional)"

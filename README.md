@@ -186,6 +186,7 @@ real-agent-setup/
 ### Prerequisites
 - A Unix-like environment (Linux, MacOS, WSL, or ChromeOS Crostini).
 - `git` and `bash` installed.
+- `python3` plus the memory-engine dependency: `pip install -r requirements.txt` (only needed if you use Memanto — without it, `brain/lib/memanto_engine.py` fails at import).
 - An AI coding assistant capable of reading local files (Antigravity, OpenCode, Claude Code, Cursor, etc.).
 
 ### 1. Installation
@@ -193,7 +194,7 @@ real-agent-setup/
 To set up a new machine with the complete MACCHA scaffolding harness:
 
 ```bash
-git clone --depth 1 git@github.com:KarelTestSpecial/real-agent-setup.git
+git clone --depth 1 https://github.com/KarelTestSpecial/real-agent-setup.git
 cd real-agent-setup
 bash setup.sh
 ```

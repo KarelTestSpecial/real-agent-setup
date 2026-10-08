@@ -42,7 +42,7 @@ echo ""
 copy_if_missing() {
     local src="$1" dst="$2"
     if [ -e "$dst" ] || [ -L "$dst" ]; then
-        echo "  ~ $dst bestaat al, overslaan"
+        echo "  ~ $dst already exists, skipping"
     else
         mkdir -p "$(dirname "$dst")"
         cp -r "$src" "$dst"
@@ -98,7 +98,7 @@ if [ -d "$REPO_DIR/infrastructure/maintenance" ]; then
     echo -e "  ${GREEN}✓${RESET} maintenance/ -> INFRA/maintenance/ (Installed successfully)"
 fi
 
-# === System Brain (templates — enkel als nog niet bestaan) ===
+# === System Brain (templates — only when not present yet) ===
 echo ""
 echo -e "${CYAN}${BOLD}📝 [4/6] MACCHA System Templates (Home Directory)${RESET}"
 for f in AGENTS.md IMPROVEMENT.md done.md in-progress.md todo.md; do
@@ -160,27 +160,27 @@ echo -e "  ${BLUE}ℹ${RESET}  Add your situation file at ~/INFO/over-owner/SITU
 
 # === OPTIONAL: Himalaya CLI Email Client ===
 echo ""
-echo "--- Himalaya CLI E-mail Client (Optioneel) ---"
+echo "--- Himalaya CLI Email Client (optional) ---"
 if [ -t 0 ]; then
-    read -r -p "Wil je Himalaya CLI installeren voor terminal-e-mailintegratie? (y/n) [n]: " answer
+    read -r -p "Install the Himalaya CLI for terminal e-mail? (y/n) [n]: " answer
     answer=${answer:-n}
 else
     answer="n"
 fi
 
 if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-    echo "  ~ Himalaya CLI downloaden en installeren..."
+    echo "  ~ Downloading and installing the Himalaya CLI..."
     mkdir -p "$HOME_DIR/.local/bin"
     if curl -sSL https://raw.githubusercontent.com/pimalaya/himalaya/master/install.sh | PREFIX="$HOME_DIR/.local" sh; then
-        echo "  ✓ Himalaya binary geïnstalleerd in ~/.local/bin"
+        echo "  ✓ Himalaya binary installed in ~/.local/bin"
         
-        # Voeg toe aan het actieve shell-profiel (op macOS: ~/.zshrc)
+        # Add it to the active shell profile (on macOS: ~/.zshrc)
         if ! grep -q "Himalaya CLI PATH" "$SHELL_RC" 2>/dev/null; then
             echo -e "\n# Himalaya CLI PATH\nexport PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
-            echo "  ✓ PATH toegevoegd aan $SHELL_RC"
+            echo "  ✓ PATH added to $SHELL_RC"
         fi
     else
-        echo "  ❌ Installatie van Himalaya is mislukt."
+        echo "  ❌ Himalaya installation failed."
     fi
 else
     echo "  ~ Himalaya CLI installatie overgeslagen."
