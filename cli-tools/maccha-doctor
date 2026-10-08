@@ -75,14 +75,47 @@ if [ -n "${FREE_KB:-}" ]; then
   if [ "$FREE_GB" -ge 2 ]; then ok "${FREE_GB}G free"; else warn "${FREE_GB}G free (<2G)"; fi
 fi
 
-section "VDAB job-hunt (optional)"
+section "VDAB job-hunt (vdab-swipe)"
 V="$H/workspace/vdab-swipe"
 if [ -d "$V" ]; then
-  if [ -L "$V/data" ]; then ok "data/ is a symlink -> $(readlink "$V/data")"; else warn "data/ is not a symlink (expected the backed-up store)"; fi
+  # --- data layer: symlinks, because maccha-backup covers INFO/PLAN/BRAIN/C, not workspace/
+  if [ -L "$V/data" ]; then
+    if [ -e "$V/data" ]; then ok "data/ symlink resolves ($(readlink "$V/data"))"
+    else bad "data/ is a symlink but the target is missing — swipe history gone!"; fi
+  else warn "data/ is not a symlink (expected the backed-up store in INFO/)"; fi
+  if [ -e "$V/chips.json" ]; then ok "chips.json reachable"
+  else warn "chips.json missing — reason vocabulary not loaded"; fi
+
+  # --- git + remote (same checks as real-agent-setup; this is now a repo with a remote)
+  if [ -d "$V/.git" ]; then
+    # `git status --porcelain`, not `git diff`: the latter misses untracked
+    # files, and those are exactly what can leak personal data (gitignored files
+    # such as data/ and chips.json are correctly ignored).
+    UNCOMMITTED=$(git -C "$V" status --porcelain 2>/dev/null | head -20)
+    if [ -z "$UNCOMMITTED" ]; then ok "working tree clean"
+    else warn "uncommitted changes ($(git -C "$V" status --porcelain | wc -l)) — including untracked files:"; printf '        %s\n' "$UNCOMMITTED"; fi
+    if git -C "$V" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+      AHEAD=$(git -C "$V" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)
+      BEHIND=$(git -C "$V" rev-list --count 'HEAD..@{u}' 2>/dev/null || echo 0)
+      if [ "$AHEAD" = "0" ] && [ "$BEHIND" = "0" ]; then ok "in sync with origin"
+      else warn "remote divergence: $AHEAD ahead, $BEHIND behind"; fi
+    else warn "no upstream branch (no remote?)"; fi
+    # The PII gate is a pre-commit hook and is NOT cloned along — it goes missing.
+    [ -x "$V/.git/hooks/pre-commit" ] && ok "PII gate present (pre-commit)" \
+      || warn "PII gate (pre-commit hook) missing — commits run without the PII check"
+  else warn "not a git repo — changes are not revertable"; fi
+
+  # --- pipeline
   if [ -f "$V/selftest.mjs" ]; then
     if (cd "$V" && node selftest.mjs >/dev/null 2>&1); then ok "pipeline selftest OK"; else bad "pipeline selftest FAILED"; fi
   else warn "selftest.mjs not found"; fi
-else ok "vdab-swipe not installed (skipped)"; fi
+  if [ -f "$V/data/features.json" ] && (cd "$V" && node validate-features.mjs >/dev/null 2>&1); then
+    ok "feature-vectors schema-valid"
+  else warn "features not validated (missing or invalid)"; fi
+else
+  # Not "skipped" any more: this project IS the jobhunt. A missing folder is a problem.
+  warn "vdab-swipe missing — no job search, no swiping, no learning"
+fi
 
 section "real-agent-setup (optional)"
 R="$H/real-agent-setup"

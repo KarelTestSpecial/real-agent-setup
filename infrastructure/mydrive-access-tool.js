@@ -29,6 +29,8 @@ const { google } = require('googleapis');
 const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH || path.join(process.env.HOME, '.config/maccha/credentials.json');
 const TOKEN_PATH = process.env.GOOGLE_TOKEN_PATH || path.join(process.env.HOME, '.config/maccha/sheets-token.json');
 // Service account key (preferred when present): project-owned identity, no browser consent.
+// Actief pad = maccha@maccha-gglworkspace-api (Fase 3 cutover 23/9/2026).
+// Archief oude SA: service-account.json.bak-mydrive-sheets-4-agent-20260923_125011 (project DELETE_REQUESTED 23/9)
 const SERVICE_ACCOUNT_PATH = process.env.GOOGLE_SA_PATH || path.join(process.env.HOME, '.config/maccha/service-account.json');
 
 // Required Scopes (Updated May 2026 for Docs support)
@@ -58,8 +60,8 @@ async function main() {
             console.log(`🤖 Service account: ${sa.client_email}`);
             console.log(`   (project: ${sa.project_id}) — share sheets with this address as Editor.`);
         } else {
-            console.log('👤 OAuth user-flow token (no service account ingesteld).');
-            console.log('   E-mail not uitleesbaar: token heeft no "email"-scope.');
+            console.log('👤 OAuth user-flow token (no service account configured).');
+            console.log('   E-mail not readable: token has no "email" scope.');
         }
         return;
     }

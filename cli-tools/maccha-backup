@@ -1,7 +1,22 @@
 #!/bin/bash
 # MACCHA encrypted backup of INFO/ PLAN/ BRAIN/ C/ (creatief) to Google Drive.
-# Triggered weekly via session-startup (marker ~/BRAIN/.last_backup);
-# manual runs are always possible: ~/bin/maccha-backup
+#
+# ⛔ DO NOT RUN ON EVERY SESSION CLOSEOUT. This is a WEEKLY run.
+#    On 1 October 2026 MACCHA ran this 8 times in one day because it had become
+#    a habit ("closing = backup"), costing ~7 GB of Drive quota and postponing
+#    the weekly run every time. That is why there is a hard brake below: by
+#    default the script refuses when fewer than $MIN_DAYS_DAGEN=7 days have
+#    passed since the last run. Override only deliberately:
+#        ~/bin/maccha/maccha-backup --force
+#    and state the REASON in the commit/conversation note, so it stays traceable.
+#
+# Ordering matters (bugfix 1 oktober 2026): the new backup is written to an
+# *.inprogress name, verified, and only THEN renamed to its final name. The
+# previous backup is deleted after that, never before. Reason: Google Drive moves
+# deleted files to the bin, so deleting first makes the folder look empty while the
+# real state is unknown — and if the upload never arrived, the old copy would
+# already be gone. See BRAIN/learned-lessons/technical/
+# rotatie_verwijdert_oude_backup_voor_nieuwe_aankomt.md
 set -euo pipefail
 
 H="${HOME:-/home/$(whoami)}"
@@ -9,10 +24,33 @@ DRIVE=/mnt/chromeos/GoogleDrive/MyDrive
 DEST_DIR="$DRIVE/MACCHA-backups"
 KEY_FILE="$H/.config/maccha/backup.key"
 MARKER="$H/BRAIN/.last_backup"
-# How many rotated backups to keep (1 = only the most recent).
-KEEP=4
+MIN_DAYS_DAGEN=7
+FORCE=0
+[ "${1:-}" = "--force" ] && FORCE=1
+
+# ==== weekly brake: this is the brake against "backup on every closeout" ====
+if [ "$FORCE" -eq 0 ]; then
+  LAST=$(cat "$MARKER" 2>/dev/null || echo 0)
+  AGE_DAYS=$(( ( $(date +%s) - LAST ) / 86400 ))
+  if [ "$AGE_DAYS" -lt "$MIN_DAYS_DAGEN" ]; then
+    echo "⛔ No backup: the last run was $AGE_DAYS day(s) ago (minimum $MIN_DAYS_DAGEN)."
+    echo "   This is a WEEKLY run, not a closeout step. Override only when you have a"
+    echo "   concrete reason:  ~/bin/maccha/maccha-backup --force"
+    echo "   Marker file: $MARKER"
+    exit 0
+  fi
+fi
+# How many completed backups to keep, counted in what THIS SCRIPT can actually
+# see (see the warning below — the count is a lower bound).
+# KEEP=2, not 1: if the rotation misses a run (see the warning above),
+# a previous backup stays behind. That is a safety net, not bloat.
+KEEP=2
 STAMP=$(date +%Y%m%d-%H%M)
-OUT="$DEST_DIR/maccha-backup-$STAMP.tar.gz.enc"
+FINAL="$DEST_DIR/maccha-backup-$STAMP.tar.gz.enc"
+TMP="$FINAL.inprogress"
+
+cleanup_tmp() { rm -f "$TMP"; }
+trap cleanup_tmp EXIT
 
 if [ ! -d "$DRIVE" ]; then
   echo "❌ Google Drive not mounted at $DRIVE — share Drive with Linux via the Files app." >&2
@@ -25,26 +63,72 @@ if [ ! -f "$KEY_FILE" ]; then
   umask 077
   openssl rand -hex 32 > "$KEY_FILE"
   echo "🔑 NEW key generated: $KEY_FILE"
-  echo "   ⚠️  Store a copy OFF this device (password manager/paper) —"
+  echo "   ⚠️  Store a copy OFF this device (another Google account) —"
   echo "   without this key the backup is worthless if the laptop is lost!"
 fi
 
-echo "📦 Creating backup → $OUT"
+# Refuse to start if a previous run left a half-written file behind.
+if ls "$DEST_DIR"/*.inprogress >/dev/null 2>&1; then
+  echo "❌ A previous run left an unfinished backup behind:" >&2
+  ls -la "$DEST_DIR"/*.inprogress >&2
+  echo "   Inspect it, then delete it before running again. Nothing was changed." >&2
+  exit 1
+fi
+
+echo "📦 Creating backup → $(basename "$TMP") (staged, not yet visible as a real backup)"
 tar -C "$H" -czf - \
   --exclude='node_modules' --exclude='*/node_modules' \
   --exclude='BRAIN/archive/2026-06-mappenstructuur' \
   --exclude='.vite' \
   INFO PLAN BRAIN C \
-| openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass file:"$KEY_FILE" -out "$OUT"
+| openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass file:"$KEY_FILE" -out "$TMP"
 
-echo "🔍 Integrity check (decrypt + list tar contents)..."
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:"$KEY_FILE" -in "$OUT" | tar -tzf - > /dev/null
+BYTES=$(stat -c %s "$TMP")
+if [ "$BYTES" -lt 1000000 ]; then
+  echo "❌ Staged backup is only $BYTES bytes — that is not a plausible full backup." >&2
+  echo "   The previous backup has NOT been removed. Aborting." >&2
+  exit 1
+fi
 
-SIZE=$(du -h "$OUT" | cut -f1)
-echo "✅ Backup OK: $OUT ($SIZE)"
+echo "🔍 Integrity check (decrypt + full tar listing)..."
+if ! openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:"$KEY_FILE" -in "$TMP" | tar -tzf - > /dev/null; then
+  echo "❌ Integrity check FAILED. The previous backup has NOT been removed." >&2
+  echo "   The staged file is kept for inspection: $TMP" >&2
+  trap - EXIT
+  exit 1
+fi
 
-# Rotation: keep only the newest $KEEP backups
-ls -1t "$DEST_DIR"/maccha-backup-*.tar.gz.enc 2>/dev/null | tail -n +$((KEEP+1)) | xargs -r rm -v
+SIZE=$(du -h "$TMP" | cut -f1)
+mv "$TMP" "$FINAL"
+trap - EXIT
+echo "✅ Backup written and verified: $(basename "$FINAL") ($SIZE, $BYTES bytes)"
+echo "⏳ NOTE: this is verified LOCALLY (the 9p mount's own cache), not in Drive."
+echo "   Drive imports it asynchronously: measured 1 October 2026 at ~36 min for a"
+echo "   932 MB file, and deletions show up up to ~45 min later. The file will appear"
+echo "   in the Drive web interface later — check drive.google.com if in doubt."
+echo "   What IS guaranteed: the previous backup was not removed before this one was"
+echo "   verified, so a failed upload can never leave you with nothing."
+
+# Rotation happens only now. Deletes land in the Drive bin, so the folder always
+# keeps at least the newest KEEP backups while this runs.
+REMOVED=0
+while read -r OLD; do
+  [ -n "$OLD" ] || continue
+  rm -v "$OLD" && REMOVED=$((REMOVED + 1))
+done < <(ls -1t "$DEST_DIR"/maccha-backup-*.tar.gz.enc 2>/dev/null | tail -n +$((KEEP + 1)))
+
+# ⚠️ The rotation above deletes based on what the 9p MOUNT shows — and the mount
+# is not a complete view of Drive. Verified 1 October 2026: maccha-backup-20260928-1845
+# (930 MB) exists in Drive, was visible in the webinterface, but was invisible to
+# BOTH the mount and the service account — so `ls` never listed it and this step can
+# never delete it. Anything like that accumulates forever (~930 MB per week).
+if [ "$REMOVED" -eq 0 ] && [ "$(ls -1 "$DEST_DIR"/maccha-backup-*.tar.gz.enc 2>/dev/null | wc -l)" -ge "$KEEP" ]; then
+  echo "⚠️  Nothing rotated away, and $KEEP or more backups are present."
+  echo "   This run can only delete what the 9p mount shows. If the Drive"
+  echo "   webinterface lists MORE backups than this, they are invisible to the"
+  echo "   mount (different sharing) and must be deleted by hand — once."
+  echo "   Check: drive.google.com → My Drive → MACCHA-backups"
+fi
 
 # Restore instructions next to the backups (without the key!)
 cat > "$DEST_DIR/RESTORE.md" <<'EOF'
@@ -59,8 +143,29 @@ Contents: ~/INFO, ~/PLAN, ~/BRAIN, ~/C — creative work (without node_modules a
    openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
      -pass file:~/.config/maccha/backup.key \
      -in maccha-backup-YYYYMMDD-HHMM.tar.gz.enc | tar -xzf - -C ~
-The key is NOT stored in this folder — the owner keeps it separately (password manager/paper).
+The key is NOT stored in this folder — the owner keeps it separately (another Google account).
+
+Rotated backups end up in the Google Drive bin and still count towards the storage
+quota. Empty the bin periodically, or the quota fills up and new uploads are refused.
+
+Is the backup really there? Measured 1 October 2026: the 932 MB upload was accepted
+by Drive ~27 seconds after the local write finished (local 12:56:43 -> Drive stamp
+12:57:10), so Drive itself is not slow. Two things DO look slow or empty while the
+file is present:
+  - the 9p mount (/mnt/chromeos/GoogleDrive) lagged ~19 minutes behind;
+  - the maccha service account cannot see every file in this folder, so a Drive-API
+    check through that account can report a file as missing when it is not.
+If you are unsure, look in the Drive web interface. Do not re-run the backup or empty
+the folder on the strength of one empty-looking view.
 EOF
+
+if [ "$REMOVED" -gt 0 ]; then
+  echo "🗑  Rotated away $REMOVED older backup(s) (they are in the Drive bin — empty it when"
+  echo "   the storage meter is above ~12 GB of 15 GB)."
+fi
+
+echo "📁 In $DEST_DIR right now:"
+ls -1sh "$DEST_DIR"/maccha-backup-*.tar.gz.enc 2>/dev/null | sed 's/^/   /'
 
 date +%s > "$MARKER"
 echo "🗓️  Marker updated ($MARKER) — next automatic run in 7 days."

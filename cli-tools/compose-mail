@@ -24,9 +24,12 @@ USAGE
 
     Body: paragraphs separated by blank lines; single newlines inside a paragraph
     become <br> (handy for signatures). Pass either --body-file or --body.
+    Inline ``**bold**`` is rendered as <strong>. Everything else is escaped, so
+    no raw HTML or markdown ever reaches the body.
 """
 import argparse
 import mimetypes
+import re
 import shutil
 import subprocess
 import sys
@@ -52,17 +55,36 @@ def find_himalaya() -> str:
     sys.exit("ERROR: himalaya binary not found (looked in ~/.local/bin and PATH).")
 
 
+BODY_STYLE = "font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.45;color:#222;"
+# Explicit margins: a bare <p> gets ~1em top AND bottom from the mail client, which
+# stacks into visibly doubled spacing between blocks. Pin it instead.
+P_STYLE = "margin:0 0 12px 0;line-height:1.45;"
+
+
+def inline_markup(escaped_line: str) -> str:
+    """Turn a tiny markdown subset into HTML on an ALREADY-escaped line.
+
+    Only ``**bold**`` is supported. Escape happens first, so this can never
+    inject markup: ``*``, ``<``, ``>`` and ``&`` are untouched by the
+    substitution (the asterisks are literal, the angle brackets are already
+    entities).
+    """
+    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped_line)
+
+
 def build_html(body: str) -> str:
     paragraphs = [p for p in body.split("\n\n")]
     html_paras = []
     for p in paragraphs:
         if not p.strip():
             continue
-        html_paras.append("<p>" + "<br>".join(escape(line) for line in p.split("\n")) + "</p>")
+        html_paras.append(
+            f'<p style="{P_STYLE}">'
+            + "<br>".join(inline_markup(escape(line)) for line in p.split("\n"))
+            + "</p>"
+        )
     return (
-        '<html><body style="font-family:Arial,sans-serif;font-size:14px;color:#222;">\n'
-        + "\n".join(html_paras)
-        + "\n</body></html>\n"
+        f'<html><body style="{BODY_STYLE}">\n' + "\n".join(html_paras) + "\n</body></html>\n"
     )
 
 

@@ -1,6 +1,7 @@
 import os
 import subprocess
 import re
+import glob
 from datetime import datetime
 
 # All paths relative to HOME so this script travels unchanged into the
@@ -31,29 +32,75 @@ def get_tms_content():
     return content
 
 
+def _vind_repos():
+    """All git repositories under ~/workspace (max. two levels deep)."""
+    repos = []
+    root = WORKSPACE_DIR
+    if not os.path.isdir(root):
+        return repos
+    for depth in (1, 2):
+        pat = os.path.join(root, *(["*"] * depth), ".git")
+        for gitdir in glob.glob(pat):
+            repos.append(os.path.dirname(gitdir))
+    return sorted(set(repos))
+
+
 def check_git_activity(tms_content):
-    print("🔍 Checking recent Git activity...")
-    commits = run_command('git log --since="24 hours ago" --oneline')
-    if not commits:
-        print("✅ No recent local git commits found.")
+    """Check that recent commits in the workspace repos are registered in the TMS.
+
+    This used to run as a bare `git log` in whatever working directory the hook
+    was started from. That happens to be some other repo (or none at all) — on
+    2/10 the hook reported "No recent local git commits found" while that day
+    had eight commits in ~/workspace/vdab-swipe. Now every repo under
+    workspace/ is checked separately.
+
+    Penalty rule: a repo that is itself mentioned in the TMS is checked strictly
+    per commit (an unregistered commit = error). A repo that is not in the TMS
+    only produces a warning, because not every project has to be registered in
+    the TMS — otherwise this check would permanently scream about projects that
+    User deliberately keeps outside the TMS.
+    """
+    print("🔍 Checking recent Git activity per repo...")
+
+    # legacy behaviour: the repo the hook started in, if there is one
+    eigen_repo = run_command('git rev-parse --show-toplevel 2>/dev/null').strip()
+    repos = _vind_repos()
+    if eigen_repo and eigen_repo not in repos:
+        repos.append(eigen_repo)
+
+    if not repos:
+        print("⚠️ No git repo found (not even under workspace/).")
         return True
 
-    issues = []
-    for line in commits.split('\n'):
-        keywords = re.findall(r'#\d+|[a-zA-Z0-9\-]{4,}', line)
-        found = False
-        for kw in keywords:
-            if kw.lower() in tms_content:
-                found = True
-                break
-        if not found:
-            issues.append(f"Commit not found in TMS: {line}")
-
-    if issues:
+    hard_fail = False
+    ongezien = 0
+    for repo in repos:
+        commits = run_command('git -C "%s" log --since="24 hours ago" --oneline' % repo)
+        naam = os.path.basename(repo)
+        if not commits:
+            continue
+        ongezien += len(commits.split('\n'))
+        in_tms = naam.lower() in tms_content.lower()
+        if not in_tms:
+            print(f"⚠️ {naam}: {len(commits.split(chr(10)))} commits in 24h, but '{naam}' is not in the TMS.")
+            continue
+        issues = []
+        for line in commits.split('\n'):
+            if not line.strip():
+                continue
+            keywords = re.findall(r'#\d+|[a-zA-Z0-9\-]{4,}', line)
+            if not any(kw.lower() in tms_content for kw in keywords):
+                issues.append(line)
         for issue in issues:
-            print(f"❌ {issue}")
+            print(f"❌ Commit not in the TMS ({naam}): {issue}")
+            hard_fail = True
+
+    if not ongezien:
+        print("✅ No commits in the last 24 hours.")
+        return True
+    if hard_fail:
         return False
-    print("✅ All recent commits are registered in TMS.")
+    print(f"✅ {ongezien} commit(s) in 24h, all registered or deliberately outside the TMS.")
     return True
 
 

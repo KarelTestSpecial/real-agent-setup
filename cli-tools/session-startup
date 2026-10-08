@@ -31,6 +31,10 @@ if $TMS_OK; then
 fi
 
 echo ""
+
+echo ""
+
+echo ""
 echo "=== Weekly TMS sweep (throttled, 1x per 7 days) ==="
 SWEEP_MARKER=~/BRAIN/tms/.last_sweep
 NOW=$(date +%s)
@@ -49,12 +53,13 @@ fi
 
 echo ""
 echo "=== INBOX check ==="
-INBOX_N=$(find ~/INBOX -mindepth 1 -not -name 'README.md' 2>/dev/null | wc -l)
+# Untitled-1 = Users permanente kladblok (zie INBOX/README.md) — nooit tellen of opruimen.
+INBOX_N=$(find ~/INBOX -mindepth 1 -not -name 'README.md' -not -name 'Untitled-1' 2>/dev/null | wc -l)
 if (( INBOX_N > 0 )); then
   echo "📥 INBOX contains $INBOX_N item(s) — process to owner locations and empty the folder:"
-  find ~/INBOX -mindepth 1 -not -name 'README.md' | head -10
+  find ~/INBOX -mindepth 1 -not -name 'README.md' -not -name 'Untitled-1' | head -10
 else
-  echo "INBOX empty."
+  echo "INBOX empty (kladblok Untitled-1 = permanent, buiten beschouwing)."
 fi
 
 echo ""
@@ -92,7 +97,7 @@ else
 fi
 
 
-# Refresh the human-readable todo view (derived from todo.md; silent unless it fails).
-if [ -f ~/bin/maccha/tms_human_view.py ]; then
-  python3 ~/bin/maccha/tms_human_view.py > /dev/null 2>&1 || echo "⚠️  tms_human_view.py failed"
-fi
+# Readable todo view retired (User's decision, 5 October 2026).
+# `todo.md` is the only place; the derived table `INFO/owner/todo_overzicht.md` was
+# deleted. `tms_human_view.py` is still there, unused, in case it is ever needed —
+# deliberately not removed: ~/bin is not under git and is not part of the weekly backup.
