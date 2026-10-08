@@ -13,6 +13,13 @@ warn()    { printf '  \033[33m⚠\033[0m %s\n' "$1"; WARN=$((WARN+1)); }
 bad()     { printf '  \033[31m✗\033[0m %s\n' "$1"; FAIL=$((FAIL+1)); }
 section() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
+# File mode as an octal string (e.g. 700). GNU stat spells it `-c`, BSD/macOS
+# stat spells it `-f` — probe both instead of assuming an OS, so the secret
+# permission check reports a real mode instead of "?" off-Linux.
+file_mode() {
+  stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1" 2>/dev/null
+}
+
 printf '\033[1m======================================================\033[0m\n'
 printf '\033[1m  🩺 MACCHA DOCTOR\033[0m\n'
 printf '\033[1m======================================================\033[0m\n'
@@ -44,11 +51,11 @@ if [ -d /mnt/chromeos/GoogleDrive/MyDrive ]; then ok "Google Drive mounted"; els
 section "Secret permissions"
 CFG="$H/.config/maccha"
 if [ -d "$CFG" ]; then
-  P=$(stat -c '%a' "$CFG" 2>/dev/null)
+  P=$(file_mode "$CFG")
   if [ "$P" = "700" ]; then ok "$CFG is 700"; else warn "$CFG is ${P:-?} (want 700)"; fi
 fi
 if [ -f "$KEY" ]; then
-  P=$(stat -c '%a' "$KEY" 2>/dev/null)
+  P=$(file_mode "$KEY")
   if [ "$P" = "600" ]; then ok "backup.key is 600"; else warn "backup.key is ${P:-?} (want 600)"; fi
 fi
 
@@ -89,7 +96,12 @@ if [ -d "$R/.git" ]; then
 else ok "real-agent-setup not installed (skipped)"; fi
 
 section "Broken symlinks in \$HOME (top level)"
-BROKEN=$(find "$H" -maxdepth 1 -xtype l 2>/dev/null)
+# `find -xtype` is GNU-only and would abort this check on BSD/macOS; instead list
+# every top-level symlink and test the target ourselves (an unresolved link is
+# exactly what `-xtype l` matches).
+BROKEN=$(find "$H" -maxdepth 1 -type l 2>/dev/null | while IFS= read -r l; do
+  if [ ! -e "$l" ]; then printf '%s\n' "$l"; fi
+done)
 if [ -z "$BROKEN" ]; then ok "none"; else warn "found:"; printf '%s\n' "$BROKEN" | sed 's/^/     /'; fi
 
 printf '\n\033[1m======================================================\033[0m\n'

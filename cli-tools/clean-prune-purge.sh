@@ -4,6 +4,13 @@
 # Description: System-wide cleanup (apt, pnpm store and optionally the trash).
 # ==============================================================================
 
+# apt and the XDG trash path are Linux-only; macOS/BSD must stop before the
+# first `sudo apt` call rather than fail halfway through with an ugly error.
+if [ "$(uname -s)" != "Linux" ]; then
+    echo "⏭️  clean-prune-purge.sh targets Linux (apt + XDG trash) — nothing to run on $(uname -s)."
+    exit 0
+fi
+
 echo "🧹 Clean up van systeem en pnpm store..."
 
 # Apt clean

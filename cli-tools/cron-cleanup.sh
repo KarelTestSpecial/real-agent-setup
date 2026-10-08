@@ -25,8 +25,12 @@ if [ -d "${HOME}/.gemini/antigravity/brain" ]; then
 fi
 
 # 2. Empty the APT cache (100% safe)
-echo "📦 Cleaning APT installation cache..."
-sudo apt-get clean
+if [ "$(uname -s)" = "Linux" ]; then
+    echo "📦 Cleaning APT installation cache..."
+    sudo apt-get clean
+else
+    echo "⏭️  Skipping APT cache (needs Linux apt)."
+fi
 
 # 3. Clean the PNPM store (dangling npm files)
 if command -v pnpm &> /dev/null; then
@@ -35,8 +39,12 @@ if command -v pnpm &> /dev/null; then
 fi
 
 # 4. Trim systemd journal logs to at most 3 days
-echo "📓 Vacuuming systemd journal logs to 3 days..."
-sudo journalctl --vacuum-time=3d
+if [ "$(uname -s)" = "Linux" ]; then
+    echo "📓 Vacuuming systemd journal logs to 3 days..."
+    sudo journalctl --vacuum-time=3d
+else
+    echo "⏭️  Skipping journal vacuum (needs systemd)."
+fi
 
 # 5. Clean the user cache (free space)
 echo "🗑️  Cleaning temporary caches..."

@@ -12,6 +12,16 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOME_DIR="${HOME:-/home/$(whoami)}"
 
+# Which shell profile receives PATH additions?
+# macOS ships zsh as the default login shell and never sources .bash_aliases,
+# so honour $SHELL before falling back to the historical bash files used on
+# Linux, WSL and ChromeOS.
+case "${SHELL:-}" in
+    */zsh)  SHELL_RC="$HOME_DIR/.zshrc" ;;
+    *)      SHELL_RC="$HOME_DIR/.bash_aliases"
+            [ -f "$SHELL_RC" ] || SHELL_RC="$HOME_DIR/.profile" ;;
+esac
+
 # Premium ANSI Terminal Colors
 CYAN="\033[36m"
 GREEN="\033[32m"
@@ -164,16 +174,10 @@ if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
     if curl -sSL https://raw.githubusercontent.com/pimalaya/himalaya/master/install.sh | PREFIX="$HOME_DIR/.local" sh; then
         echo "  ✓ Himalaya binary geïnstalleerd in ~/.local/bin"
         
-        # Voeg toe aan .bash_aliases
-        local_alias_file="$HOME_DIR/.bash_aliases"
-        if [ -f "$local_alias_file" ]; then
-            if ! grep -q "Himalaya CLI PATH" "$local_alias_file"; then
-                echo -e "\n# Himalaya CLI PATH\nexport PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$local_alias_file"
-                echo "  ✓ PATH toegevoegd aan ~/.bash_aliases"
-            fi
-        else
-            echo -e "\n# Himalaya CLI PATH\nexport PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME_DIR/.profile"
-            echo "  ✓ PATH toegevoegd aan ~/.profile"
+        # Voeg toe aan het actieve shell-profiel (op macOS: ~/.zshrc)
+        if ! grep -q "Himalaya CLI PATH" "$SHELL_RC" 2>/dev/null; then
+            echo -e "\n# Himalaya CLI PATH\nexport PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+            echo "  ✓ PATH toegevoegd aan $SHELL_RC"
         fi
     else
         echo "  ❌ Installatie van Himalaya is mislukt."
@@ -197,7 +201,7 @@ echo -e "  ${YELLOW}1.${RESET} Customize your bootstrap templates inside your ho
 echo -e "     - ${BLUE}~/AGENTS.md${RESET}         (Master Bootstrap profile)"
 echo -e "     - ${BLUE}~/IMPROVEMENT.md${RESET}    (Long-Term Auto-Improvement configuration)"
 echo -e "     - ${BLUE}~/ALIASES.md${RESET}        (Productivity shell shortcuts)"
-echo -e "  ${YELLOW}2.${RESET} Add the bin folder to your PATH profile (e.g. in ${BLUE}~/.bash_aliases${RESET}):"
+echo -e "  ${YELLOW}2.${RESET} Add the bin folder to your PATH profile (e.g. in ${BLUE}${SHELL_RC##*/}${RESET}):"
 echo -e "     ${BOLD}export PATH=\"\$HOME/bin/maccha:\$HOME/bin:\$PATH\"${RESET}"
 echo -e "  ${YELLOW}3.${RESET} Start your AI assistant (Antigravity, OpenCode, Claude Code, etc.)"
 echo -e "     It will read ${BLUE}~/AGENTS.md${RESET} first and be immediately operational!"
