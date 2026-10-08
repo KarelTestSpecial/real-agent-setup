@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- `.publish-allowlist`: tracked, fail-closed publish curation. Every destination path that may ship is listed explicitly; anything else in `~/bin/maccha` or `~/INFRA` is skipped *and reported by name*. Publishing a tool now requires adding and committing a line instead of happening as a side effect of a blind copy. A missing allowlist aborts the copy phase (exit 1) rather than reverting to "copy everything".
+
+### Fixed
+- **Hard PII gate missed files that were not tracked yet.** It enumerated `git ls-files`, but a file this run had just copied in is untracked at gate time — so a brand-new personal script sailed past the PII gate (and only a coincidental Dutch marker in the language gate stopped it). The gate now scans `git ls-files --cached --others --exclude-standard`, covering new files while still excluding gitignored local config. Proven with a probe file: the old enumeration returned 0 hits, the new one aborts with `PII LEAK DETECTED`.
+
 ## [1.1.6] - 2026-09-13
 ### Added
 - `maccha-doctor`: one-shot harness health check (core zones, root symlinks, backup freshness, secret permissions, TMS integrity, supply chain, disk space, optional vdab-swipe/repo checks, broken symlinks). Exit 0 = healthy, 1 = failure.

@@ -174,6 +174,7 @@ real-agent-setup/
 │   ├── security/ technical/       #   your full local set stays in ~/BRAIN/learned-lessons/
 │   └── README.md
 ├── setup.sh                       # Install script for new machines
+├── .publish-allowlist             # Curated list of what may be published (fail-closed)
 └── publish.sh                     # Publish local improvements back to repo
 ```
 *(Note: Directories like `cli-tools` and `infrastructure` contain numerous specialized scripts for system maintenance, AI integrations, and daily workflows.)*
@@ -250,9 +251,19 @@ bash publish.sh --check-only # Run sanitization + PII + language gates only (no 
 > [!WARNING]
 > `publish.sh` will **NEVER** copy your personal files (`~/AGENTS.md`, `~/BRAIN/`, `~/learned-lessons/`) to the repository. Your private data and re-integration context remain completely localized to your physical machine.
 
+### 🧭 Publish allowlist (tracked, fail-closed)
+
+Copying is **curation, not a mirror**. `.publish-allowlist` in the repo root lists every destination path (`cli-tools/…`, `infrastructure/…`, `brain/…`) that is allowed to ship; a line naming a directory permits everything beneath it. Anything else found in `~/bin/maccha` or `~/INFRA` is **skipped and reported by name** during the sync, so a brand-new local script is never public by default:
+
+```
+  ⊘ cli-tools/one-off-personal-tool.py — not in .publish-allowlist, skipped (add that line to publish it)
+```
+
+Publishing a tool is therefore always a visible decision: add its line, and commit that line. If `.publish-allowlist` is missing, `publish.sh` **refuses to copy anything** (exit 1) instead of falling back to a blind copy. Preview the allow/deny decision for every file with `bash publish.sh --dry-run`.
+
 ### 🔒 Local-only sanitization config (gitignored)
 
-`publish.sh` copies your working scripts verbatim, so a few personal details can ride along (a home-folder name, a one-off local tool). To keep those out of the public repo **without ever writing them into the committed `publish.sh` itself**, the publish step is driven by two optional, **gitignored** config files in the repo root. They live only on your machine; if a file is absent, that step is simply skipped.
+On top of the allowlist (which decides *what* may ship), two optional, **gitignored** config files in the repo root decide *how* it ships. They live only on your machine; if a file is absent, that step is simply skipped. They exist so personal tokens never have to be written into the committed `publish.sh` itself.
 
 | File | Purpose | Example line |
 |---|---|---|

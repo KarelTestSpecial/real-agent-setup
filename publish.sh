@@ -15,9 +15,15 @@ HOME_DIR="${HOME:-/home/$(whoami)}"
 DRY_RUN=false
 CHECK_ONLY=false
 
-# Local-only file exclusions (gitignored): one filename or glob per line, '#' comments.
-# Keeps personal/one-off filenames out of the committed publish.sh itself.
-# (No skipping logic needed as we use explicit directories)
+# Explicit publish curation (tracked, unlike the two local gate configs).
+# Fail-closed: an absent allowlist aborts the copy phase instead of shipping
+# every local script by accident.
+ALLOWLIST="$REPO_DIR/.publish-allowlist"
+SKIPPED=0
+
+# Local-only gate configs (gitignored): .publish-sanitize.sed and .publish-pii-words.
+# They are read further down; keeping personal tokens out of this committed script.
+# Curation itself is NOT local: it lives in the tracked .publish-allowlist above.
 # Premium ANSI Terminal Colors
 CYAN="\033[36m"
 GREEN="\033[32m"
@@ -50,6 +56,30 @@ echo -e "  ${BLUE}Destination    : ${YELLOW}$REPO_DIR${RESET}"
 echo -e "${CYAN}${BOLD}======================================================${RESET}"
 echo ""
 
+# === Helper: is this destination allowed to ship? ===
+# Reads .publish-allowlist: one repo-relative path per line, '#' comments.
+# A path naming a directory permits every path beneath it.
+publish_allowed() {
+    local want="$1" line
+    while IFS= read -r line || [ -n "$line" ]; do
+        line="${line%%#*}"
+        line="${line#"${line%%[![:space:]]*}"}"
+        line="${line%"${line##*[![:space:]]}"}"
+        if [ -z "$line" ]; then continue; fi
+        if [ "$line" = "$want" ]; then return 0; fi
+        case "$want" in
+            "$line"/*) return 0 ;;
+        esac
+    done < "$ALLOWLIST"
+    return 1
+}
+
+publish_skip() {
+    local rel="$1"
+    echo -e "  ${YELLOW}⊘ $rel — not in .publish-allowlist, skipped (add that line to publish it)${RESET}"
+    SKIPPED=$((SKIPPED + 1))
+}
+
 # === Helper: kopieer directory-inhoud ===
 # copy_dir <bron> <doel_in_repo>
 # Alleen bestanden, geen mappen (flat copy voor bin/)
@@ -66,6 +96,11 @@ copy_dir_flat() {
         [ -f "$item" ] || continue  # skip dirs
         local name=$(basename "$item")
         
+        if ! publish_allowed "$dst_repo/$name"; then
+            publish_skip "$dst_repo/$name"
+            continue
+        fi
+        
         if $DRY_RUN; then
             echo "  [DRY] cp $item -> $dst/$name"
         else
@@ -81,6 +116,10 @@ copy_dir_recursive() {
     local dst="$REPO_DIR/$dst_repo"
     if [ ! -d "$src" ]; then
         echo -e "  ${YELLOW}⚠️  Source not found: $src (skipped)${RESET}"
+        return
+    fi
+    if ! publish_allowed "$dst_repo"; then
+        publish_skip "$dst_repo/"
         return
     fi
     mkdir -p "$dst"
@@ -104,10 +143,17 @@ copy_dir_recursive() {
 }
 
 if ! $CHECK_ONLY; then
+if [ ! -f "$ALLOWLIST" ]; then
+    echo -e "\n${RED}${BOLD}✗ .publish-allowlist is missing — refusing to publish without curation.${RESET}"
+    echo -e "  Restore it from git (${BOLD}git checkout -- .publish-allowlist${RESET}) so local"
+    echo -e "  scripts cannot reach the public repo by accident."
+    exit 1
+fi
+
 echo ""
 echo -e "${CYAN}${BOLD}🧠 [1/4] Syncing CLI Tools...${RESET}"
 copy_dir_flat "$HOME_DIR/bin/maccha" "cli-tools"
-echo -e "  ${YELLOW}(Note: Personal scripts in ~/bin are safely ignored)${RESET}"
+echo -e "  ${YELLOW}(Note: only .publish-allowlist entries are copied — everything else is reported below)${RESET}"
 
 echo ""
 echo -e "${CYAN}${BOLD}📂 [2/4] Syncing Infrastructure Bridges...${RESET}"
@@ -124,6 +170,14 @@ echo -e "${CYAN}${BOLD}📚 [4/4] Learned Lessons Policy Registry${RESET}"
 echo -e "  ${YELLOW}⚠️  PII-WARNING:${RESET} Learned lessons are ${BOLD}NOT${RESET} automatically copied."
 echo -e "     If you have sanitised lessons to publish, copy them manually:"
 echo -e "     ${BOLD}cp -r ~/learned-lessons/technical/ repo/learned-lessons/${RESET}"
+
+echo ""
+if [ "$SKIPPED" -gt 0 ]; then
+    echo -e "  ${YELLOW}${BOLD}$SKIPPED local file(s) NOT published${RESET} (not in ${BLUE}.publish-allowlist${RESET})."
+    echo -e "  That is the intended default: nothing becomes public without a deliberate line."
+else
+    echo -e "  ${GREEN}All local files in the sync scope are allowlisted.${RESET}"
+fi
 fi
 
 echo ""
@@ -176,15 +230,18 @@ echo -e "  ${GREEN}✓${RESET} Stripped any LOCAL-ONLY blocks."
 # the sync scope (e.g. a leftover .backup of a gitignored config, or a system-brain
 # template) is exactly how a leak slipped through before. Enumerating via git keeps
 # the gitignored local config (.publish-sanitize.sed etc.) out of scope.
+# `--others --exclude-standard` also covers files that are not tracked *yet*: a file
+# this run just copied in is untracked at gate time, and scanning tracked files only
+# would let a brand-new personal script walk straight past this gate.
 echo ""
 echo -e "${CYAN}${BOLD}🚨 Hard PII Gate${RESET}"
 GATE_DIRS=()
 for d in "${SYNC_DIRS[@]}"; do [ -d "$REPO_DIR/$d" ] && GATE_DIRS+=("$REPO_DIR/$d"); done
 cd "$REPO_DIR"
-mapfile -t GATE_FILES < <(git ls-files)
+mapfile -t GATE_FILES < <(git ls-files --cached --others --exclude-standard)
 LEAK=0
 if [ "${#GATE_FILES[@]}" -eq 0 ]; then
-    echo -e "  ${YELLOW}⚠️  No tracked files found — skipping PII scan.${RESET}"
+    echo -e "  ${YELLOW}⚠️  No files to scan — skipping PII scan.${RESET}"
 else
     # 1) Hardcoded home paths in any tracked file. -I skips binaries.
     if grep -InIE "/home/[a-z0-9_-]+/" "${GATE_FILES[@]}" 2>/dev/null; then

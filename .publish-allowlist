@@ -1,0 +1,58 @@
+# MACCHA publish allowlist — explicit curation for publish.sh.
+#
+# One repo-relative destination path per line. '#' starts a comment.
+# A path naming a directory allows every file beneath it (recursive).
+#
+# Policy: FAIL-CLOSED. Anything in ~/bin/maccha or ~/INFRA that is not listed
+# here is skipped and reported during publish — a brand-new local script is
+# never public by default. Publishing a tool is therefore always a visible,
+# committable decision instead of a side effect of a blind copy.
+#
+# The two local, gitignored configs (.publish-sanitize.sed, .publish-pii-words)
+# still run on top of this: allowlisting decides WHAT may ship, they decide
+# HOW it is rewritten and what aborts the publish.
+
+cli-tools/calendar-add.js
+cli-tools/calendar-read.js
+cli-tools/check-antigravity-ide-update
+cli-tools/check-antigravity-update
+cli-tools/clean-antigravity.sh
+cli-tools/clean-prune-purge.sh
+cli-tools/compose-mail
+cli-tools/cron-cleanup.sh
+cli-tools/excel-to-csv
+cli-tools/gdoc-extractor-bookmarklet.txt
+cli-tools/gdoc-extractor.js
+cli-tools/maccha-backup
+cli-tools/maccha-doctor
+cli-tools/memanto
+cli-tools/memanto_cli.py
+cli-tools/port-registry
+cli-tools/safety_gate.sh
+cli-tools/session-closeout
+cli-tools/session-startup
+cli-tools/start-opencode.sh
+cli-tools/storage-manager
+cli-tools/syscheck-upstairs
+cli-tools/tms_human_view.py
+cli-tools/tms_integrity_hook.py
+cli-tools/tms_shortlist_sync.py
+cli-tools/update-antigravity
+cli-tools/update-antigravitycli
+cli-tools/update-antigravityide
+cli-tools/update-opencode.sh
+cli-tools/update-pnpm
+
+infrastructure/firestore-delete.sh
+infrastructure/firestore-read.sh
+infrastructure/firestore-write.sh
+infrastructure/ga-inventory.py
+infrastructure/gdrive-markdown-uploader.js
+infrastructure/mydrive-access-tool.js
+infrastructure/package.json
+infrastructure/pnpm-lock.yaml
+infrastructure/run_deep_research.js
+infrastructure/storage-manager.js
+infrastructure/maintenance
+
+brain/lib
