@@ -326,13 +326,17 @@ class MemantoMemory:
         if self.client and query and query.strip():
             try:
                 candidate_texts = [c["text"] for c in candidates]
-                # Embed candidates in batch.
+                # Embed candidates in chunks (API caps contents per request at 100).
                 # gemini-embedding-2 reads a list of bare strings as a single document;
                 # explicit Content objects force one embedding per text.
-                candidates_emb = self.client.models.embed_content(
-                    model=self.embedding_model,
-                    contents=[types.Content(parts=[types.Part(text=t)]) for t in candidate_texts]
-                )
+                candidates_emb = []
+                for i in range(0, len(candidate_texts), 100):
+                    chunk = candidate_texts[i:i + 100]
+                    resp = self.client.models.embed_content(
+                        model=self.embedding_model,
+                        contents=[types.Content(parts=[types.Part(text=t)]) for t in chunk]
+                    )
+                    candidates_emb.extend(resp.embeddings)
                 
                 # Embed query
                 query_emb = self.client.models.embed_content(
