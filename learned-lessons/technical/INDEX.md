@@ -8,6 +8,9 @@ Welcome to the MACCHA Technical Knowledge Index. This directory contains curated
 ## Domain: AI & Network Resilience
 - [Resilient Network Fetching & Parsing](./resilient_network_fetching_and_parsing.md)
 
+## Domain: Extension & Browser Testing
+- [Testing Chrome extensions: `--load-extension` is blocked in branded Chrome](./chrome_for_testing_extension_loading.md)
+
 ## Domain: Memory Hygiene
 - [Decay without prune = silent bloat](./decay_without_prune_silent_bloat.md)
 
