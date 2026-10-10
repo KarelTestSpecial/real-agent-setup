@@ -17,7 +17,7 @@ from pathlib import Path
 
 HOME = Path.home()
 SRC = HOME / "BRAIN" / "tms" / "todo.md"
-OUT = HOME / "INFO" / "owner" / "todo_overzicht.md"
+OUT = HOME / "INFO" / "karel" / "todo_overzicht.md"
 
 STATUS = {" ": "Open", "/": "In progress", "x": "Done"}
 

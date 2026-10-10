@@ -65,7 +65,7 @@ def check_git_activity(tms_content):
     per commit (an unregistered commit = error). A repo that is not in the TMS
     only produces a warning, because not every project has to be registered in
     the TMS — otherwise this check would permanently scream about projects that
-    User deliberately keeps outside the TMS.
+    Karel deliberately keeps outside the TMS.
     """
     print("🔍 Checking recent Git activity per repo...")
 
@@ -425,6 +425,77 @@ def check_publish_drift():
     return True
 
 
+# Mandate files measured against the Context Efficiency budget. The NL runtime
+# file (~/BRAIN/AGENTS.md) is the single source of the threshold; the English
+# capsule copy is measured against the same norm. ~/.gemini/GEMINI.md is
+# reported informationally only (owner decision: keep it untouched for now).
+MANDATE_FILES = [
+    os.path.join(BRAIN, "AGENTS.md"),
+    os.path.join(HOME, "real-agent-setup", "system-brain", "AGENTS.md"),
+]
+MANDATE_INFO_ONLY = [os.path.join(HOME, ".gemini", "GEMINI.md")]
+CONTEXT_BUDGET_FALLBACK = 3333
+
+
+def check_context_budget(files=None, norm=None):
+    """Measure the mandate files against the Context Efficiency budget.
+
+    Non-blocking by design: an over-budget mandate file prints a warning but
+    never fails the hook — trimming the file (or displacing an old mandate when
+    adding a new one) is a human decision. The norm itself is read from the
+    "Context Efficiency" line in BRAIN/AGENTS.md (one fact, one owner).
+    """
+    budget_source = "hardcoded fallback"
+    if norm is None:
+        try:
+            with open(os.path.join(BRAIN, "AGENTS.md")) as f:
+                m = re.search(r"Context Efficiency[^\n]*?(\d{3,5})\s*\*{0,2}\s*tokens", f.read())
+            if m:
+                norm = int(m.group(1))
+                budget_source = "BRAIN/AGENTS.md (Context Efficiency line)"
+        except OSError:
+            pass
+        if norm is None:
+            norm = CONTEXT_BUDGET_FALLBACK
+            print(f"⚠️ Could not read the context budget from BRAIN/AGENTS.md — using fallback {norm}.")
+
+    to_measure = files if files is not None else MANDATE_FILES
+    print(f"📏 Checking mandate context budget: {norm} tokens (source: {budget_source}) ...")
+
+    for path in to_measure:
+        rel = os.path.relpath(path, HOME)
+        if not os.path.isfile(path):
+            print(f"ℹ️ {rel}: not present, skipped.")
+            continue
+        out = run_command(f"{os.path.join(BIN_MACCHA, 'count-tokens')} '{path}'")
+        m = re.match(r"\s*(\d+)", out or "")
+        if not m:
+            print(f"⚠️ {rel}: token count unavailable ({(out or '')[:60]}) — skipped.")
+            continue
+        n = int(m.group(1))
+        if n > norm:
+            print(
+                f"⚠️ {rel}: {n}/{norm} tokens — over budget. Trim the mandate file, "
+                "or displace an older mandate before adding a new one."
+            )
+        else:
+            print(f"✅ {rel}: {n}/{norm} tokens ({norm - n} free).")
+
+    if files is None:
+        for path in MANDATE_INFO_ONLY:
+            if not os.path.isfile(path):
+                continue
+            rel = os.path.relpath(path, HOME)
+            out = run_command(f"{os.path.join(BIN_MACCHA, 'count-tokens')} '{path}'")
+            m = re.match(r"\s*(\d+)", out or "")
+            if not m:
+                continue
+            n = int(m.group(1))
+            state = "over budget" if n > norm else "within budget"
+            print(f"ℹ️ {rel}: {n} tokens ({state}) — informational only, not enforced.")
+    return True
+
+
 def main():
     print(f"🛡️ TMS Integrity Hook - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     tms_content = get_tms_content()
@@ -435,9 +506,10 @@ def main():
     index_ok = check_index_coverage()
     guardrails_ok = check_guardrails()
     archive_ok = check_archive_retention()
+    budget_ok = check_context_budget()
     publish_ok = check_publish_drift()
 
-    if git_ok and workspace_ok and lessons_ok and index_ok and guardrails_ok and archive_ok and publish_ok:
+    if git_ok and workspace_ok and lessons_ok and index_ok and guardrails_ok and archive_ok and budget_ok and publish_ok:
         print("\n🟢 TMS is CLEAN AND UPTODATE. All activities registered.")
         exit(0)
     else:

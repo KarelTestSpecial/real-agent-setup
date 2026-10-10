@@ -2,7 +2,7 @@
 # Guarded delete of ONE Firestore document in the kdc-apps project.
 # Same auth as firestore-read.sh: gcloud user OAuth token against the Firestore
 # REST API. An IAM/gcloud token bypasses the client security rules, so this
-# works with User's own gcloud creds — no service account needed.
+# works with Karel's own gcloud creds — no service account needed.
 #
 # Usage:
 #   firestore-delete.sh <collection> <docId>          # DRY RUN: prints the doc, deletes NOTHING

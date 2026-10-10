@@ -45,6 +45,9 @@ fi
 # KEEP=2, not 1: if the rotation misses a run (see the warning above),
 # a previous backup stays behind. That is a safety net, not bloat.
 KEEP=2
+# >>> LOCAL-ONLY
+KEEP=2
+# <<< LOCAL-ONLY
 STAMP=$(date +%Y%m%d-%H%M)
 FINAL="$DEST_DIR/maccha-backup-$STAMP.tar.gz.enc"
 TMP="$FINAL.inprogress"

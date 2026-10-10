@@ -34,6 +34,22 @@ async function main() {
         }
     ];
 
+// # >>> LOCAL-ONLY
+    filesToUpload = [
+        {
+            localPath: '/home/kareltestspecial/2-JOB/Smart.be/dossier_elias/Email_Historiek_Diploma_GOCI_2026.md',
+            title: 'Karel Decherf - Email-Historiek GOCI (Overmacht diploma)'
+        },
+        {
+            localPath: '/home/kareltestspecial/2-JOB/Smart.be/dossier_elias/Overzicht_PRs_en_Bounty_Claims_2026.05.29.md',
+            title: 'Karel Decherf - Overzicht Pull Requests en Bounty Claims (Proof of Work)'
+        },
+        {
+            localPath: '/home/kareltestspecial/2-JOB/Smart.be/dossier_elias/Bijlage_Administratieve_Toelichting_Dimona_Sigedis.md',
+            title: 'Karel Decherf - Administratieve Toelichting DIMONA en Sigedis'
+        }
+    ];
+// # <<< LOCAL-ONLY
 
     console.log('\n=== Starting upload and conversion to Google Docs ===\n');
 

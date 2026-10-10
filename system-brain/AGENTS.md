@@ -76,7 +76,7 @@ The agent MUST ALWAYS run this checklist proactively, **in order**, at the start
 | **Secrets** | NEVER in source code — scan before every commit |
 | **Outgoing email** | Always `~/bin/maccha/compose-mail` (HTML + quoted-printable + attachments + threading) — it only **saves a draft** (HITL). Never raw `.eml` or `himalaya save` (Gmail truncates them) |
 | **Himalaya** | Binary `~/.local/bin/himalaya`; pass the account with `-a` on the **subcommand** (an env var is ignored); inbox = `himalaya envelope list` |
-| **Context budget** | Mandate files stay ≤ 2500 tokens of critical mandates — project-specific detail lives in the Deep Knowledge Index |
+| **Context budget** | Mandate files stay ≤ 3333 tokens of critical mandates — project-specific detail lives in the Deep Knowledge Index |
 | **Filenames** | Correspondence, reports and drafts get a `yyyymmdd_` date prefix; drafts add `draft_` before the date; never sequence numbers (`08_`, `0x`) |
 
 ---

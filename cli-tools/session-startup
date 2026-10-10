@@ -31,8 +31,28 @@ if $TMS_OK; then
 fi
 
 echo ""
+# >>> LOCAL-ONLY (stripped by publish.sh — personal, non-generic block)
+# SITUATIE_OVERZICHT has a half-life, not an update-trigger: keep its ⚠️ flag
+# current every session (cheap, silent when OK), and explain only when stale.
+if ! python3 ~/bin/maccha/situation_staleness_check.py --quiet >/dev/null 2>&1; then
+  python3 ~/bin/maccha/situation_staleness_check.py --flag >/dev/null 2>&1
+  python3 ~/bin/maccha/situation_staleness_check.py
+  echo "   → Verify the stale claims, then update the 'Laatste update' date, or state that"
+  echo "     the half-life should be raised. Do not silently leave the flag."
+fi
+# <<< LOCAL-ONLY
 
 echo ""
+# >>> LOCAL-ONLY (stripped by publish.sh — personal, non-generic block)
+# Google tokens lie on expiry dates: an OAuth client can be deleted from its GCP
+# project while the token still shows a valid expiry. So test access, don't read it.
+if ! python3 ~/bin/maccha/google_access_check.py --quiet >/dev/null 2>&1; then
+  python3 ~/bin/maccha/google_access_check.py --flag >/dev/null 2>&1
+  python3 ~/bin/maccha/google_access_check.py
+  echo "   → See ~/.config/maccha/GOOGLE_ACCESS.md for the recovery route. The Drive"
+  echo "     tools are non-functional until an OAuth client is recreated."
+fi
+# <<< LOCAL-ONLY
 
 echo ""
 echo "=== Weekly TMS sweep (throttled, 1x per 7 days) ==="
@@ -53,7 +73,7 @@ fi
 
 echo ""
 echo "=== INBOX check ==="
-# Untitled-1 = Users permanente kladblok (zie INBOX/README.md) — nooit tellen of opruimen.
+# Untitled-1 = Karels permanente kladblok (zie INBOX/README.md) — nooit tellen of opruimen.
 INBOX_N=$(find ~/INBOX -mindepth 1 -not -name 'README.md' -not -name 'Untitled-1' 2>/dev/null | wc -l)
 if (( INBOX_N > 0 )); then
   echo "📥 INBOX contains $INBOX_N item(s) — process to owner locations and empty the folder:"
@@ -81,12 +101,17 @@ LASTL=$(cat "$LC_MARKER" 2>/dev/null || echo 0)
 if (( NOW - LASTL > 604800 )); then
   echo "$NOW" > "$LC_MARKER"
   LC_TARGETS=(~/BRAIN/AGENTS.md ~/BRAIN/tms/todo.md ~/BRAIN/tms/in-progress.md)
+  # >>> LOCAL-ONLY (stripped by publish.sh — personal, non-generic block)
+  LC_TARGETS+=(~/INFO/karel/SITUATIE_OVERZICHT.md ~/BRAIN/systeem-info/ROOT_REGISTER.md ~/BRAIN/systeem-info/TOOL_REGISTER.md)
+  # <<< LOCAL-ONLY
   node ~/BRAIN/hooks/link-check.cjs "${LC_TARGETS[@]}" 2>/dev/null || echo "⚠️  link-check.cjs failed"
 else
   echo "Last link check $(( (NOW - LASTL) / 86400 )) day(s) ago — OK."
 fi
 
 echo ""
+# >>> LOCAL-ONLY (stripped by publish.sh — personal, non-generic block)
+# <<< LOCAL-ONLY
 
 echo ""
 echo "=== Solucious weekly reminder (Saturday only) ==="
@@ -97,7 +122,7 @@ else
 fi
 
 
-# Readable todo view retired (User's decision, 5 October 2026).
-# `todo.md` is the only place; the derived table `INFO/owner/todo_overzicht.md` was
+# Readable todo view retired (Karel's decision, 5 October 2026).
+# `todo.md` is the only place; the derived table `INFO/karel/todo_overzicht.md` was
 # deleted. `tms_human_view.py` is still there, unused, in case it is ever needed —
 # deliberately not removed: ~/bin is not under git and is not part of the weekly backup.
