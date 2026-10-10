@@ -177,7 +177,7 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 | Learned lessons | `~/BRAIN/learned-lessons/` |
 | Tool register | `~/BRAIN/system-info/TOOL_REGISTER.md` |
 | Infrastructure scripts | `~/bin/maccha/` and `~/INFRA/` |
-| Encrypted weekly backup | `maccha-backup` (AES-256 tar of personal zones → cloud drive, key in `~/.config/maccha/backup.key`, triggered by `session-startup`) |
+| Encrypted weekly backup | `maccha-backup` (AES-256 tar of personal zones plus the `~/bin/maccha` tooling → cloud drive, key in `~/.config/maccha/backup.key`, triggered by `session-startup`) |
 
 ---
 
