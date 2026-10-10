@@ -55,6 +55,14 @@ else
   echo "Scratch directory not found or HOME variable unset"
 fi
 
+# 5 Session Event (written by the agent afterwards — this script never invents content)
+echo ""
+echo "=== Step 5: Session Event in Memanto ==="
+echo "Write the session event now (the agent does this, not this script):"
+echo "  memanto_cli.py remember \"<session title + key outcomes>\" --category Event"
+echo "  (Event = logbook; filing it as Fact would overwrite unrelated events"
+echo "   — see lesson memanto_event_category_niet_fact)"
+
 echo ""
 echo "========================================"
 echo " CLOSEOUT COMPLETED"

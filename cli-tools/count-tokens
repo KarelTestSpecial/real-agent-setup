@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# count-tokens — count real tokens (cl100k_base) for files instead of
+# guessing with chars/4 heuristics (see lesson learned-lessons/technical/
+# token_budget_measure_with_real_tokenizer.md). One-time bootstrap:
+# js-tiktoken@1.0.21 (BPE ranks bundled; version older than the
+# minimum-release-age cooldown; ignore-scripts from .npmrc) into
+# ~/INFRA/token-tool/.
+set -euo pipefail
+TOOL_DIR="$HOME/INFRA/token-tool"
+if [ ! -d "$TOOL_DIR/node_modules/js-tiktoken" ]; then
+  mkdir -p "$TOOL_DIR"
+  [ -f "$TOOL_DIR/package.json" ] || (cd "$TOOL_DIR" && pnpm init -y >/dev/null)
+  echo "[count-tokens] first run: installing js-tiktoken@1.0.21 in $TOOL_DIR" >&2
+  (cd "$TOOL_DIR" && pnpm add js-tiktoken@1.0.21 --save-exact >/dev/null)
+fi
+[ $# -ge 1 ] || { echo "Usage: count-tokens <file> [file...]" >&2; exit 1; }
+JST="$TOOL_DIR/node_modules/js-tiktoken" node -e '
+const { getEncoding } = require(process.env.JST);
+const fs = require("fs");
+const enc = getEncoding("cl100k_base");
+for (const p of process.argv.slice(1)) {
+  const n = enc.encode(fs.readFileSync(p, "utf8")).length;
+  console.log(String(n).padStart(6), "<-", p.replace(process.env.HOME, "~"));
+}' "$@"
