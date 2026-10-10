@@ -24,6 +24,9 @@ import uuid
 import datetime
 import math
 import re
+import hashlib
+import time
+import tempfile
 from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
@@ -68,12 +71,20 @@ MEMANTO_CATEGORIES = {
 }
 
 class MemantoMemory:
-    def __init__(self, memory_file: str = "data/memanto_memory.json"):
+    def __init__(self, memory_file: str = "data/memanto_memory.json", cache_file: Optional[str] = None):
         _load_env_manually()
         self.memory_file = memory_file
         os.makedirs(os.path.dirname(self.memory_file) if os.path.dirname(self.memory_file) else "data", exist_ok=True)
         self.memories: List[Dict[str, Any]] = []
         self._load_memories()
+
+        # Vector embedding cache setup (per-item hash -> vector)
+        self.cache_file = cache_file or os.path.join(
+            os.path.dirname(self.memory_file) if os.path.dirname(self.memory_file) else "data",
+            "embedding_cache.json"
+        )
+        self.cache: Dict[str, List[float]] = {}
+        self._load_cache()
 
         # Initialize genai client (detecting studio API keys vs Vertex environment)
         self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -98,6 +109,109 @@ class MemantoMemory:
         except Exception as e:
             self.client = None
             print(f"[Memanto] Initialization failed or delayed: {e}")
+
+    def _hash_text(self, text: str) -> str:
+        """Computes deterministic SHA256 hash of normalized text for embedding cache key."""
+        return hashlib.sha256(text.strip().encode("utf-8")).hexdigest()
+
+    def _load_cache(self):
+        """Loads vector cache from disk if available."""
+        if os.path.exists(self.cache_file):
+            try:
+                with open(self.cache_file, "r") as f:
+                    self.cache = json.load(f)
+            except Exception as e:
+                print(f"[Memanto] Error loading embedding cache: {e}")
+                self.cache = {}
+        else:
+            self.cache = {}
+
+    def _save_cache(self):
+        """Atomically persists active memory vector embeddings to disk, pruning obsolete entries."""
+        try:
+            active_hashes = {
+                self._hash_text(m["text"])
+                for m in self.memories
+                if not m.get("superseded_by") and m.get("confidence", 0.0) > 0
+            }
+            if self.memories:
+                self.cache = {h: vec for h, vec in self.cache.items() if h in active_hashes}
+
+            cache_dir = os.path.dirname(self.cache_file) or "."
+            os.makedirs(cache_dir, exist_ok=True)
+            with tempfile.NamedTemporaryFile("w", dir=cache_dir, delete=False, suffix=".tmp") as tf:
+                json.dump(self.cache, tf)
+                tf.flush()
+                os.fsync(tf.fileno())
+                tmp_name = tf.name
+            os.replace(tmp_name, self.cache_file)
+        except Exception as e:
+            print(f"[Memanto] Error writing embedding cache: {e}")
+
+    def _ensure_embedded(self, texts: List[str], verbose: bool = True) -> None:
+        """Ensures that all given texts have cached embeddings.
+        Batches missing items into chunks <= 100, sleeps ~65s between chunks
+        to respect the 100 items/min Gemini free-tier rate limit, retries on 429
+        up to 2 times, and atomically persists to disk."""
+        if not self.client or not texts:
+            return
+
+        missing_items = []
+        seen = set()
+        for t in texts:
+            h = self._hash_text(t)
+            if h not in self.cache and h not in seen:
+                seen.add(h)
+                missing_items.append((h, t))
+
+        if not missing_items:
+            return
+
+        for chunk_start in range(0, len(missing_items), 100):
+            if chunk_start > 0:
+                if verbose:
+                    print(f"[Memanto] Rate-limit pacing: sleeping 65s before embedding chunk {chunk_start // 100 + 1}...")
+                time.sleep(65)
+
+            chunk = missing_items[chunk_start:chunk_start + 100]
+            chunk_hashes = [item[0] for item in chunk]
+            chunk_texts = [item[1] for item in chunk]
+
+            resp = None
+            for attempt in range(3):
+                try:
+                    resp = self.client.models.embed_content(
+                        model=self.embedding_model,
+                        contents=[types.Content(parts=[types.Part(text=t)]) for t in chunk_texts]
+                    )
+                    break
+                except Exception as err:
+                    err_str = str(err)
+                    if ("429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower()) and attempt < 2:
+                        if verbose:
+                            print(f"[Memanto] 429 quota hit (attempt {attempt+1}/3). Retrying in 65s...")
+                        time.sleep(65)
+                    else:
+                        raise err
+
+            if resp and resp.embeddings:
+                for h, emb in zip(chunk_hashes, resp.embeddings):
+                    self.cache[h] = emb.values
+                self._save_cache()
+
+    def warmup_cache(self, verbose: bool = True) -> int:
+        """Precomputes embeddings for all active memories that lack cache entries.
+        Returns the count of newly embedded items."""
+        if not self.client:
+            return 0
+        active_memories = [
+            m for m in self.memories
+            if not m.get("superseded_by") and m.get("confidence", 0.0) >= 0.05
+        ]
+        active_texts = [m["text"] for m in active_memories]
+        before_count = len(self.cache)
+        self._ensure_embedded(active_texts, verbose=verbose)
+        return len(self.cache) - before_count
 
     def _load_memories(self):
         """Loads memory instances from disk and applies decay calculations."""
@@ -340,34 +454,32 @@ class MemantoMemory:
         if self.client and query and query.strip():
             try:
                 candidate_texts = [c["text"] for c in candidates]
-                # Embed candidates in chunks (API caps contents per request at 100).
-                # gemini-embedding-2 reads a list of bare strings as a single document;
-                # explicit Content objects force one embedding per text.
-                candidates_emb = []
-                for i in range(0, len(candidate_texts), 100):
-                    chunk = candidate_texts[i:i + 100]
-                    resp = self.client.models.embed_content(
-                        model=self.embedding_model,
-                        contents=[types.Content(parts=[types.Part(text=t)]) for t in chunk]
-                    )
-                    candidates_emb.extend(resp.embeddings)
-                
-                # Embed query
+                candidate_hashes = [self._hash_text(t) for t in candidate_texts]
+
+                # Ensure candidate embeddings are in cache (pacing + retries)
+                self._ensure_embedded(candidate_texts)
+
+                # Verify all candidate hashes are in cache
+                if not all(h in self.cache for h in candidate_hashes):
+                    raise RuntimeError("Incomplete candidate embeddings in cache")
+
+                candidate_vectors = [self.cache[h] for h in candidate_hashes]
+
+                # Embed query (exactly 1 API call per recall!)
                 query_emb = self.client.models.embed_content(
                     model=self.embedding_model,
                     contents=query
                 )
-                
                 query_vec = query_emb.embeddings[0].values
-                
+
                 for idx, item in enumerate(candidates):
-                    emb_vec = candidates_emb[idx].values
+                    emb_vec = candidate_vectors[idx]
                     # Compute Cosine similarity
                     dot_product = sum(q * e for q, e in zip(query_vec, emb_vec))
                     norm_q = math.sqrt(sum(q * q for q in query_vec))
                     norm_e = math.sqrt(sum(e * e for e in emb_vec))
                     similarity = dot_product / (norm_q * norm_e) if norm_q and norm_e else 0.0
-                    
+
                     # Weight score by memory confidence
                     final_score = similarity * item.get("confidence", 1.0)
                     scores.append((final_score, item))
