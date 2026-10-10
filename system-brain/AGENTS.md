@@ -1,15 +1,12 @@
 # 🧠 MACCHA — Multi-Agent Continuous Context Harness
 **Top-Layer Agent Bootstrap | Root: `~/` (Home Directory)**
-> **To every AI agent:** This is the FIRST file you read. It activates the entire MACCHA system.
-> Read this document completely before taking any action.
+> **To every AI agent:** this is the FIRST file you read — it activates the entire MACCHA system. Read it completely before taking any action.
 
 ---
 
 ## ⚡ What is MACCHA?
 
-**MACCHA** (*Multi-Agent Continuous Context Harness*) is a personal AI orchestration and memory system. It is designed so that every AI agent — regardless of which tool or session — is immediately fully contextualized and operationalized.
-
-**Core principle:** Continuity across sessions, agents, and tools. No repetition, no context loss, no drift.
+**MACCHA** (*Multi-Agent Continuous Context Harness*) is a personal AI orchestration and memory system: every agent — any tool, any session — is immediately fully contextualized and operational. **Core principle:** continuity — no repetition, no context loss, no drift.
 
 ---
 
@@ -33,37 +30,13 @@
 
 ## 🚀 Mandatory Session Startup Protocol
 
-The agent MUST ALWAYS run the full checklist proactively at the beginning of every new conversation/session. This is critical to ensure you have the full context before starting work. Perform the steps **in order**:
+The agent MUST ALWAYS run this checklist proactively, **in order**, at the start of every new session:
 
-### Step 1: Load Situation
-```
-Read: ~/INFO/over-owner/SITUATIE_OVERZICHT.md
-```
-This is the central reference document about the owner (personal, legal, financial, technical). It replaces dozens of loose files.
-
-### Step 2: Prime Context
-```
-Run: ~/bin/maccha/session-startup   → prime context check (backup marker, INBOX count, watchers)
-```
-In some harnesses this runs automatically via a SessionStart hook; there, only verify the prime output is present. Otherwise run the script yourself.
-
-### Step 3: Check System Status (TMS)
-```
-Read: ~/todo.md             → Open tasks
-Read: ~/in-progress.md      → Active tasks (prune to ~10)
-Read: ~/BRAIN/policies/guardrails.md → Machine-enforced guardrails (auto-checked at closeout)
-```
-
-### Step 4: Activate MACCHA Layer
-```
-Read: ~/BRAIN/AGENTS.md     → Session protocol, security rules, mandates
-```
-
-### Step 5: Intelligence Check (if relevant)
-```
-Consult: ~/IMPROVEMENT.md           → LTAIS intelligence inventory
-Consult: ~/BRAIN/learned-lessons/   → Specific curated lessons
-```
+1. **Load Situation** — read `~/INFO/over-owner/SITUATIE_OVERZICHT.md`: the central reference about the owner (personal, legal, financial, technical); replaces dozens of loose files.
+2. **Prime Context** — run `~/bin/maccha/session-startup` (backup marker, INBOX count, watchers). In harnesses with a SessionStart hook this runs automatically — just verify the output; otherwise run it yourself.
+3. **Check System Status (TMS)** — read `~/todo.md` (open), `~/in-progress.md` (active, prune to ~10) and `~/BRAIN/policies/guardrails.md` (machine-enforced, auto-checked at closeout).
+4. **Activate MACCHA Layer** — read `~/BRAIN/AGENTS.md` (session protocol, security rules, mandates).
+5. **Intelligence Check (if relevant)** — consult `~/IMPROVEMENT.md` (LTAIS inventory) and `~/BRAIN/learned-lessons/` (curated lessons).
 
 > **Rule:** Do NOT proactively ask for synchronization. Load context silently, report concisely.
 
@@ -103,7 +76,7 @@ Consult: ~/BRAIN/learned-lessons/   → Specific curated lessons
 | **Secrets** | NEVER in source code — scan before every commit |
 | **Outgoing email** | Always `~/bin/maccha/compose-mail` (HTML + quoted-printable + attachments + threading) — it only **saves a draft** (HITL). Never raw `.eml` or `himalaya save` (Gmail truncates them) |
 | **Himalaya** | Binary `~/.local/bin/himalaya`; pass the account with `-a` on the **subcommand** (an env var is ignored); inbox = `himalaya envelope list` |
-| **Context budget** | This bootstrap stays ≤ 2500 tokens; project-specific detail lives in the Deep Knowledge Index, not here |
+| **Context budget** | Mandate files stay ≤ 2500 tokens of critical mandates — project-specific detail lives in the Deep Knowledge Index |
 | **Filenames** | Correspondence, reports and drafts get a `yyyymmdd_` date prefix; drafts add `draft_` before the date; never sequence numbers (`08_`, `0x`) |
 
 ---
@@ -123,22 +96,9 @@ Consult: ~/BRAIN/learned-lessons/   → Specific curated lessons
 
 ---
 
-## 📌 TMS (Task Management System)
-
-| File | Location | Purpose |
-|---|---|---|
-| `todo.md` | `~/BRAIN/tms/` (symlink `~/todo.md`) | Open tasks + waiting-on-external |
-| `in-progress.md` | `~/BRAIN/tms/` (symlink `~/in-progress.md`) | Active tasks (max ~10) |
-| `done.md` | `~/BRAIN/tms/` (symlink `~/done.md`) | Completed (one line each) |
-
-See **Knowledge Maintenance** above for the flow-through rules and line form.
-
----
-
 ## 📦 MACCHA as a Package (real-agent-setup)
 
-The complete MACCHA harness is available as a PII-free, downloadable package:
-- **Repo:** `github.com/[your-username]/real-agent-setup`
+The complete MACCHA harness is available as a PII-free package (`github.com/[your-username]/real-agent-setup`):
 - **Every change** to the harness structure MUST be reflected in this repo via `publish.sh`
 - **Portability:** scripts always use `$HOME` or `os.homedir()` — **never hardcoded paths**
 - **PII gate:** `AGENTS.md`, `IMPROVEMENT.md`, `BRAIN/*` and learned lessons are private; only sanitized templates/lessons are published.
@@ -147,7 +107,7 @@ The complete MACCHA harness is available as a PII-free, downloadable package:
 
 ## 🗣️ Communication
 
-- **Reporting format:** reports to the owner are Markdown (`.md`) with headings/tables, placed in `~/INFO/voor-owner/`.
+- **Reporting format:** reports to the owner are Markdown (`.md`) with headings/tables, placed in `~/INFO/over-owner/`.
 - **PII & professional privacy:** in external correspondence to professional contacts, employers, or volunteer organizations, NEVER share PII or sensitive personal details. Default to a clean, professional sign-off with no AI mention; any AI signature is optional and used only when fitting.
 - **Deadlines:** when registering deadline-bound work (e.g. translation jobs) in the TMS or reports, ALWAYS include the specific deadline date in the title/description to disambiguate recurring items.
 
@@ -166,16 +126,7 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 - **Strategic:** `learned-lessons/strategic/INDEX.md`
 - **Security:** `learned-lessons/security/INDEX.md`
 
-> New lesson = create the lesson file AND update the matching `INDEX.md` (Librarian task). Group it under the right `## Domain:` heading. The frontmatter is mandatory — `tms_integrity_hook.py` rejects lessons without `tier:` and `category:`:
->
-> ```yaml
-> ---
-> category: technical | strategic | security   # = the folder
-> domain: <kebab-slug>                          # = the "## Domain:" heading in the INDEX
-> tier: 2                                       # a curated lesson = Tier 2
-> last_updated: YYYY-MM-DD
-> ---
-> ```
+> New lesson = create the lesson file AND update the matching `INDEX.md` (Librarian task), grouped under the right `## Domain:` heading. Frontmatter is mandatory — copy the block from any existing lesson (`category`, `domain`, `tier`, `last_updated`); `tms_integrity_hook.py` rejects lessons missing `tier:` or `category:`.
 
 ---
 
@@ -183,17 +134,11 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 
 | What | Where |
 |---|---|
-| Owner situation | `~/INFO/over-owner/SITUATIE_OVERZICHT.md` |
-| Plans | `~/PLAN/` |
-| Inbox (owner → agent drop-off) | `~/INBOX/` (triage + propose; instruction items only after owner confirmation — HITL; archival material flows directly) |
 | Task flow (TMS) | `~/BRAIN/tms/` (symlinks: `~/todo.md`, `~/in-progress.md`, `~/done.md`) |
-| Guardrails register (machine-enforced) | `~/BRAIN/policies/guardrails.md` |
-| Session protocol (detailed) | `~/BRAIN/AGENTS.md` |
 | Working memory | `~/BRAIN/memanto/memanto_global.json` (via `memanto_cli.py remember/recall/answer/distill/prune`) |
-| Learned lessons | `~/BRAIN/learned-lessons/` |
 | Tool register | `~/BRAIN/system-info/TOOL_REGISTER.md` |
 | Infrastructure scripts | `~/bin/maccha/` and `~/INFRA/` |
-| Encrypted weekly backup | `maccha-backup` (AES-256 tar of personal zones plus the `~/bin/maccha` tooling → cloud drive, key in `~/.config/maccha/backup.key`, triggered by `session-startup`) |
+| Encrypted weekly backup | `maccha-backup` — AES-256 tar of the personal zones + `~/bin/maccha` → cloud drive (key `~/.config/maccha/backup.key`); weekly via `session-startup` |
 
 ---
 
@@ -201,4 +146,4 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 *"Continuity is the key to agentic performance."*
 
 ---
-> **📝 NOTE FOR MACCHA USERS:** Customize the paths under "Key Locations" and the situation-document path to match your own setup. Replace `over-owner/` with your own directory name.
+> **📝 NOTE:** Customize the paths above (e.g. replace `over-owner/`) to match your own setup.
