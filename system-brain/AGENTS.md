@@ -101,6 +101,10 @@ Consult: ~/BRAIN/learned-lessons/   → Specific curated lessons
 | **Home root** | Keep clean — projects in `~/workspace/`, temp in `~/scratch/` |
 | **Aliases** | Write in `~/.bash_aliases`, NEVER in `~/.bashrc` |
 | **Secrets** | NEVER in source code — scan before every commit |
+| **Outgoing email** | Always `~/bin/maccha/compose-mail` (HTML + quoted-printable + attachments + threading) — it only **saves a draft** (HITL). Never raw `.eml` or `himalaya save` (Gmail truncates them) |
+| **Himalaya** | Binary `~/.local/bin/himalaya`; pass the account with `-a` on the **subcommand** (an env var is ignored); inbox = `himalaya envelope list` |
+| **Context budget** | This bootstrap stays ≤ 2500 tokens; project-specific detail lives in the Deep Knowledge Index, not here |
+| **Filenames** | Correspondence, reports and drafts get a `yyyymmdd_` date prefix; drafts add `draft_` before the date; never sequence numbers (`08_`, `0x`) |
 
 ---
 
@@ -113,6 +117,9 @@ Consult: ~/BRAIN/learned-lessons/   → Specific curated lessons
 5. **Secrets scan:** check for API keys and private keys before every commit.
 6. **DeFi No-Execution Zone:** analysis only. No trades without hardware-wallet confirmation.
 7. **Read-only registers:** some files (e.g. a curated shortlist) are owner-edited only — read, never write.
+8. **Secrets storage:** keys and keypairs live in `~/.config/maccha/secrets/` (dir 700, files 600); API keys only in a gitignored `.env`, never hardcoded; seed phrases are NEVER digitized. Keep a register at `~/.config/maccha/secrets/README.md`.
+9. **Bounty audit:** present an opportunity only after the 4-point audit (Payout, Response, Age, PR-count). Filter honeypots: "Prompt Leaks", "No Humans Allowed", and ghost bounties (>5 open PRs with no response).
+10. **Live-first:** use `gh` for current PR/issue status instead of trusting memory; discovery (GitHub dorks, bounty boards) is separate from validation.
 
 ---
 
@@ -148,7 +155,7 @@ The complete MACCHA harness is available as a PII-free, downloadable package:
 
 ## 🧰 Tool Register
 
-Before reaching for the browser or writing an ad-hoc script, scan `~/BRAIN/systeem-info/TOOL_REGISTER.md` (capability → tool → when-to-use). It surfaces tools that would otherwise be undiscoverable at the decision moment. Built a new reusable tool = add one line to the register (it links, never copies).
+Before reaching for the browser or writing an ad-hoc script, scan `~/BRAIN/system-info/TOOL_REGISTER.md` (capability → tool → when-to-use). It surfaces tools that would otherwise be undiscoverable at the decision moment. Built a new reusable tool = add one line to the register (it links, never copies).
 
 ---
 
@@ -159,7 +166,16 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 - **Strategic:** `learned-lessons/strategic/INDEX.md`
 - **Security:** `learned-lessons/security/INDEX.md`
 
-> New lesson = create the lesson file AND update the matching `INDEX.md` (Librarian task). Group it under the right `## Domain:` heading.
+> New lesson = create the lesson file AND update the matching `INDEX.md` (Librarian task). Group it under the right `## Domain:` heading. The frontmatter is mandatory — `tms_integrity_hook.py` rejects lessons without `tier:` and `category:`:
+>
+> ```yaml
+> ---
+> category: technical | strategic | security   # = the folder
+> domain: <kebab-slug>                          # = the "## Domain:" heading in the INDEX
+> tier: 2                                       # a curated lesson = Tier 2
+> last_updated: YYYY-MM-DD
+> ---
+> ```
 
 ---
 
