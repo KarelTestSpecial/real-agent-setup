@@ -165,8 +165,9 @@ real-agent-setup/
 │   ├── todo.md / in-progress.md / done.md   # TMS trackers
 │   ├── hooks/                     #   Agent hooks (startup-lessons, tms-integrity, test-enforcer)
 │   └── policies/guardrails.md     #   Machine-enforced guardrails
-├── brain/                         # Memory engine
+├── brain/                         # Memory engine + maintenance playbooks
 │   ├── lib/memanto_engine.py      #   13-category working memory (Memanto)
+│   ├── maintenance/               #   Budget & TMS maintenance playbooks
 │   └── README.md
 ├── cli-tools/                     # Shared CLI utilities (AI models, storage, cleanup)
 ├── infrastructure/                # Shared bridges and session maintenance scripts
