@@ -347,7 +347,7 @@ class MemantoMemory:
                 query_vec = query_emb.embeddings[0].values
                 
                 for idx, item in enumerate(candidates):
-                    emb_vec = candidates_emb.embeddings[idx].values
+                    emb_vec = candidates_emb[idx].values
                     # Compute Cosine similarity
                     dot_product = sum(q * e for q, e in zip(query_vec, emb_vec))
                     norm_q = math.sqrt(sum(q * q for q in query_vec))
