@@ -120,38 +120,44 @@ class MemantoMemory:
 
     def _apply_temporal_decay(self):
         """Calculates and applies confidence decay based on elapsed time.
-        Pinned entries are immune to decay."""
+        Pinned entries are immune to decay.
+
+        Idempotent: decay is applied only for the time since the last
+        calculation (`last_decayed_at`, falling back to `created_at`), so
+        repeated loads in the same second no longer re-apply the full period
+        factor — decay advances per elapsed time, not per call."""
         now = datetime.datetime.now()
         updated = False
         for item in self.memories:
             if item.get("pinned") or item.get("superseded_by") or item.get("confidence", 0.0) <= 0.0:
                 continue
-            
-            ts = item["created_at"]
-        try:
-            created_at = datetime.datetime.fromisoformat(ts)
-        except (TypeError, ValueError):
-            created_at = datetime.datetime.now()
-        if created_at.tzinfo is not None:
-            created_at = created_at.replace(tzinfo=None)
-            days_elapsed = (now - created_at).total_seconds() / (24 * 3600)
-            
+
+            ts = item.get("last_decayed_at") or item["created_at"]
+            try:
+                reference = datetime.datetime.fromisoformat(ts)
+            except (TypeError, ValueError):
+                reference = datetime.datetime.now()
+            if reference.tzinfo is not None:
+                reference = reference.replace(tzinfo=None)
+            days_elapsed = (now - reference).total_seconds() / (24 * 3600)
+
             category = item.get("category", "Context")
             decay_rate = MEMANTO_CATEGORIES.get(category, {}).get("decay_rate", 0.02)
-            
+
             if decay_rate > 0.0 and days_elapsed > 0.5:
                 # Exponential decay formula
                 original_confidence = item.get("confidence", 1.0)
                 new_confidence = original_confidence * math.exp(-decay_rate * days_elapsed)
-                
+
                 # Minimum threshold
                 if new_confidence < 0.05:
                     new_confidence = 0.0
-                
+
                 if abs(original_confidence - new_confidence) > 0.01:
                     item["confidence"] = round(new_confidence, 3)
+                    item["last_decayed_at"] = now.isoformat()
                     updated = True
-                    
+
         if updated:
             self._save_memories()
 
@@ -254,6 +260,7 @@ class MemantoMemory:
         for item in self.memories:
             if item["id"] == memory_id:
                 item["pinned"] = False
+                item["last_decayed_at"] = datetime.datetime.now().isoformat()
                 self._save_memories()
                 return True
         return False
