@@ -11,6 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# SINGLE SOURCE: this file lives in the capsule repo (brain/lib/) and is loaded
+# at runtime through the symlink ~/INFRA/agents-brain/lib/memanto_engine.py.
+# Never replace that symlink with a local copy (silent drift) — and remember
+# the symlink targets the repo *working tree*: a branch checkout or PR merge
+# in real-agent-setup instantly changes what the runtime loads on this machine.
+# See lesson: learned-lessons/technical/symlink_single_source_git_checkout_risico.md
+
 import os
 import json
 import uuid
