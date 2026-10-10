@@ -28,6 +28,7 @@ USAGE
     no raw HTML or markdown ever reaches the body.
 """
 import argparse
+import json
 import mimetypes
 import re
 import shutil
@@ -38,11 +39,28 @@ from html import escape
 from pathlib import Path
 
 # Stable account -> From address map (see CLAUDE.md Himalaya section).
-ACCOUNT_FROM = {
-    "gmail-personal": "personal@example.com",
-    "gmail-fpc": "fpc@example.com",
-    "gmail-test": "test@example.com",
-}
+# Kept OUTSIDE the script so every published copy stays PII-free: the script
+# ships with example addresses, each install points at its own local file.
+ACCOUNTS_FILE = Path.home() / ".config" / "maccha" / "accounts.json"
+
+
+def load_accounts() -> dict:
+    if not ACCOUNTS_FILE.is_file():
+        sys.exit(
+            f"ERROR: {ACCOUNTS_FILE} not found.\n"
+            '       Expected a JSON object mapping himalaya accounts to From\n'
+            '       addresses, e.g. {"gmail-personal": "you@example.com"}.'
+        )
+    try:
+        data = json.loads(ACCOUNTS_FILE.read_text())
+    except json.JSONDecodeError as e:
+        sys.exit(f"ERROR: invalid JSON in {ACCOUNTS_FILE}: {e}")
+    if not isinstance(data, dict) or not data:
+        sys.exit(f"ERROR: {ACCOUNTS_FILE} must be a non-empty JSON object.")
+    return data
+
+
+ACCOUNT_FROM = load_accounts()
 
 
 def find_himalaya() -> str:
