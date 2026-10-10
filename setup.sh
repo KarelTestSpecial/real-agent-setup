@@ -131,6 +131,15 @@ else
     echo -e "  ${YELLOW}~${RESET} BRAIN/policies/guardrails.md exists, skipping"
 fi
 
+# Archive retention policy (also read by tms_integrity_hook.py)
+if [ ! -f "$HOME_DIR/BRAIN/archive/README.md" ]; then
+    mkdir -p "$HOME_DIR/BRAIN/archive"
+    cp "$REPO_DIR/system-brain/archive/README.md" "$HOME_DIR/BRAIN/archive/README.md"
+    echo -e "  ${GREEN}✓${RESET} BRAIN/archive/README.md (Retention policy)"
+else
+    echo -e "  ${YELLOW}~${RESET} BRAIN/archive/README.md exists, skipping"
+fi
+
 # === Learned Lessons ===
 echo ""
 echo -e "${CYAN}${BOLD}📚 [5/6] Learned Lessons Registry${RESET}"
