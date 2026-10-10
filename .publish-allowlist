@@ -19,6 +19,7 @@ cli-tools/check-antigravity-update
 cli-tools/clean-antigravity.sh
 cli-tools/clean-prune-purge.sh
 cli-tools/compose-mail
+cli-tools/count-tokens
 cli-tools/cron-cleanup.sh
 cli-tools/excel-to-csv
 cli-tools/gdoc-extractor-bookmarklet.txt
