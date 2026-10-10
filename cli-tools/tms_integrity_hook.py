@@ -14,6 +14,8 @@ WORKSPACE_DIR = os.path.join(HOME, "workspace")
 GUARDRAILS_FILE = os.path.join(BRAIN, "policies", "guardrails.md")
 ARCHIVE_DIR = os.path.join(BRAIN, "archive")
 INFRA_BACKUPS = os.path.join(HOME, "INFRA", "backups")
+BIN_MACCHA = os.path.join(HOME, "bin", "maccha")
+PUBLISH_MARKER = os.path.join(HOME, ".config", "maccha", "last_publish")
 # Both are scanned: BRAIN/archive = curated knowledge archive (permanent
 # entries allowed), INFRA/backups = temporary restore points (never permanent).
 ARCHIVE_DIRS = [ARCHIVE_DIR, INFRA_BACKUPS]
@@ -376,6 +378,53 @@ def check_archive_retention():
     return True
 
 
+def check_publish_drift():
+    """Remind (never block) that changed cli-tools may not be published yet.
+
+    publish.sh drops a timestamp in ~/.config/maccha/last_publish whenever the
+    local tooling matches the repo; any file in ~/bin/maccha newer than that
+    marker means real-agent-setup is drifting. Local-only scripts (not on the
+    publish allowlist) can raise this too — publish.sh's own report is the
+    authority on what would actually ship.
+    """
+    print(f"📤 Checking publish drift for {os.path.relpath(BIN_MACCHA, HOME)} ...")
+    if not os.path.isdir(BIN_MACCHA):
+        print("✅ No local tooling directory, skipping.")
+        return True
+    if not os.path.isfile(PUBLISH_MARKER):
+        print("ℹ️ No publish marker yet (publish.sh writes it on success) — drift check skipped.")
+        return True
+    try:
+        with open(PUBLISH_MARKER) as f:
+            last = int(f.read().strip())
+    except ValueError:
+        print("⚠️ Publish marker unreadable — run publish.sh once to refresh it.")
+        return True
+
+    newest = 0.0
+    newest_name = ""
+    for entry in os.listdir(BIN_MACCHA):
+        if entry in ("__pycache__", ".git"):
+            continue
+        path = os.path.join(BIN_MACCHA, entry)
+        try:
+            mt = os.path.getmtime(path)
+        except OSError:
+            continue
+        if mt > newest:
+            newest, newest_name = mt, entry
+
+    if newest > last + 60:
+        age_h = int((newest - last) / 3600)
+        print(
+            f"⚠️ {newest_name} changed after the last publish ({age_h}h ago) — "
+            "run publish.sh to sync real-agent-setup (its allowlist decides what ships)."
+        )
+    else:
+        print("✅ Published: no tooling newer than the last publish marker.")
+    return True
+
+
 def main():
     print(f"🛡️ TMS Integrity Hook - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     tms_content = get_tms_content()
@@ -386,8 +435,9 @@ def main():
     index_ok = check_index_coverage()
     guardrails_ok = check_guardrails()
     archive_ok = check_archive_retention()
+    publish_ok = check_publish_drift()
 
-    if git_ok and workspace_ok and lessons_ok and index_ok and guardrails_ok and archive_ok:
+    if git_ok and workspace_ok and lessons_ok and index_ok and guardrails_ok and archive_ok and publish_ok:
         print("\n🟢 TMS is CLEAN AND UPTODATE. All activities registered.")
         exit(0)
     else:

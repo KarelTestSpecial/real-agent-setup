@@ -299,8 +299,10 @@ echo -e "${CYAN}${BOLD}🐙 Git Repository Integrity Check${RESET}"
 cd "$REPO_DIR"
 
 # Check if there are differences
+PUBLISH_OK=0
 if git diff --quiet && git diff --cached --quiet; then
     echo -e "  ${GREEN}✓${RESET} No modifications found to commit."
+    PUBLISH_OK=1
 else
     echo -e "  ${YELLOW}⚠️${RESET} Modifications detected:"
     git status --short
@@ -320,10 +322,18 @@ else
         git commit -m "$msg"
         git push origin main
         echo -e "  ${GREEN}✓${RESET} Successfully pushed to GitHub!"
+        PUBLISH_OK=1
     else
         echo -e "  ${YELLOW}~${RESET} Changes staged locally but not pushed."
         echo -e "  Manual sequence: ${BOLD}git add -A && git commit -m \"...\" && git push${RESET}"
     fi
+fi
+
+# Marker for the publish-drift reminder in tms_integrity_hook.py: the moment
+# the local tooling was last known to match the repo.
+if [ "$PUBLISH_OK" = "1" ] && [ -d "$HOME_DIR/.config/maccha" ]; then
+    date +%s > "$HOME_DIR/.config/maccha/last_publish"
+    echo -e "  ${GREEN}✓${RESET} Publish marker updated (closeout drift check reads it)."
 fi
 
 echo ""
