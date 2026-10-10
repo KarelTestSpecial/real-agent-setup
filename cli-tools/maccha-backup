@@ -78,9 +78,8 @@ fi
 echo "📦 Creating backup → $(basename "$TMP") (staged, not yet visible as a real backup)"
 tar -C "$H" -czf - \
   --exclude='node_modules' --exclude='*/node_modules' \
-  --exclude='BRAIN/archive/2026-06-mappenstructuur' \
   --exclude='.vite' \
-  INFO PLAN BRAIN C \
+  INFO PLAN BRAIN C bin/maccha \
 | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass file:"$KEY_FILE" -out "$TMP"
 
 BYTES=$(stat -c %s "$TMP")

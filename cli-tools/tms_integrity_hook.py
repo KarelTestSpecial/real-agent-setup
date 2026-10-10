@@ -12,6 +12,11 @@ TMS_DIR = os.path.join(BRAIN, "tms")
 LESSONS_DIR = os.path.join(BRAIN, "learned-lessons")
 WORKSPACE_DIR = os.path.join(HOME, "workspace")
 GUARDRAILS_FILE = os.path.join(BRAIN, "policies", "guardrails.md")
+ARCHIVE_DIR = os.path.join(BRAIN, "archive")
+INFRA_BACKUPS = os.path.join(HOME, "INFRA", "backups")
+# Both are scanned: BRAIN/archive = curated knowledge archive (permanent
+# entries allowed), INFRA/backups = temporary restore points (never permanent).
+ARCHIVE_DIRS = [ARCHIVE_DIR, INFRA_BACKUPS]
 
 
 def run_command(command):
@@ -299,6 +304,78 @@ def check_guardrails():
     return all_ok
 
 
+def check_archive_retention():
+    """Signal (never block) archive items past their retention window.
+
+    Retention lives in BRAIN/archive/README.md inside a machine-readable
+    RETENTIE block (owner of the policy): `permanent = <names>`,
+    `overig_dagen = <n>`, `max_mb = <n>`. `permanent` only exempts entries
+    in BRAIN/archive; INFRA/backups entries always age out. Removal stays
+    HITL (owner's OK per item).
+    """
+    print(f"📦 Checking retention: {' + '.join(os.path.relpath(d, HOME) for d in ARCHIVE_DIRS)} ...")
+    if not any(os.path.isdir(d) for d in ARCHIVE_DIRS):
+        print("✅ No archive/backup directories, skipping.")
+        return True
+
+    permanent = set()
+    max_days = 180
+    max_mb = 5
+    readme = os.path.join(ARCHIVE_DIR, "README.md")
+    try:
+        with open(readme, "r") as f:
+            txt = f.read()
+        m = re.search(r"<!--\s*RETENTIE\s*(.*?)\s*RETENTIE\s*-->", txt, re.S)
+        if not m:
+            print("⚠️ RETENTIE block missing in archive README — using defaults (180d / 5MB).")
+        else:
+            for line in m.group(1).splitlines():
+                line = line.strip()
+                if not line or "=" not in line:
+                    continue
+                key, val = (p.strip() for p in line.split("=", 1))
+                if key == "permanent":
+                    permanent.update(p.strip() for p in val.split(",") if p.strip())
+                elif key == "overig_dagen":
+                    max_days = int(val)
+                elif key == "max_mb":
+                    max_mb = int(val)
+    except FileNotFoundError:
+        print("⚠️ No archive README — using defaults (180d / 5MB).")
+    except Exception as e:
+        print(f"⚠️ Could not read archive retention config ({e}) — using defaults.")
+
+    now = datetime.now()
+    overruns = []
+    total_kb = 0
+    for base in ARCHIVE_DIRS:
+        if not os.path.isdir(base):
+            continue
+        du = run_command(f"du -sk {base}")
+        if du and du.split()[0].isdigit():
+            total_kb += int(du.split()[0])
+        for entry in sorted(os.listdir(base)):
+            path = os.path.join(base, entry)
+            if base == ARCHIVE_DIR and entry in permanent:
+                continue
+            try:
+                age_days = (now - datetime.fromtimestamp(os.path.getmtime(path))).days
+            except OSError:
+                continue
+            if age_days > max_days:
+                overruns.append(f"{os.path.relpath(path, HOME)} ({age_days}d old, limit {max_days}d)")
+
+    mb = total_kb / 1024
+
+    for o in overruns:
+        print(f"⚠️ Past retention: {o} — schedule removal (owner's OK required).")
+    if mb > max_mb:
+        print(f"⚠️ Archive+backups total {mb:.1f}MB exceeds the {max_mb}MB budget — propose a sweep.")
+    if not overruns and mb <= max_mb:
+        print(f"✅ Retention OK ({total_kb}K / {max_mb}MB budget; items ≤{max_days}d or permanent).")
+    return True
+
+
 def main():
     print(f"🛡️ TMS Integrity Hook - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     tms_content = get_tms_content()
@@ -308,8 +385,9 @@ def main():
     lessons_ok = check_learned_lessons_integrity()
     index_ok = check_index_coverage()
     guardrails_ok = check_guardrails()
+    archive_ok = check_archive_retention()
 
-    if git_ok and workspace_ok and lessons_ok and index_ok and guardrails_ok:
+    if git_ok and workspace_ok and lessons_ok and index_ok and guardrails_ok and archive_ok:
         print("\n🟢 TMS is CLEAN AND UPTODATE. All activities registered.")
         exit(0)
     else:
