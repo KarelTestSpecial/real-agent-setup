@@ -65,7 +65,7 @@ def check_git_activity(tms_content):
     per commit (an unregistered commit = error). A repo that is not in the TMS
     only produces a warning, because not every project has to be registered in
     the TMS — otherwise this check would permanently scream about projects that
-    Karel deliberately keeps outside the TMS.
+    User deliberately keeps outside the TMS.
     """
     print("🔍 Checking recent Git activity per repo...")
 

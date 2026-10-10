@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { createRequire } = require('module');
-const req = createRequire('/home/kareltestspecial/INFRA/');
+const req = createRequire('$HOME/INFRA/');
 const { google } = req('googleapis');
 
 const CREDENTIALS_PATH = path.join(process.env.HOME, '.config/maccha/credentials.json');

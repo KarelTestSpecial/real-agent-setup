@@ -58,7 +58,7 @@ fi
 # 3. Path and Secret Leak Check
 echo "📂 Scanning for legacy hardcoded path references..."
 LEAKS_FOUND=0
-LEGACY_PATTERNS=("INFO/aan-karel" "G_A/agents/real-agent/rapportage")
+LEGACY_PATTERNS=("INFO/aan-owner" "G_A/agents/real-agent/rapportage")
 
 for pattern in "${LEGACY_PATTERNS[@]}"; do
     # Scan infrastructure files (excluding node_modules and .git)

@@ -1,4 +1,4 @@
-#!/home/kareltestspecial/BRAIN/memanto/.venv/bin/python3
+#!/usr/bin/env python3
 import sys, os, json, argparse, re, datetime
 
 sys.path.insert(0, os.path.expanduser("~/INFRA/agents-brain/lib"))

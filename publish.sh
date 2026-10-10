@@ -136,8 +136,28 @@ copy_dir_recursive() {
         # and dereference symlinks so the repo never receives a personal absolute
         # symlink target. (Previously 'cp -ru' silently skipped files whose local
         # mtime was older than the sanitized repo copy, causing stale drift.)
-        # Fail loud: a copy error must abort the publish, never be swallowed.
-        cp -rfL "${items[@]}" "$dst/"
+        # Skip items whose symlink-resolved source IS the repo destination: the
+        # brain/lib engine is loaded through a runtime symlink that points into
+        # this repo (single source), so a same-file cp would abort the whole
+        # publish under `set -e` — and with it the PII gates + publish marker.
+        local same=() copy_items=()
+        for item in "${items[@]}"; do
+            local base; base="$(basename "$item")"
+            local resolved_src resolved_dst
+            resolved_src="$(realpath "$item")"
+            resolved_dst="$(realpath "$dst/$base" 2>/dev/null || echo "$dst/$base")"
+            if [ "$resolved_src" = "$resolved_dst" ]; then
+                same+=("$base")
+            else
+                copy_items+=("$item")
+            fi
+        done
+        if [ "${#same[@]}" -gt 0 ]; then
+            echo "  • $dst_repo/: ${same[*]} already the same file (runtime symlink single source) — skipped"
+        fi
+        if [ "${#copy_items[@]}" -gt 0 ]; then
+            cp -rfL "${copy_items[@]}" "$dst/"
+        fi
         echo "  ✓ $dst_repo/ (gesynchroniseerd)"
     fi
 }
