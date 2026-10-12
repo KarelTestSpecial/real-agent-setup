@@ -110,6 +110,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Build an HTML+QP e-mail and save it as a himalaya draft.")
     ap.add_argument("--account", required=True, help="himalaya account (e.g. gmail-personal)")
     ap.add_argument("--to", required=True)
+    ap.add_argument("--cc", action="append", default=[], help="Cc recipient (repeatable)")
     ap.add_argument("--subject", required=True)
     ap.add_argument("--from", dest="from_addr", help="From address (default: derived from --account)")
     g = ap.add_mutually_exclusive_group(required=True)
@@ -135,6 +136,8 @@ def main() -> None:
     msg = EmailMessage()
     msg["From"] = from_addr
     msg["To"] = args.to
+    if args.cc:
+        msg["Cc"] = ", ".join(args.cc)
     msg["Subject"] = subject
     if args.in_reply_to:
         msg["In-Reply-To"] = args.in_reply_to
