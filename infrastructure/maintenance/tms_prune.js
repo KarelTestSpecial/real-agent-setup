@@ -63,4 +63,47 @@ function pruneDone() {
     console.log(`TMS Hygiene: ${toArchive.length} oldest lines moved to ${archivePath}.`);
 }
 
+function pruneImprovement() {
+    const impPath = path.join(os.homedir(), 'BRAIN', 'IMPROVEMENT.md');
+    const logPath = path.join(os.homedir(), 'BRAIN', 'archive', 'improvement-lessons-log.md');
+    const MAX_IMP_LINES = 120;
+    if (!fs.existsSync(impPath)) return;
+
+    const lines = fs.readFileSync(impPath, 'utf8').split('\n');
+    if (lines.length <= MAX_IMP_LINES) {
+        console.log(`TMS Hygiene: IMPROVEMENT.md is ${lines.length} lines (limit ${MAX_IMP_LINES}), no prune needed.`);
+        return;
+    }
+
+    // Find all session blocks ("### ") and archive the oldest ones
+    const blockStarts = [];
+    let roadmapIdx = lines.length;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith('## 📈 Improvement Roadmap')) {
+            roadmapIdx = i;
+            break;
+        }
+        if (lines[i].startsWith('### ')) {
+            blockStarts.push(i);
+        }
+    }
+
+    if (blockStarts.length <= 2) return;
+
+    // Keep the top header + newest 3 session blocks + roadmap footer
+    const cutIdx = blockStarts[Math.min(3, blockStarts.length - 1)];
+    const toArchive = lines.slice(cutIdx, roadmapIdx);
+    if (toArchive.length === 0) return;
+
+    fs.mkdirSync(path.dirname(logPath), { recursive: true });
+    const stamp = new Date().toISOString().split('T')[0];
+    const archiveChunk = `\n\n## --- Auto-archived from IMPROVEMENT.md on ${stamp} ---\n\n` + toArchive.join('\n').trim() + '\n';
+    fs.appendFileSync(logPath, archiveChunk);
+
+    const kept = lines.slice(0, cutIdx).concat([''], lines.slice(roadmapIdx)).join('\n').replace(/\s+$/, '') + '\n';
+    fs.writeFileSync(impPath, kept);
+    console.log(`TMS Hygiene: archived ${toArchive.length} lines from IMPROVEMENT.md to ${logPath}.`);
+}
+
 pruneDone();
+pruneImprovement();

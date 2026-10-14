@@ -496,20 +496,74 @@ def check_context_budget(files=None, norm=None):
     return True
 
 
+MAX_TMS_LINE_CHARS = 1200
+MAX_TODO_LINES_WARN = 350
+
+
+def check_tms_hygiene():
+    """Enforce hard line-length limit on todo.md / in-progress.md so the
+    read tool (which truncates at 2000 chars) never drops the end of a task,
+    and warn when todo.md grows past MAX_TODO_LINES_WARN lines."""
+    print(f"📏 Checking TMS line lengths (max {MAX_TMS_LINE_CHARS} chars per line)...")
+    violations = []
+    for name in ("todo.md", "in-progress.md"):
+        path = os.path.join(TMS_DIR, name)
+        if not os.path.isfile(path):
+            continue
+        with open(path, "r") as f:
+            lines = f.readlines()
+        if name == "todo.md" and len(lines) > MAX_TODO_LINES_WARN:
+            print(
+                f"⚠️ todo.md has {len(lines)} lines (warn threshold {MAX_TODO_LINES_WARN}) — "
+                "move parked sub-tasks or history into their PLAN/ or INFO/ dossier."
+            )
+        for idx, line in enumerate(lines, 1):
+            raw = line.rstrip("\n")
+            if len(raw) > MAX_TMS_LINE_CHARS:
+                preview = raw.strip()[:65]
+                violations.append(
+                    f"{name}:{idx} is {len(raw)} chars (max {MAX_TMS_LINE_CHARS}): '{preview}...' "
+                    "→ move chronological history to the dossier file in INFO/ and keep only the next action + link."
+                )
+    if violations:
+        for v in violations:
+            print(f"❌ {v}")
+        return False
+    print(f"✅ All lines in todo.md and in-progress.md are ≤{MAX_TMS_LINE_CHARS} chars.")
+    return True
+
+
+def check_situatie_status_leak():
+    """Warn if the central situation overview contains task status symbols (✅⏳❌🔴⛔🟡).
+    Non-blocking reminder so weaker models rewrite status ticks into plain facts."""
+    checker = os.path.join(BIN_MACCHA, "situation_staleness_check.py")
+    if not os.path.isfile(checker):
+        return True
+    out = run_command(f"python3 '{checker}'")
+    if "status-symbool" in out:
+        print("⚠️ Central situation overview contains task status symbols (✅/⏳/⛔) — rewrite them as plain state facts:")
+        for line in out.splitlines():
+            if line.strip().startswith(("✅", "⏳", "❌", "🔴", "⛔", "🟡")):
+                print("   " + line.strip())
+    return True
+
+
 def main():
     print(f"🛡️ TMS Integrity Hook - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     tms_content = get_tms_content()
 
     git_ok = check_git_activity(tms_content)
     workspace_ok = check_workspace_activity(tms_content)
+    hygiene_ok = check_tms_hygiene()
     lessons_ok = check_learned_lessons_integrity()
     index_ok = check_index_coverage()
     guardrails_ok = check_guardrails()
     archive_ok = check_archive_retention()
     budget_ok = check_context_budget()
     publish_ok = check_publish_drift()
+    check_situatie_status_leak()
 
-    if git_ok and workspace_ok and lessons_ok and index_ok and guardrails_ok and archive_ok and budget_ok and publish_ok:
+    if git_ok and workspace_ok and hygiene_ok and lessons_ok and index_ok and guardrails_ok and archive_ok and budget_ok and publish_ok:
         print("\n🟢 TMS is CLEAN AND UPTODATE. All activities registered.")
         exit(0)
     else:

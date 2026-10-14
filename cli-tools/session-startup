@@ -26,6 +26,12 @@ if [ -f ~/in-progress.md ]; then
     TMS_OK=false
   fi
 fi
+LONG_LINES=$(awk 'length($0) > 1200 {print FILENAME ":" FNR " (" length($0) " chars)"}' ~/todo.md ~/in-progress.md 2>/dev/null)
+if [ -n "$LONG_LINES" ]; then
+  echo "⚠️  Lines >1200 chars in TMS (risk of read-tool truncation at 2000 chars) — move history to INFO/:"
+  echo "$LONG_LINES"
+  TMS_OK=false
+fi
 if $TMS_OK; then
   echo "TMS OK (todo: $(grep -c '^- \[[ /]\]' ~/todo.md) open, in-progress: $(grep -c '^- \[[ /]\]' ~/in-progress.md) open)"
 fi
