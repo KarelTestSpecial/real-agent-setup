@@ -99,5 +99,4 @@ fi
 
 # Readable todo view retired (User's decision, 5 October 2026).
 # `todo.md` is the only place; the derived table `INFO/owner/todo_overzicht.md` was
-# deleted. `tms_human_view.py` is still there, unused, in case it is ever needed —
-# deliberately not removed: ~/bin is not under git and is not part of the weekly backup.
+# deleted. `tms_human_view.py` is still there, unused, in case it is ever needed.

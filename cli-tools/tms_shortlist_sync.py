@@ -19,18 +19,23 @@ STOPWORDS = {
 
 
 def significant_words(text):
-    return {w for w in re.findall(r'\w+', text.lower()) if len(w) >= 4 and w not in STOPWORDS}
+    return {w for w in re.findall(r'\w+', text.lower()) if len(w) >= 3 and w not in STOPWORDS}
 
 
 def stem_overlap(words_a, words_b):
     """Counts semantic matches including compound words: 'belasting' matches
-    'belastingregister', 'betalen' matches 'uitbetaling' (stem = first 5 chars)."""
+    'belastingregister', 'betalen' matches 'uitbetaling' (stem = first 5 chars).
+    Short words (<5 chars, e.g. 'bwr', 'ivt') require exact word match."""
     count = 0
     for a in words_a:
         stem_a = a[:5] if len(a) >= 5 else a
         for b in words_b:
             stem_b = b[:5] if len(b) >= 5 else b
-            if stem_a in b or stem_b in a:
+            if len(a) < 5 or len(b) < 5:
+                if a == b:
+                    count += 1
+                    break
+            elif stem_a in b or stem_b in a:
                 count += 1
                 break
     return count

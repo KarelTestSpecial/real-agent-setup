@@ -84,8 +84,9 @@ def cmd_distill(args):
     print(f"File: {fp}\nMemanto ID: {mid}")
 
 def cmd_prune(args):
-    """Flow-through: clean up decayed working-memory entries (default: Event < 0.2).
-    Curated categories (Learning/Preference/Fact) are never touched."""
+    """Flow-through: clean up decayed working-memory entries (default: Event < 0.2)
+    plus any entry explicitly marked as superseded / forgotten (confidence == 0.0).
+    Active curated categories (Learning/Preference/Fact with confidence > 0) are never touched."""
     PROTECTED = {"Learning", "Preference", "Fact"}
     cats = [c.strip() for c in args.category.split(",")] if args.category else ["Event"]
     if any(c in PROTECTED for c in cats):
@@ -93,9 +94,11 @@ def cmd_prune(args):
         sys.exit(1)
     before = list(brain.memories)
     doomed = [m for m in before
-              if m.get("category") in cats and m.get("confidence", 1.0) < args.threshold]
+              if (m.get("category") in cats and m.get("confidence", 1.0) < args.threshold)
+              or m.get("superseded_by")
+              or m.get("confidence", 1.0) <= 0.0]
     keep = [m for m in before if m not in doomed]
-    print(f"Store: {len(before)} entries | removed: {len(doomed)} ({','.join(cats)} < {args.threshold}) | remaining: {len(keep)}")
+    print(f"Store: {len(before)} entries | removed: {len(doomed)} ({','.join(cats)} < {args.threshold} + superseded/0.0) | remaining: {len(keep)}")
     for m in doomed[:10]:
         print(f"  - conf={m.get('confidence', 0):.2f} | {m.get('text', '')[:60]}")
     if len(doomed) > 10:
