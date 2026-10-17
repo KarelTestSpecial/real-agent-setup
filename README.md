@@ -283,7 +283,18 @@ In addition, you can wrap any personal, non-generic block inside an otherwise-sh
 > [!NOTE]
 > These two files are listed in `.gitignore`, so they are never tracked or pushed. Create them from scratch on each machine you publish from. New contributors adopting the framework simply add their own.
 
+### 🏷️ Versioning & releases
+
+`VERSION` (repo root) and `CHANGELOG.md` are the single source of truth for the version; the matching annotated Git tag is `v<VERSION>`. Cutting a release is a deliberate, manual step:
+
+1. Move the `[Unreleased]` entries of `CHANGELOG.md` into a new `## [x.y.z] - YYYY-MM-DD` section and bump `VERSION` — plus the footer of `README.md` and `system-brain/AGENTS.md`, which name the same version.
+2. Commit and push that as `chore(release): vX.Y.Z`.
+3. `git tag -a vX.Y.Z -m "MACCHA vX.Y.Z — <one-line summary>"` and `git push origin vX.Y.Z`.
+4. `gh release create vX.Y.Z --title "MACCHA vX.Y.Z" --notes-file <file>`: the release body is the new changelog section, so a visitor to the Releases page sees what changed without reading the git log.
+
+There is **no automated release workflow** — `.github/workflows/gates.yml` only runs the syntax and publish gates on every push and pull request — so tagging stays a human decision. From `v1.2.0` on, the tag, `VERSION`, the changelog and the footers move together; the older tags (`v0.1` … `v1.1.6`) predate this convention.
+
 ---
 
-*MACCHA v2.0 | Multi-Agent Continuous Context Harness*  
+*MACCHA v1.2.0 | Multi-Agent Continuous Context Harness*  
 *"Continuity is the absolute key to agentic performance."*

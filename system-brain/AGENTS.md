@@ -142,7 +142,7 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 
 ---
 
-*MACCHA v1.1 | Multi-Agent Continuous Context Harness*
+*MACCHA v1.2.0 | Multi-Agent Continuous Context Harness*
 *"Continuity is the key to agentic performance."*
 
 ---

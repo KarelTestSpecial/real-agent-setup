@@ -3,9 +3,18 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.2.0] - 2026-10-17
 ### Added
 - `.publish-allowlist`: tracked, fail-closed publish curation. Every destination path that may ship is listed explicitly; anything else in `~/bin/maccha` or `~/INFRA` is skipped *and reported by name*. Publishing a tool now requires adding and committing a line instead of happening as a side effect of a blind copy. A missing allowlist aborts the copy phase (exit 1) rather than reverting to "copy everything".
 - `requirements.txt` (`google-genai==2.11.0`): `brain/lib/memanto_engine.py` imports the SDK at module level and `setup.sh` installs no Python dependencies, so a clean clone crashed on first Memanto use. The prerequisite is now stated in the README.
+- **Archive retention policy and check**: `tms_integrity_hook.py` signals (never blocks) archive and backup items past their retention window. The policy lives in a machine-readable `RETENTIE` block of `BRAIN/archive/README.md` — `permanent` exempts only the curated knowledge archive, while `INFRA/backups` entries always age out (180 days, 5 MB budget) — and `setup.sh` creates that README on a fresh install.
+- **Unpublished-tooling reminder at closeout**: `publish.sh` writes `~/.config/maccha/last_publish` whenever the local tooling matches the repo, and the integrity hook raises a non-blocking "run publish.sh" reminder when anything in `~/bin/maccha` is newer.
+- **Weekly link check** (`hooks/link-check.cjs`, a curated English copy shipped beside the other capsule hooks): validates every zonal and `file://` path inside the knowledge documents. It is a real gate — exit 0/1/2, a hard error when a source file cannot be read, and URL-encoded (`%20`) targets decoded with a raw-path fallback. `session-startup` runs it on a weekly throttle and advances the throttle marker **only on a clean run**; the target list resolves per layout (`BRAIN/<file>` → `~/<file>`), so both the maintainer layout and a fresh capsule install work.
+- **Memanto embedding cache**: a persistent per-item SHA256 cache avoids re-embedding unchanged memories. Candidates are chunked to ≤100 items with 65 s pacing to respect the free-tier 100-items/min limit, plus 429 retry with exponential backoff while the keyword fallback stays in place — a warm cache means exactly one query embedding per recall.
+- **Context-budget check**: new non-blocking `check_context_budget()` in the integrity hook, with the norm read from the `Context Efficiency` line of `BRAIN/AGENTS.md` (raised 2500 → **3333** tokens, matching the trimmed Dutch runtime file).
+- `compose-mail`: `--cc` option for copying recipients, and `**bold**` inline markup is escaped instead of leaking into the message.
+- Maintenance playbooks under `brain/maintenance/`: mandate-budget maintenance and TMS hygiene.
 
 ### Changed
 - Quick Start clones over **HTTPS** instead of SSH. The documented SSH remote requires a GitHub key on the target machine, which a fresh demo laptop does not have.
@@ -13,9 +22,23 @@ All notable changes to this project will be documented in this file.
 - `setup.sh`: the remaining Dutch prompts and messages are English. Non-interactive runs were already safe (`[ -t 0 ]` guard) and stay that way.
 - **Language gate: marker list extended, exception made explicit.** The 55 markers were a proxy and let real Dutch through in six published files; the list now covers high-frequency Dutch function words. `tms_shortlist_sync.py` is excluded **by name** (it ships a Dutch stopword list for Dutch-language text analysis — that is its function), so the exception is a documented choice instead of a coincidence.
 - The six files the extended gate caught are translated: `calendar-add.js`, `clean-prune-purge.sh`, `firestore-read/write/delete.sh`, `run_deep_research.js`, `ga-inventory.py`, plus a Dutch comment in `memanto_engine.py`. Message strings only — no behaviour changed.
+- **English-only publication finished** for the Dutch strings that had never shipped (messages and comments only, no behaviour change): `maccha-doctor` (job-hunt section), `maccha-backup`, `session-startup`, `tms_integrity_hook` (and its `INFRA/maintenance` symlink copy), `tms_prune.js` and `mydrive-access-tool.js`.
+- `compose-mail` reads the mail `From` addresses from a local `~/.config/maccha/accounts.json` (0600) and fails closed with an actionable message when it is missing — the published copy therefore ships **zero** personal addresses.
+- **Bootstrap mandates deduplicated** (−80 lines, every mandate retained) and the generic rules the bootstrap was missing synced: outgoing email, Himalaya accounts, context budget, filename convention, secrets storage, bounty audit and live-first guidance.
+- **TMS line limit**: the integrity hook enforces a 1200-character maximum per TMS line and auto-prunes `IMPROVEMENT.md`.
+- `session-startup` checks the stale flag of the half-life situation document, and its retired-todo-view comment block is English; `safety_gate.sh`'s legacy path pattern is fixed.
+- `system-brain/AGENTS.md`: closeout step 3 corrected — the agent writes the Memanto session event itself after the run (the script only announces it).
+- Two lessons published to the capsule: measuring token budgets with a real tokenizer instead of a chars/4 estimate, and the Chrome-for-Testing extension loading test.
+- A `SINGLE SOURCE` note atop `memanto_engine.py` warns that the runtime reaches the engine through a working-tree symlink (`~/INFRA/agents-brain/lib/…`): never replace the symlink with a copy, and remember that a branch checkout there changes runtime content immediately.
 
 ### Fixed
 - **Hard PII gate missed files that were not tracked yet.** It enumerated `git ls-files`, but a file this run had just copied in is untracked at gate time — so a brand-new personal script sailed past the PII gate (and only a coincidental Dutch marker in the language gate stopped it). The gate now scans `git ls-files --cached --others --exclude-standard`, covering new files while still excluding gitignored local config. Proven with a probe file: the old enumeration returned 0 hits, the new one aborts with `PII LEAK DETECTED`.
+- **macOS portability**: `maccha-doctor` (`stat -c '%a'`, `find -xtype l`), `clean-prune-purge.sh` and `cron-cleanup.sh` (`sudo apt`, `journalctl`) and `setup.sh` (PATH additions written to a `~/.bash_aliases` that zsh never sources) all assumed a GNU/Linux userland. They now probe GNU and BSD spellings, skip the Linux-only steps elsewhere, and pick the profile from `$SHELL`.
+- **Memanto confidence decay had been silently dead for ~6 weeks**: a dedent nested the whole decay block under `if tzinfo is not None`, and naive timestamps are the norm. Decay now applies only the time elapsed since the last calculation (`last_decayed_at`, falling back to `created_at`), so repeated loads no longer re-multiply the same period factor — the previous behaviour would have drained every memory to `0.0` once decay ran again. `unpin_memory` resets the decay reference, and sub-threshold decay is not written away as lost.
+- **Vector search silently degraded to keyword matching**: after the chunking fix, `candidates_emb.embeddings` raised an `AttributeError` on a plain list, so every recall fell back to the keyword path. The similarity loop now uses the chunked list.
+- `embed_content` is chunked to 100 items: 210 memories in a single request returned `400 BatchEmbedContentsRequest` from the API's contents-per-request cap.
+- `tms_shortlist_sync.py` accepts 3-character acronyms again, and the pruner removes superseded and `0.0` Memanto entries.
+- `publish.sh`: a same-file symlink (a runtime symlink resolving to the repo destination itself, as with the `brain/lib` engine) is skipped instead of making a `cp` fail and aborting the whole publish — gates and publish marker included.
 
 ## [1.1.6] - 2026-09-13
 ### Added
