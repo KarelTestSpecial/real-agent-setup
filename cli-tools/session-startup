@@ -82,12 +82,27 @@ fi
 echo ""
 echo "=== Weekly link check (throttled, 1x per 7 days) ==="
 # Guards knowledge files against link rot after folder reorganizations.
+# The throttle marker is only written after a CLEAN check: a broken link therefore
+# keeps reporting on every start until it is repaired (a gate, not a report).
 LC_MARKER=~/BRAIN/.last_linkcheck
 LASTL=$(cat "$LC_MARKER" 2>/dev/null || echo 0)
 if (( NOW - LASTL > 604800 )); then
-  echo "$NOW" > "$LC_MARKER"
-  LC_TARGETS=(~/BRAIN/AGENTS.md ~/BRAIN/tms/todo.md ~/BRAIN/tms/in-progress.md)
-  node ~/BRAIN/hooks/link-check.cjs "${LC_TARGETS[@]}" 2>/dev/null || echo "⚠️  link-check.cjs failed"
+  # Resolve each logical knowledge file to the layout present on this machine:
+  # BRAIN/tms/<f> (personal layout) -> BRAIN/<f> -> ~/<f> (fresh capsule install,
+  # where setup.sh puts the templates in the home directory).
+  LC_TARGETS=()
+  for f in AGENTS.md IMPROVEMENT.md todo.md in-progress.md done.md; do
+    for cand in "$HOME/BRAIN/tms/$f" "$HOME/BRAIN/$f" "$HOME/$f"; do
+      if [ -f "$cand" ]; then LC_TARGETS+=("$cand"); break; fi
+    done
+  done
+  if [ "${#LC_TARGETS[@]}" -eq 0 ]; then
+    echo "link-check: no knowledge files found in this layout — skipped."
+  elif node ~/BRAIN/hooks/link-check.cjs "${LC_TARGETS[@]}" 2>/dev/null; then
+    echo "$NOW" > "$LC_MARKER"
+  else
+    echo "⚠️  link-check.cjs failed — throttle NOT advanced: this keeps reporting until fixed."
+  fi
 else
   echo "Last link check $(( (NOW - LASTL) / 86400 )) day(s) ago — OK."
 fi
