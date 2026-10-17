@@ -58,9 +58,8 @@ infrastructure/maintenance
 
 brain/lib
 
-# NOTE: skills/ is mirrored per skill, never wholesale. ~/BRAIN/skills also holds
-# personal Dutch-language variants that must NOT ship (the language and PII gates
-# would abort on them — by design), so every public skill is listed by its own
-# directory, and `publish.sh` needs a matching copy call per line.
-# See skills/README.md.
-skills/step-by-step
+# NOTE: skills/ is deliberately absent from this list. The public skills are
+# hand-maintained in this repository (like the system-brain templates) — there is
+# no local source folder to copy from, and the maintainer's personal Dutch-language
+# variants in ~/BRAIN/skills/ must NOT ship. skills/ still runs through the language
+# and PII gates via SYNC_DIRS in publish.sh. See skills/README.md.

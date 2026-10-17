@@ -5,24 +5,27 @@ Claude Code, OpenCode, Antigravity and any other harness that reads a skills dir
 
 Each subdirectory is one skill. Install one by copying the folder into your agent's
 skills directory (`~/.agents/skills/`, `~/.claude/skills/`, …); `setup.sh` does that
-for you when installing on a new machine.
+for you when installing on a new machine, and never overwrites a skill you already
+have.
 
-## Curation policy — mirrored per skill, never wholesale
+## Curation policy — hand-maintained, deliberately static
 
-This directory is generated from the maintainer's `~/BRAIN/skills/` by `publish.sh`,
-in the same way as `cli-tools/`: the local directory is the source of truth.
+This directory is maintained **directly in this repository**, in the same spirit as
+the `system-brain/` templates. What you see here is the published, generic version of
+each skill, and it changes only when its maintainer decides to update it. Nothing is
+auto-synced from anyone's local setup.
 
 Two things follow from that:
 
-- **Curation is per skill.** `~/BRAIN/skills/` also holds personal variants that are
-  written in Dutch and address their owner by name. They must not ship, and the
-  language and PII gates would abort the publish if they tried. So every public skill
-  needs *both* a line in `.publish-allowlist` and a copy call in the mirrors section
-  of `publish.sh`. One without the other is a no-op, not a leak: an allowlisted file
-  still has to be copied, and a Dutch file that makes it through is caught by the gate.
-- **Never edit the files here by hand.** Change `~/BRAIN/skills/<skill>/SKILL.md` and
-  run `publish.sh`. A skill may exist locally that is deliberately *not* published
-  here — that is the default, not an oversight.
+- **A local skill is a different artefact, not a hidden source.** The maintainer's
+  personal variants are written in Dutch and address their owner by name. They must
+  not ship, and the language and PII gates would abort the publish if they tried. A
+  skill here is a translation/derivative that may lag its local counterpart on
+  purpose — exactly like a translated manual.
+- **Editing here is the workflow.** Want a change published? Change the file in this
+  repository and commit. There is no `publish.sh` wiring for skills on purpose: that
+  script syncs CLI tools and infrastructure scripts (identical artefacts), never
+  curated text.
 
 ## Bundled skills
 

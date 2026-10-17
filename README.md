@@ -159,7 +159,7 @@ MACCHA comes with a suite of pre-configured tools designed to extend your agent'
 Not everything the harness knows is a mandate or a script — some of it is a *way of working*. `skills/` ships drop-in agent skills: plain `SKILL.md` files with YAML frontmatter that Claude Code, OpenCode, Antigravity and other harnesses pick up from a skills directory.
 
 - **`step-by-step`**: patient, one-step-at-a-time guidance. Exactly one step per message, always restarting at step 1, waiting for the user's "done" before moving on, and pausing in front of anything that changes something (send, submit, delete, pay) until the user says go. Made for the moment a user says "slow down", "walk me through it", or is doing something for the first time.
-- **`skills/README.md`**: the curation policy. The directory is generated from `~/BRAIN/skills/` by `publish.sh` and curated **per skill** — that folder also holds personal, Dutch-language variants that must never ship, so a public skill needs its own allowlist line.
+- **`skills/README.md`**: the curation policy. The skills are **hand-maintained here, deliberately static** — like the `system-brain/` templates, they change when the maintainer decides to, and are never auto-synced from a personal setup (where personal, Dutch-language variants live).
 
 Installing a skill is one copy into your harness's skills directory (`~/.agents/skills/`, `~/.claude/skills/`, …); `setup.sh` does it for you.
 
@@ -186,7 +186,7 @@ real-agent-setup/
 │   └── README.md
 ├── skills/                        # Drop-in agent skills (English, harness-agnostic)
 │   ├── step-by-step/              #   One step per message; the user keeps the reins
-│   └── README.md                  #   Curation policy (mirrored per skill from ~/BRAIN/skills)
+│   └── README.md                  #   Curation policy (hand-maintained, deliberately static)
 ├── setup.sh                       # Install script for new machines
 ├── .publish-allowlist             # Curated list of what may be published (fail-closed)
 └── publish.sh                     # Publish local improvements back to repo
