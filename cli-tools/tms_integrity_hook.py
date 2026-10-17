@@ -425,6 +425,73 @@ def check_publish_drift():
     return True
 
 
+# Release hygiene for the capsule repo: VERSION + CHANGELOG.md are the single
+# source of truth and every release carries a matching annotated tag (see the
+# README "Versioning & releases"). ``publish.sh`` intentionally does NOT couple a
+# publish run to a release, so nothing else would ever notice that the tag has
+# fallen behind — this check is that signal (it once sat 27 commits and five
+# weeks behind v1.1.6). Local only: it never contacts the remote.
+CAPSULE_REPO = os.path.join(HOME, "real-agent-setup")
+TAG_DRIFT_MIN_COMMITS = 10
+TAG_DRIFT_MAX_DAYS = 30
+
+
+def check_release_drift():
+    """Remind (never block) that the capsule release tag may be lagging.
+
+    Warns on volume (>= TAG_DRIFT_MIN_COMMITS commits since the newest tag) or
+    on age (>= TAG_DRIFT_MAX_DAYS since the tagged commit), and on a mismatch
+    between the VERSION file and that tag (VERSION ahead = release in progress).
+    """
+    print(f"🏷️ Checking release drift for {os.path.relpath(CAPSULE_REPO, HOME)} ...")
+    if not os.path.isdir(os.path.join(CAPSULE_REPO, ".git")):
+        print("✅ No capsule git repo, skipping.")
+        return True
+
+    tag = run_command(f"git -C '{CAPSULE_REPO}' describe --tags --abbrev=0")
+    if not tag or tag.startswith("Error:") or "fatal" in tag:
+        print("ℹ️ No release tag in the capsule repo yet — nothing to compare against.")
+        return True
+
+    count_raw = run_command(f"git -C '{CAPSULE_REPO}' rev-list --count '{tag}..HEAD'")
+    try:
+        commits = int(count_raw)
+    except ValueError:
+        print("⚠️ Could not count the commits since the last tag — check skipped.")
+        return True
+
+    version = ""
+    version_file = os.path.join(CAPSULE_REPO, "VERSION")
+    if os.path.isfile(version_file):
+        with open(version_file) as f:
+            version = f.read().strip()
+
+    days = 0
+    tag_date = run_command(f"git -C '{CAPSULE_REPO}' log -1 --format=%cs '{tag}'")
+    try:
+        days = (datetime.now() - datetime.strptime(tag_date[:10], "%Y-%m-%d")).days
+    except ValueError:
+        days = 0
+
+    reminders = []
+    if version and f"v{version}" != tag:
+        reminders.append(
+            f"VERSION says {version} but the newest tag is {tag} — finish the release "
+            "or bring VERSION back in line (README 'Versioning & releases')."
+        )
+    if commits >= TAG_DRIFT_MIN_COMMITS or days >= TAG_DRIFT_MAX_DAYS:
+        reminders.append(
+            f"{commits} commit(s) since {tag} ({days}d ago) — consider cutting a release: "
+            "VERSION + CHANGELOG.md, then `git tag -a` and `gh release create`."
+        )
+
+    for reminder in reminders:
+        print(f"⚠️ {reminder}")
+    if not reminders:
+        print(f"✅ Release tag {tag} is current ({commits} commit(s) since, tag {days}d old).")
+    return True
+
+
 # Mandate files measured against the Context Efficiency budget. The NL runtime
 # file (~/BRAIN/AGENTS.md) is the single source of the threshold; the English
 # capsule copy is measured against the same norm. ~/.gemini/GEMINI.md is
@@ -561,9 +628,10 @@ def main():
     archive_ok = check_archive_retention()
     budget_ok = check_context_budget()
     publish_ok = check_publish_drift()
+    release_ok = check_release_drift()
     check_situatie_status_leak()
 
-    if git_ok and workspace_ok and hygiene_ok and lessons_ok and index_ok and guardrails_ok and archive_ok and budget_ok and publish_ok:
+    if git_ok and workspace_ok and hygiene_ok and lessons_ok and index_ok and guardrails_ok and archive_ok and budget_ok and publish_ok and release_ok:
         print("\n🟢 TMS is CLEAN AND UPTODATE. All activities registered.")
         exit(0)
     else:

@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- **Release-drift reminder at closeout**: the integrity hook now warns (never blocks) when the capsule tag falls behind — 10+ commits since the newest tag, 30+ days since the tagged commit, or a `VERSION` bump without a matching tag. `publish.sh` deliberately does not couple a publish run to a release, so this check is the only signal that the tag is lagging (it once sat 27 commits and five weeks behind `v1.1.6`). Local only: it never contacts the remote.
 
 ## [1.2.0] - 2026-10-17
 ### Added
