@@ -76,10 +76,18 @@ if ls "$DEST_DIR"/*.inprogress >/dev/null 2>&1; then
 fi
 
 echo "📦 Creating backup → $(basename "$TMP") (staged, not yet visible as a real backup)"
+# Extra (17/10/2026): the personal PII word list and the local publish configs
+# belong in a faithful reinstall, but ~/.config/ and real-agent-setup/ fall
+# outside the fixed folder set. backup.key itself stays OUT of the tar (off-device copy).
+EXTRA=()
+if [ -f "$H/.config/maccha/pii-words.json" ]; then EXTRA+=( .config/maccha/pii-words.json ); fi
+if [ -f "$H/real-agent-setup/.publish-sanitize.sed" ]; then EXTRA+=( real-agent-setup/.publish-sanitize.sed ); fi
+if [ -f "$H/real-agent-setup/.publish-pii-words" ]; then EXTRA+=( real-agent-setup/.publish-pii-words ); fi
+echo "🔐 Extra config included: ${EXTRA[*]:-none}"
 tar -C "$H" -czf - \
   --exclude='node_modules' --exclude='*/node_modules' \
   --exclude='.vite' \
-  INFO PLAN BRAIN C bin/maccha \
+  INFO PLAN BRAIN C bin ${EXTRA[@]+"${EXTRA[@]}"} \
 | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass file:"$KEY_FILE" -out "$TMP"
 
 BYTES=$(stat -c %s "$TMP")

@@ -1,0 +1,5 @@
+[
+  { "sev": "BLOCK", "cat": "identification", "pattern": "First\\s+Name|Lastname\\b", "flags": "i", "comment": "replace with your own name — pattern is a JavaScript regex as a string (double the backslashes: \\b, \\s)" },
+  { "sev": "BLOCK", "cat": "health/justice", "pattern": "\\bexamplehospital\\b|\\bexampleterm\\b", "flags": "i", "comment": "your own sensitive context terms: institutions, conditions, case words" },
+  { "sev": "WARN", "cat": "assistant identity", "pattern": "\\bYourAssistantName\\b", "flags": "", "comment": "sev: WARN = report only, BLOCK = block the push" }
+]

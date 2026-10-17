@@ -28,6 +28,8 @@ cli-tools/maccha-backup
 cli-tools/maccha-doctor
 cli-tools/memanto
 cli-tools/memanto_cli.py
+cli-tools/pii-check.mjs
+cli-tools/pii-words.example.json
 cli-tools/port-registry
 cli-tools/safety_gate.sh
 cli-tools/session-closeout

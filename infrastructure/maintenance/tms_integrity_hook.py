@@ -378,14 +378,37 @@ def check_archive_retention():
     return True
 
 
+def _publish_allowlist_names():
+    """Names in ~/bin/maccha that publish.sh would actually ship (cli-tools/*).
+
+    Reads real-agent-setup/.publish-allowlist (the fail-closed curation that
+    publish.sh enforces). Returns None when it cannot be read — the caller then
+    falls back to warning about everything instead of silently going quiet.
+    """
+    path = os.path.join(HOME, "real-agent-setup", ".publish-allowlist")
+    try:
+        with open(path) as f:
+            lines = f.readlines()
+    except OSError:
+        return None
+    names = set()
+    for line in lines:
+        line = line.split("#", 1)[0].strip()
+        if not line.startswith("cli-tools/"):
+            continue
+        rel = line[len("cli-tools/"):]
+        if rel and "/" not in rel:
+            names.add(rel)
+    return names
+
+
 def check_publish_drift():
-    """Remind (never block) that changed cli-tools may not be published yet.
+    """Remind (never block) that changed publishable tools may not be synced yet.
 
     publish.sh drops a timestamp in ~/.config/maccha/last_publish whenever the
-    local tooling matches the repo; any file in ~/bin/maccha newer than that
-    marker means real-agent-setup is drifting. Local-only scripts (not on the
-    publish allowlist) can raise this too — publish.sh's own report is the
-    authority on what would actually ship.
+    local tooling matches the repo. Only files on .publish-allowlist can drift
+    (they are what ships); local-only scripts are expected to differ and get a
+    neutral line instead of a warning (tool-zones rule, PLAN 20261017).
     """
     print(f"📤 Checking publish drift for {os.path.relpath(BIN_MACCHA, HOME)} ...")
     if not os.path.isdir(BIN_MACCHA):
@@ -401,27 +424,37 @@ def check_publish_drift():
         print("⚠️ Publish marker unreadable — run publish.sh once to refresh it.")
         return True
 
-    newest = 0.0
-    newest_name = ""
+    allow = _publish_allowlist_names()
+    newest_pub = (0.0, "")
+    local_hits = []
     for entry in os.listdir(BIN_MACCHA):
-        if entry in ("__pycache__", ".git"):
+        if entry in ("__pycache__", ".git", "node_modules"):
             continue
         path = os.path.join(BIN_MACCHA, entry)
         try:
             mt = os.path.getmtime(path)
         except OSError:
             continue
-        if mt > newest:
-            newest, newest_name = mt, entry
+        if allow is None or entry in allow:
+            if mt > newest_pub[0]:
+                newest_pub = (mt, entry)
+        elif mt > last + 60:
+            local_hits.append(entry)
 
-    if newest > last + 60:
-        age_h = int((newest - last) / 3600)
+    if newest_pub[0] > last + 60:
+        age_h = int((newest_pub[0] - last) / 3600)
         print(
-            f"⚠️ {newest_name} changed after the last publish ({age_h}h ago) — "
-            "run publish.sh to sync real-agent-setup (its allowlist decides what ships)."
+            f"⚠️ {newest_pub[1]} changed after the last publish ({age_h}h ago) — "
+            "run publish.sh to sync real-agent-setup."
         )
+    elif allow is None:
+        print("⚠️ .publish-allowlist unreadable — cannot tell what would ship; treating all as drift.")
     else:
-        print("✅ Published: no tooling newer than the last publish marker.")
+        print("✅ Published tools in sync — nothing on the allowlist needs publishing.")
+    if local_hits:
+        shown = ", ".join(sorted(local_hits)[:3])
+        more = f" (+{len(local_hits) - 3} more)" if len(local_hits) > 3 else ""
+        print(f"ℹ️ Local-only, not in .publish-allowlist (no sync needed): {shown}{more}.")
     return True
 
 
