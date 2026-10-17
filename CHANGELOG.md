@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- **Bundled agent skills (`skills/`)**: a new curated mirror for drop-in skills — plain `SKILL.md` files with YAML frontmatter that any harness reading a skills directory will pick up. First entry is `step-by-step`: patient one-step-at-a-time guidance with an explicit "the user holds the reins" rule, the opposite of the always-on agent that acts first and reports later. Curation is **per skill** because `~/BRAIN/skills/` also holds Dutch, personal variants that must not ship: a public skill needs both a `.publish-allowlist` line and a copy call in the mirrors section of `publish.sh`, and `skills` is added to `SYNC_DIRS` so the language and PII gates cover the directory either way. `setup.sh` installs the bundled skills into `~/.agents/skills/` (plus `~/.claude/skills/` when that harness directory already exists), and the public `system-brain/AGENTS.md` template documents the activation phrases so a fresh install knows the skill exists.
 - **Release-drift reminder at closeout**: the integrity hook now warns (never blocks) when the capsule tag falls behind — 10+ commits since the newest tag, 30+ days since the tagged commit, or a `VERSION` bump without a matching tag. `publish.sh` deliberately does not couple a publish run to a release, so this check is the only signal that the tag is lagging (it once sat 27 commits and five weeks behind `v1.1.6`). Local only: it never contacts the remote.
+
+### Changed
+- `setup.sh`: the last Dutch strings are English (both copy confirmations, two comments and the skipped-Himalaya message). The language gate never saw them, because top-level files are outside `SYNC_DIRS` — so the one file a brand-new user runs first was also the one file never checked. The gate scope is deliberately unchanged; `setup.sh`/`publish.sh`/`README.md` stay out of it, since publishing never rewrites them.
 
 ## [1.2.0] - 2026-10-17
 ### Added

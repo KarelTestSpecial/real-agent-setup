@@ -186,7 +186,15 @@ echo -e "${CYAN}${BOLD}🧠 [3/4] Syncing Brain Memory Engine...${RESET}"
 copy_dir_recursive "$HOME_DIR/INFRA/agents-brain/lib" "brain/lib"
 
 echo ""
-echo -e "${CYAN}${BOLD}📚 [4/4] Learned Lessons Policy Registry${RESET}"
+echo -e "${CYAN}${BOLD}📚 [4/4] Curated Mirrors (Lessons & Skills)${RESET}"
+# Curated mirrors publish per item, never wholesale.
+# Skills: ~/BRAIN/skills also holds personal, Dutch-language variants that must not
+# ship, so every public skill needs its own allowlist line AND its own copy call
+# here. One without the other is a no-op: the copy is reported and skipped — and a
+# skill that gets allowlisted but is still Dutch is caught by the language gate.
+for skill in step-by-step; do
+    copy_dir_recursive "$HOME_DIR/BRAIN/skills/$skill" "skills/$skill"
+done
 echo -e "  ${YELLOW}⚠️  PII-WARNING:${RESET} Learned lessons are ${BOLD}NOT${RESET} automatically copied."
 echo -e "     If you have sanitised lessons to publish, copy them manually:"
 echo -e "     ${BOLD}cp -r ~/learned-lessons/technical/ repo/learned-lessons/${RESET}"
@@ -214,7 +222,10 @@ fi
 
 # === Sanitization scope ===
 # Only the synced content dirs are sanitized and gated — never publish.sh / README / .git.
-SYNC_DIRS=("cli-tools" "infrastructure" "brain")
+# "skills" joins the sync scope so the sanitize pass, the language gate and the PII
+# gate all cover that directory. The copy itself is curated per skill in the
+# "Curated Mirrors" section above — see skills/README.md.
+SYNC_DIRS=("cli-tools" "infrastructure" "brain" "skills")
 SANITIZE_RULES="$REPO_DIR/.publish-sanitize.sed"   # local-only (gitignored): holds personal tokens
 PII_WORDS="$REPO_DIR/.publish-pii-words"           # local-only (gitignored): one identifier per line
 

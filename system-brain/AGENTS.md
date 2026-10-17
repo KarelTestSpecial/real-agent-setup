@@ -110,6 +110,7 @@ The complete MACCHA harness is available as a PII-free package (`github.com/[you
 - **Reporting format:** reports to the owner are Markdown (`.md`) with headings/tables, placed in `~/INFO/over-owner/`.
 - **PII & professional privacy:** in external correspondence to professional contacts, employers, or volunteer organizations, NEVER share PII or sensitive personal details. Default to a clean, professional sign-off with no AI mention; any AI signature is optional and used only when fitting.
 - **Deadlines:** when registering deadline-bound work (e.g. translation jobs) in the TMS or reports, ALWAYS include the specific deadline date in the title/description to disambiguate recurring items.
+- **Step-by-step skill:** the bundled `step-by-step` skill (see `skills/`) is a mode, not a one-off. Load it when the user says "slow down", "step by step", "walk me through it", "from step 1", or wants to keep the reins on what changes: exactly one step per message, restart at step 1, and pause before anything that sends, submits, deletes or pays. Map your own activation phrases to it here.
 
 ---
 

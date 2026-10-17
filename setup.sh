@@ -46,7 +46,7 @@ copy_if_missing() {
     else
         mkdir -p "$(dirname "$dst")"
         cp -r "$src" "$dst"
-        echo "  ✓ gekopieerd $src -> $dst"
+        echo "  ✓ copied $src -> $dst"
     fi
 }
 
@@ -54,7 +54,7 @@ copy_always() {
     local src="$1" dst="$2"
     mkdir -p "$(dirname "$dst")"
     cp -r "$src" "$dst"
-    echo "  ✓ gekopieerd $src -> $dst"
+    echo "  ✓ copied $src -> $dst"
 }
 
 # === Brain (Memory Engine) ===
@@ -91,7 +91,7 @@ for f in mydrive-access-tool.js storage-manager.js manual-scrcpy.txt; do
     fi
 done
 
-# Kopieer maintenance scripts
+# Copy maintenance scripts
 if [ -d "$REPO_DIR/infrastructure/maintenance" ]; then
     mkdir -p "$HOME_DIR/INFRA/maintenance"
     cp -r "$REPO_DIR/infrastructure/maintenance"/* "$HOME_DIR/INFRA/maintenance/"
@@ -140,18 +140,43 @@ else
     echo -e "  ${YELLOW}~${RESET} BRAIN/archive/README.md exists, skipping"
 fi
 
-# === Learned Lessons ===
+# === Learned Lessons & Agent Skills (curated mirrors) ===
 echo ""
-echo -e "${CYAN}${BOLD}📚 [5/6] Learned Lessons Registry${RESET}"
+echo -e "${CYAN}${BOLD}📚 [5/6] Knowledge Mirrors (Lessons & Skills)${RESET}"
 if [ ! -d "$HOME_DIR/learned-lessons" ]; then
     mkdir -p "$HOME_DIR/learned-lessons"
-    # Kopieer README placeholder
+    # Copy the README placeholder
     if [ -f "$REPO_DIR/learned-lessons/README.md" ]; then
         cp "$REPO_DIR/learned-lessons/README.md" "$HOME_DIR/learned-lessons/README.md"
         echo -e "  ${GREEN}✓${RESET} learned-lessons/ established"
     fi
 else
     echo -e "  ${YELLOW}~${RESET} learned-lessons/ directory exists, skipping"
+fi
+
+# Drop-in agent skills: plain SKILL.md folders for Claude Code, OpenCode,
+# Antigravity and friends. Copied rather than symlinked, because this clone may
+# be deleted afterwards. ~/.agents/skills is the cross-agent location; the Claude
+# Code directory is only touched when that harness is already installed.
+if [ -d "$REPO_DIR/skills" ]; then
+    mkdir -p "$HOME_DIR/.agents/skills"
+    SKILL_TARGETS=("$HOME_DIR/.agents/skills")
+    if [ -d "$HOME_DIR/.claude" ]; then
+        SKILL_TARGETS+=("$HOME_DIR/.claude/skills")
+    fi
+    for skill_dir in "$REPO_DIR"/skills/*/; do
+        [ -d "$skill_dir" ] || continue
+        name=$(basename "$skill_dir")
+        for target in "${SKILL_TARGETS[@]}"; do
+            if [ -e "$target/$name" ] || [ -L "$target/$name" ]; then
+                echo -e "  ${YELLOW}~${RESET} ${target/#$HOME_DIR/~}/$name exists, skipping"
+            else
+                mkdir -p "$target"
+                cp -r "$skill_dir" "$target/$name"
+                echo -e "  ${GREEN}✓${RESET} skills/$name -> ${target/#$HOME_DIR/~}/"
+            fi
+        done
+    done
 fi
 
 # === Personal Zones (empty scaffolding — matches the AGENTS.md zone model) ===
@@ -192,7 +217,7 @@ if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
         echo "  ❌ Himalaya installation failed."
     fi
 else
-    echo "  ~ Himalaya CLI installatie overgeslagen."
+    echo "  ~ Himalaya CLI installation skipped."
 fi
 
 

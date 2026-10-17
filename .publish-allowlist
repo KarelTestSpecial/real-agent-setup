@@ -57,3 +57,10 @@ infrastructure/storage-manager.js
 infrastructure/maintenance
 
 brain/lib
+
+# NOTE: skills/ is mirrored per skill, never wholesale. ~/BRAIN/skills also holds
+# personal Dutch-language variants that must NOT ship (the language and PII gates
+# would abort on them — by design), so every public skill is listed by its own
+# directory, and `publish.sh` needs a matching copy call per line.
+# See skills/README.md.
+skills/step-by-step
