@@ -93,17 +93,19 @@ class MemantoMemory:
         try:
             if self.api_key:
                 self.client = genai.Client(api_key=self.api_key)
-                self.model_name = "gemini-2.5-flash"
+                self.model_name = os.getenv("MEMANTO_MODEL", "gemini-3.5-flash")
                 self.embedding_model = "gemini-embedding-2"
                 print(f"[Memanto] Initialized Gemini AI Studio Client (Key present)")
             else:
                 vertex_project = os.getenv("VERTEX_PROJECT_ID", "your-vertex-project-id")
+                if vertex_project == "your-vertex-project-id":
+                    print("[Memanto] WARNING: no GEMINI_API_KEY and no VERTEX_PROJECT_ID set — LLM calls (conflict check) will fail with 403. Provide the key via ~/.gemini/.env.")
                 self.client = genai.Client(
                     vertexai=True,
                     project=vertex_project,
                     location=os.getenv("VERTEX_LOCATION", "us-central1")
                 )
-                self.model_name = "gemini-2.5-flash"
+                self.model_name = os.getenv("MEMANTO_MODEL", "gemini-3.5-flash")
                 self.embedding_model = "gemini-embedding-2"
                 print(f"[Memanto] Initialized Gemini Vertex AI Client (Keyless/ADC) on project: {vertex_project}")
         except Exception as e:
@@ -153,7 +155,10 @@ class MemantoMemory:
         Batches missing items into chunks <= 100, sleeps ~65s between chunks
         to respect the 100 items/min Gemini free-tier rate limit, retries on 429
         up to 2 times, and atomically persists to disk."""
-        if not self.client or not texts:
+        if not self.client:
+            print("[Memanto] WARNING: no LLM client — entry stored WITHOUT a vector; semantic recall will miss it.")
+            return
+        if not texts:
             return
 
         missing_items = []
