@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.3.0] - 2026-10-18
 ### Added
 - **`mail-check` (cli-tools/)**: one read-only call that answers "check my mail" across *every* configured account, reading each account's All-Mail folder instead of the INBOX default (which covers a single account and misses whatever Gmail filed into labels). It carries no configuration: accounts come from `himalaya account list`, and the All-Mail folder is found by its IMAP `\All` attribute via `folder list -o json` — so the Dutch/English mailbox split (`[Gmail]/Alle e-mail` vs `[Gmail]/All Mail`) never has to be guessed, and a new account needs no edit. Output lists date, unread marker, sender, subject and the folder-local message id, plus the exact `message read` command per account; `--days`, `--unread`, `--account` and `--json` narrow it.
 - **Working-memory rule in the `system-brain/AGENTS.md` template**: the template now states what the Memanto layer is *for* — session `Event`s, behavioural entries (`Instruction`/`Preference`/`Decision`/`Goal`), and references — and what it must never hold: a second copy of anything that already has an owner file (amounts, links, appointments, statuses). It ships the decision test (*"if this changes, which file must change with it?"*) and how to read the owner's *"put this in your memory"* — that phrase names an outcome ("make sure it stays findable"), not a store, so the normal answer is an owner file plus a reference. The rule's owner is the maintainer's private `BRAIN/AGENTS.md`; the template carries the mirror because `brain/lib/memanto_engine.py` ships here.
