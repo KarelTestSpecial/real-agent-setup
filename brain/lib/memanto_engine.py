@@ -206,7 +206,9 @@ class MemantoMemory:
 
     def warmup_cache(self, verbose: bool = True) -> int:
         """Precomputes embeddings for all active memories that lack cache entries.
-        Returns the count of newly embedded items."""
+        Returns the NET change in cached vectors: newly embedded items minus the
+        stale hashes pruned by _save_cache, so a negative value means pruning
+        outweighed new embeddings (it is not an "items embedded" counter)."""
         if not self.client:
             return 0
         active_memories = [
