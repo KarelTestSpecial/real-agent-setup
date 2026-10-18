@@ -26,6 +26,7 @@ cli-tools/gdoc-extractor-bookmarklet.txt
 cli-tools/gdoc-extractor.js
 cli-tools/maccha-backup
 cli-tools/maccha-doctor
+cli-tools/mail-check
 cli-tools/memanto
 cli-tools/memanto_cli.py
 cli-tools/pii-check.mjs

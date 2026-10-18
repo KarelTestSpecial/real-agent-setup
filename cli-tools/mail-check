@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""
+mail-check — "check my mail": the last messages across ALL himalaya accounts,
+read from each account's All-Mail folder instead of the INBOX default.
+
+WHY THIS EXISTS
+  The INBOX-only default is a lower bound, not an answer: Gmail silently
+  archives/filters messages into labels, so a window query on the INBOX misses
+  them. And the same window has to be repeated per account, which is exactly
+  the step that gets skipped. This script does all accounts in one call.
+
+WHY IT NEEDS NO CONFIG
+  - Accounts come from `himalaya account list` (no hardcoded account names).
+  - The All-Mail folder is detected by its IMAP `\\All` attribute, so a
+    localised mailbox label — Gmail names the same mailbox differently per
+    account language — never has to be guessed or hardcoded.
+
+USAGE
+  mail-check                     # last 48h, every account
+  mail-check --days 7            # last 7 days
+  mail-check --unread            # only unread messages
+  mail-check --account gmail-test
+  mail-check --limit 80          # envelopes fetched per account
+  mail-check --json              # machine-readable
+
+OUTPUT
+  One block per account: date, unread marker, sender, subject, message id,
+  plus the exact `himalaya message read` command for that account. Message ids
+  are folder-local: always read with the folder printed in the same block.
+"""
+import argparse
+import datetime as dt
+import json
+import os
+import subprocess
+import sys
+
+BIN = os.path.expanduser("~/.local/bin/himalaya")
+
+
+def run(args):
+    """Run himalaya and return parsed JSON, or None when there is nothing to parse."""
+    try:
+        proc = subprocess.run([BIN] + args, capture_output=True, text=True, timeout=180)
+    except FileNotFoundError:
+        sys.exit(f"error: himalaya not found at {BIN}")
+    out = proc.stdout.strip()
+    if not out:
+        return None
+    try:
+        return json.loads(out)
+    except json.JSONDecodeError:
+        print(f"warning: non-JSON output for {' '.join(args)}", file=sys.stderr)
+        return None
+
+
+def all_mail_folder(account):
+    """Return this account's All-Mail folder name (IMAP \\All attribute), or None."""
+    folders = run(["folder", "list", "-a", account, "-o", "json"]) or []
+    for folder in folders:
+        if "\\all" in str(folder.get("desc", "")).lower():
+            return folder.get("name")
+    return None
+
+
+def parse_date(value):
+    """Parse himalaya's 'YYYY-MM-DD HH:MM+ZZ:ZZ' into an aware datetime."""
+    if not value:
+        return None
+    text = value.strip().replace(" ", "T", 1)
+    try:
+        parsed = dt.datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.datetime.now().astimezone().tzinfo)
+    return parsed
+
+
+def clip(text, width):
+    text = (text or "").replace("\n", " ").strip()
+    return text if len(text) <= width else text[: width - 1] + "…"
+
+
+def main():
+    ap = argparse.ArgumentParser(add_help=True, description="Last messages across all accounts, over each All-Mail folder.")
+    ap.add_argument("--days", type=float, default=2.0, help="window in days (default 2 = 48h)")
+    ap.add_argument("--unread", action="store_true", help="only unread messages")
+    ap.add_argument("--account", action="append", help="limit to this account (repeatable)")
+    ap.add_argument("--limit", type=int, default=40, help="envelopes fetched per account (default 40)")
+    ap.add_argument("--json", action="store_true", help="machine-readable output")
+    args = ap.parse_args()
+
+    if not os.path.exists(BIN):
+        sys.exit(f"error: himalaya not found at {BIN}")
+
+    accounts = [a.get("name") for a in (run(["account", "list", "-o", "json"]) or []) if a.get("name")]
+    if args.account:
+        accounts = [a for a in accounts if a in set(args.account)]
+    if not accounts:
+        sys.exit("error: no himalaya accounts found (check `himalaya account list`)")
+
+    now = dt.datetime.now().astimezone()
+    cutoff = now - dt.timedelta(days=args.days)
+    report, total, unread_total = {}, 0, 0
+
+    for account in accounts:
+        folder = all_mail_folder(account)
+        if not folder:
+            report[account] = {"folder": None, "messages": [], "error": "no All-Mail folder (\\All) found"}
+            continue
+        envelopes = run([
+            "envelope", "list", "-a", account,
+            "--folder", folder,
+            "-o", "json",
+            "--page-size", str(max(args.limit, 1)),
+        ]) or []
+
+        messages = []
+        for env in envelopes:
+            when = parse_date(env.get("date"))
+            if when and when < cutoff:
+                continue
+            flags = env.get("flags") or []
+            unseen = "Seen" not in flags
+            if args.unread and not unseen:
+                continue
+            messages.append({
+                "id": env.get("id"),
+                "date": when.isoformat() if when else env.get("date"),
+                "unread": unseen,
+                "from": (env.get("from") or {}).get("name") or (env.get("from") or {}).get("addr") or "?",
+                "from_addr": (env.get("from") or {}).get("addr") or "",
+                "subject": env.get("subject") or "(no subject)",
+                "attachment": bool(env.get("has_attachment")),
+            })
+        messages.sort(key=lambda m: m["date"] or "", reverse=True)
+        report[account] = {"folder": folder, "messages": messages}
+        total += len(messages)
+        unread_total += sum(1 for m in messages if m["unread"])
+
+    if args.json:
+        print(json.dumps({"since": cutoff.isoformat(), "until": now.isoformat(),
+                          "total": total, "unread": unread_total, "accounts": report},
+                         ensure_ascii=False, indent=2))
+        return
+
+    print(f"=== MAIL CHECK — window {args.days:g}d · since {cutoff:%Y-%m-%d %H:%M} · "
+          f"{total} message(s), {unread_total} unread ===")
+    if not total:
+        print("(nothing in this window — widen with --days N)")
+
+    for account in accounts:
+        entry = report.get(account) or {}
+        folder = entry.get("folder")
+        messages = entry.get("messages") or []
+        if not folder:
+            print(f"\n## {account} — SKIPPED: {entry.get('error')}")
+            continue
+        print(f"\n## {account} · {folder} · {len(messages)} message(s), "
+              f"{sum(1 for m in messages if m['unread'])} unread")
+        for m in messages:
+            mark = "●" if m["unread"] else " "
+            when = (m["date"] or "")[:16].replace("T", " ")
+            attach = " [att]" if m["attachment"] else ""
+            print(f"  {when} {mark} {clip(m['from'], 22):<22} {clip(m['subject'], 62)}"
+                  f"  id:{m['id']}{attach}")
+        if messages:
+            print(f"  read: himalaya message read -a {account} --folder \"{folder}\" <id>")
+
+
+if __name__ == "__main__":
+    main()
