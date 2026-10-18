@@ -2,6 +2,7 @@ import os
 import subprocess
 import re
 import glob
+import json
 from datetime import datetime
 
 # All paths relative to HOME so this script travels unchanged into the
@@ -596,14 +597,35 @@ def check_context_budget(files=None, norm=None):
     return True
 
 
-MAX_TMS_LINE_CHARS = 1200
+# Unit = CHARACTERS (len() on a UTF-8 decoded str), not bytes. The reader
+# (read tool) truncates a line at exactly 2000 characters (measured 18/10/2026:
+# 2000 passes in full, 2100 does not) → 1800 keeps a 200-character margin.
+# SINGLE source of the limit: ~/.config/maccha/tms_line_limit.json — the same
+# value is read by ~/bin/maccha/session-startup and by the OpenCode plugin
+# ~/.config/opencode/plugins/tms-line-limit.ts.
+TMS_LINE_LIMIT_FILE = os.path.expanduser("~/.config/maccha/tms_line_limit.json")
+TMS_LINE_LIMIT_DEFAULT = 1800
+
+
+def load_max_tms_line_chars():
+    """Read the TMS line limit from its single source file; fall back to the default."""
+    try:
+        with open(TMS_LINE_LIMIT_FILE, encoding="utf-8") as handle:
+            value = int(json.load(handle).get("max_line_chars"))
+        return value if value > 0 else TMS_LINE_LIMIT_DEFAULT
+    except Exception:
+        return TMS_LINE_LIMIT_DEFAULT
+
+
+MAX_TMS_LINE_CHARS = load_max_tms_line_chars()
 MAX_TODO_LINES_WARN = 350
 
 
 def check_tms_hygiene():
     """Enforce hard line-length limit on todo.md / in-progress.md so the
     read tool (which truncates at 2000 chars) never drops the end of a task,
-    and warn when todo.md grows past MAX_TODO_LINES_WARN lines."""
+    and warn when todo.md grows past MAX_TODO_LINES_WARN lines.
+    The limit is in characters (UTF-8 aware); session-startup measures the same unit."""
     print(f"📏 Checking TMS line lengths (max {MAX_TMS_LINE_CHARS} chars per line)...")
     violations = []
     for name in ("todo.md", "in-progress.md"):

@@ -26,9 +26,34 @@ if [ -f ~/in-progress.md ]; then
     TMS_OK=false
   fi
 fi
-LONG_LINES=$(awk 'length($0) > 1200 {print FILENAME ":" FNR " (" length($0) " chars)"}' ~/todo.md ~/in-progress.md 2>/dev/null)
+# Limit in CHARACTERS (UTF-8 aware), not bytes: awk length() counts bytes, which
+# differed by 20-40 characters per line for euro signs, dashes or emoji versus
+# tms_integrity_hook.py. SINGLE source: ~/.config/maccha/tms_line_limit.json —
+# also read by the closeout hook tms_integrity_hook.py and the plugin tms-line-limit.ts.
+TMS_MAX_LINE=$(python3 -c '
+import json, os
+try:
+    with open(os.path.expanduser("~/.config/maccha/tms_line_limit.json"), encoding="utf-8") as fh:
+        print(int(json.load(fh)["max_line_chars"]))
+except Exception:
+    print(1800)
+' 2>/dev/null)
+[ -n "$TMS_MAX_LINE" ] || TMS_MAX_LINE=1800
+LONG_LINES=$(python3 -c '
+import sys
+LIMIT = int(sys.argv[1])
+for path in sys.argv[2:]:
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for nr, line in enumerate(fh, 1):
+                line = line.rstrip("\n")
+                if len(line) > LIMIT:
+                    print(f"{path}:{nr} ({len(line)} chars)")
+    except OSError:
+        pass
+' "$TMS_MAX_LINE" ~/todo.md ~/in-progress.md 2>/dev/null)
 if [ -n "$LONG_LINES" ]; then
-  echo "⚠️  Lines >1200 chars in TMS (risk of read-tool truncation at 2000 chars) — move history to INFO/:"
+  echo "⚠️  Lines >${TMS_MAX_LINE} chars in TMS (read tool truncates at 2000) — move history to INFO/:"
   echo "$LONG_LINES"
   TMS_OK=false
 fi
