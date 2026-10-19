@@ -27,6 +27,12 @@ OUTPUT
   One block per account: date, unread marker, sender, subject, message id,
   plus the exact `himalaya message read` command for that account. Message ids
   are folder-local: always read with the folder printed in the same block.
+
+  Timestamps are converted to THIS machine's timezone before they are printed
+  (or emitted as ISO in --json). himalaya echoes the raw `Date:` header with the
+  sender's offset — Exchange/Outlook writes `+00:00`, so a mail sent at 14:07
+  CEST used to show up as 12:07 and made it look like it arrived before an
+  earlier reply. Never slice the ISO string; always go through local_str().
 """
 import argparse
 import datetime as dt
@@ -75,6 +81,25 @@ def parse_date(value):
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=dt.datetime.now().astimezone().tzinfo)
     return parsed
+
+
+def local_str(value, fmt="%Y-%m-%d %H:%M"):
+    """Render a himalaya timestamp in THIS machine's timezone.
+
+    himalaya echoes the raw `Date:` header with its own offset (Outlook/Exchange
+    often writes `+00:00`), so slicing the ISO string shows the sender's
+    wall-clock, not yours — a mail sent at 14:07 CEST then looks like 12:07.
+    Never print the timestamp without converting it first.
+    """
+    parsed = parse_date(value)
+    if parsed is None:
+        return (value or "")[:16].replace("T", " ")
+    return parsed.astimezone().strftime(fmt)
+
+
+def sort_key(message):
+    """Chronological sort key: aware datetimes, never the ISO string (mixed offsets compare wrong)."""
+    return parse_date(message.get("date")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc)
 
 
 def clip(text, width):
@@ -127,14 +152,14 @@ def main():
                 continue
             messages.append({
                 "id": env.get("id"),
-                "date": when.isoformat() if when else env.get("date"),
+                "date": when.astimezone().isoformat() if when else env.get("date"),
                 "unread": unseen,
                 "from": (env.get("from") or {}).get("name") or (env.get("from") or {}).get("addr") or "?",
                 "from_addr": (env.get("from") or {}).get("addr") or "",
                 "subject": env.get("subject") or "(no subject)",
                 "attachment": bool(env.get("has_attachment")),
             })
-        messages.sort(key=lambda m: m["date"] or "", reverse=True)
+        messages.sort(key=sort_key, reverse=True)
         report[account] = {"folder": folder, "messages": messages}
         total += len(messages)
         unread_total += sum(1 for m in messages if m["unread"])
@@ -161,7 +186,7 @@ def main():
               f"{sum(1 for m in messages if m['unread'])} unread")
         for m in messages:
             mark = "●" if m["unread"] else " "
-            when = (m["date"] or "")[:16].replace("T", " ")
+            when = local_str(m["date"])
             attach = " [att]" if m["attachment"] else ""
             print(f"  {when} {mark} {clip(m['from'], 22):<22} {clip(m['subject'], 62)}"
                   f"  id:{m['id']}{attach}")
