@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **`system-brain/AGENTS.md`: the codeword rule is now its own self-contained block.** The template preached that a definition must be self-contained while keeping its own codeword definition buried in a 300-word paragraph about memory layers. The paragraph now stops at the layer itself (three jobs, what must never be copied in, and why), and the rule follows under its own heading — `Owner first — always, and on the signal "persist this"` — with the criterion stated in full, the two clauses that were still missing from the mirror (**never a second copy**; say *where* it landed, not what you stored; in doubt name the candidates — dossier, mandate file, or memory layer), and the codeword kept as a shorthand rather than a substitute for the rule.
 
+### Removed
+- **`cli-tools/session-startup`**: removed obsolete weekly Saturday shopping reminder (personal reminder, no longer applicable).
+
 ## [1.3.0] - 2026-10-18
 ### Added
 - **`mail-check` (cli-tools/)**: one read-only call that answers "check my mail" across *every* configured account, reading each account's All-Mail folder instead of the INBOX default (which covers a single account and misses whatever Gmail filed into labels). It carries no configuration: accounts come from `himalaya account list`, and the All-Mail folder is found by its IMAP `\All` attribute via `folder list -o json` — so the Dutch/English mailbox split (`[Gmail]/Alle e-mail` vs `[Gmail]/All Mail`) never has to be guessed, and a new account needs no edit. Output lists date, unread marker, sender, subject and the folder-local message id, plus the exact `message read` command per account; `--days`, `--unread`, `--account` and `--json` narrow it.

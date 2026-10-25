@@ -134,15 +134,6 @@ fi
 
 echo ""
 
-echo ""
-echo "=== Solucious weekly reminder (Saturday only) ==="
-if [ "$(date +%u)" -eq 6 ]; then
-  echo "🛒 Reminder: check Solucious order!"
-else
-  echo "Not Saturday — OK."
-fi
-
-
 # Readable todo view retired (User's decision, 5 October 2026).
 # `todo.md` is the only place; the derived table `INFO/owner/todo_overzicht.md` was
 # deleted. `tms_human_view.py` is still there, unused, in case it is ever needed.
