@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.4.0] - 2026-10-26
 ### Added
 - **Two-horizon TMS (`todo.md` + `backlog.md`), 300-char pointer rule, and automatic tier-expiry audit (`tms_prune.js`)**: separates active tasks (≤30 days, loaded at `start`) from parked/long-term tasks (`backlog.md`, excluded from `start` context), caps every active task line at **300 characters** (next action + link only; chronological history stays in the owner dossier), ships five universal PII-free domain headings in `system-brain/todo.md` and `system-brain/backlog.md`, and adds `auditActiveTms()` to `infrastructure/maintenance/tms_prune.js` to flag `[Ephemeral]` (>7d) and `[Sprint]` (>21d) items past their expiry window.
 
