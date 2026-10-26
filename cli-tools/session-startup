@@ -36,9 +36,9 @@ try:
     with open(os.path.expanduser("~/.config/maccha/tms_line_limit.json"), encoding="utf-8") as fh:
         print(int(json.load(fh)["max_line_chars"]))
 except Exception:
-    print(1800)
+    print(300)
 ' 2>/dev/null)
-[ -n "$TMS_MAX_LINE" ] || TMS_MAX_LINE=1800
+[ -n "$TMS_MAX_LINE" ] || TMS_MAX_LINE=300
 LONG_LINES=$(python3 -c '
 import sys
 LIMIT = int(sys.argv[1])
@@ -51,9 +51,9 @@ for path in sys.argv[2:]:
                     print(f"{path}:{nr} ({len(line)} chars)")
     except OSError:
         pass
-' "$TMS_MAX_LINE" ~/todo.md ~/in-progress.md 2>/dev/null)
+' "$TMS_MAX_LINE" ~/todo.md ~/in-progress.md ~/backlog.md 2>/dev/null)
 if [ -n "$LONG_LINES" ]; then
-  echo "⚠️  Lines >${TMS_MAX_LINE} chars in TMS (read tool truncates at 2000) — move history to INFO/:"
+  echo "⚠️  Lines >${TMS_MAX_LINE} chars in TMS — move history to INFO/ and keep only next action + link:"
   echo "$LONG_LINES"
   TMS_OK=false
 fi
@@ -116,7 +116,7 @@ if (( NOW - LASTL > 604800 )); then
   # BRAIN/tms/<f> (personal layout) -> BRAIN/<f> -> ~/<f> (fresh capsule install,
   # where setup.sh puts the templates in the home directory).
   LC_TARGETS=()
-  for f in AGENTS.md IMPROVEMENT.md todo.md in-progress.md done.md; do
+  for f in AGENTS.md IMPROVEMENT.md todo.md in-progress.md backlog.md done.md; do
     for cand in "$HOME/BRAIN/tms/$f" "$HOME/BRAIN/$f" "$HOME/$f"; do
       if [ -f "$cand" ]; then LC_TARGETS+=("$cand"); break; fi
     done

@@ -61,8 +61,8 @@ The agent MUST ALWAYS run this checklist proactively, **in order**, at the start
 ## 🗃️ Knowledge Maintenance (MANDATORY)
 
 1. **One fact, one owner — never copy, always link.** Owners: tasks → `tms/`; income & tax → your tax/income register (offline mirror `tms/tax_income_ledger.md`); slow-changing situation → `INFO/over-owner/SITUATIE_OVERZICHT.md` (no status tables!); lessons → `learned-lessons/` + `IMPROVEMENT.md`; plans → `PLAN/`. Update a status **only** in its owner file.
-2. **TMS is flow-through, not a junk drawer.** Each task lives in exactly one TMS file. Finished → move it to `done.md` immediately as a single line (date + 2-3 sentences + link to the artifact). Never leave `[x]` items in `todo.md`/`in-progress.md`. Archive `done.md` per quarter to `BRAIN/archive/tms/`.
-3. **Fixed TMS line form (label first):** `- [ ] [Tier] 🔥 **Title**: description … (date) [link]` — the expiry-tier label (`[Ephemeral]`/`[Sprint]`/`[Strategic]`/`[Eternal]`) always comes right after the checkbox, before the title; the optional urgency flame 🔥 sits between label and title.
+2. **TMS is flow-through, not a junk drawer.** Each task lives in exactly one TMS file (`in-progress.md` ≤ ~10 active; `todo.md` active ≤30d; `backlog.md` parked/>30d, not loaded at `start`; `done.md` finished as one line + archived quarterly to `BRAIN/archive/tms/`). Never leave `[x]` items in active files.
+3. **Fixed TMS line form (≤300 chars/line, label first):** `- [ ] [Tier] 🔥 **Title**: next action … (date) [link]` — `[Ephemeral]` (≤7d)/`[Sprint]` (≤21d)/`[Strategic]`/`[Eternal]` right after the checkbox; chronological history belongs in the owner dossier.
 4. **Weekly TMS sweep:** roll `[x]` items forward, dedupe, trim in-progress, enforce the line form.
 
 ---
@@ -141,7 +141,7 @@ Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per
 
 | What | Where |
 |---|---|
-| Task flow (TMS) | `~/BRAIN/tms/` (symlinks: `~/todo.md`, `~/in-progress.md`, `~/done.md`) |
+| Task flow (TMS) | `~/BRAIN/tms/` (symlinks: `~/todo.md`, `~/in-progress.md`, `~/backlog.md`, `~/done.md`) |
 | Working memory | `~/BRAIN/memanto/memanto_global.json` (via `memanto_cli.py remember/recall/answer/distill/prune`) |
 | Tool register | `~/BRAIN/system-info/TOOL_REGISTER.md` |
 | Infrastructure scripts | `~/bin/maccha/` and `~/INFRA/` |

@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- **Two-horizon TMS (`todo.md` + `backlog.md`), 300-char pointer rule, and automatic tier-expiry audit (`tms_prune.js`)**: separates active tasks (≤30 days, loaded at `start`) from parked/long-term tasks (`backlog.md`, excluded from `start` context), caps every active task line at **300 characters** (next action + link only; chronological history stays in the owner dossier), ships five universal PII-free domain headings in `system-brain/todo.md` and `system-brain/backlog.md`, and adds `auditActiveTms()` to `infrastructure/maintenance/tms_prune.js` to flag `[Ephemeral]` (>7d) and `[Sprint]` (>21d) items past their expiry window.
+
 ### Changed
 - **`system-brain/AGENTS.md`: the codeword rule is now its own self-contained block.** The template preached that a definition must be self-contained while keeping its own codeword definition buried in a 300-word paragraph about memory layers. The paragraph now stops at the layer itself (three jobs, what must never be copied in, and why), and the rule follows under its own heading — `Owner first — always, and on the signal "persist this"` — with the criterion stated in full, the two clauses that were still missing from the mirror (**never a second copy**; say *where* it landed, not what you stored; in doubt name the candidates — dossier, mandate file, or memory layer), and the codeword kept as a shorthand rather than a substitute for the rule.
 

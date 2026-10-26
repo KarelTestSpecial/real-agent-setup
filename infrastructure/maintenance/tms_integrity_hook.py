@@ -32,7 +32,7 @@ def run_command(command):
 
 def get_tms_content():
     content = ""
-    for name in ["todo.md", "in-progress.md", "done.md"]:
+    for name in ["todo.md", "in-progress.md", "backlog.md", "done.md"]:
         full_path = os.path.join(TMS_DIR, name)
         if os.path.exists(full_path):
             with open(full_path, "r") as file:
@@ -260,7 +260,7 @@ def check_forbidden_terms_in_active_tms(rule):
         return True
 
     issues = []
-    for name in ["todo.md", "in-progress.md"]:
+    for name in ["todo.md", "in-progress.md", "backlog.md"]:
         path = os.path.join(TMS_DIR, name)
         if not os.path.exists(path):
             continue
@@ -597,14 +597,13 @@ def check_context_budget(files=None, norm=None):
     return True
 
 
-# Unit = CHARACTERS (len() on a UTF-8 decoded str), not bytes. The reader
-# (read tool) truncates a line at exactly 2000 characters (measured 18/10/2026:
-# 2000 passes in full, 2100 does not) → 1800 keeps a 200-character margin.
-# SINGLE source of the limit: ~/.config/maccha/tms_line_limit.json — the same
-# value is read by ~/bin/maccha/session-startup and by the OpenCode plugin
-# ~/.config/opencode/plugins/tms-line-limit.ts.
+# Unit = CHARACTERS (len() on a UTF-8 decoded str), not bytes. Keep active TMS
+# lines concise (<=300 chars: single next action + link; chronological history
+# belongs in the owner dossier). SINGLE source of the limit:
+# ~/.config/maccha/tms_line_limit.json — read by ~/bin/maccha/session-startup
+# and by the OpenCode plugin ~/.config/opencode/plugins/tms-line-limit.ts.
 TMS_LINE_LIMIT_FILE = os.path.expanduser("~/.config/maccha/tms_line_limit.json")
-TMS_LINE_LIMIT_DEFAULT = 1800
+TMS_LINE_LIMIT_DEFAULT = 300
 
 
 def load_max_tms_line_chars():
@@ -618,17 +617,17 @@ def load_max_tms_line_chars():
 
 
 MAX_TMS_LINE_CHARS = load_max_tms_line_chars()
-MAX_TODO_LINES_WARN = 350
+MAX_TODO_LINES_WARN = 100
 
 
 def check_tms_hygiene():
-    """Enforce hard line-length limit on todo.md / in-progress.md so the
-    read tool (which truncates at 2000 chars) never drops the end of a task,
-    and warn when todo.md grows past MAX_TODO_LINES_WARN lines.
+    """Enforce hard line-length limit on todo.md / in-progress.md / backlog.md so
+    task lines stay concise pointers instead of mini-dossiers, and warn when
+    todo.md grows past MAX_TODO_LINES_WARN lines.
     The limit is in characters (UTF-8 aware); session-startup measures the same unit."""
     print(f"📏 Checking TMS line lengths (max {MAX_TMS_LINE_CHARS} chars per line)...")
     violations = []
-    for name in ("todo.md", "in-progress.md"):
+    for name in ("todo.md", "in-progress.md", "backlog.md"):
         path = os.path.join(TMS_DIR, name)
         if not os.path.isfile(path):
             continue
@@ -637,7 +636,7 @@ def check_tms_hygiene():
         if name == "todo.md" and len(lines) > MAX_TODO_LINES_WARN:
             print(
                 f"⚠️ todo.md has {len(lines)} lines (warn threshold {MAX_TODO_LINES_WARN}) — "
-                "move parked sub-tasks or history into their PLAN/ or INFO/ dossier."
+                "move parked sub-tasks or history into backlog.md or their PLAN/ or INFO/ dossier."
             )
         for idx, line in enumerate(lines, 1):
             raw = line.rstrip("\n")
@@ -651,7 +650,7 @@ def check_tms_hygiene():
         for v in violations:
             print(f"❌ {v}")
         return False
-    print(f"✅ All lines in todo.md and in-progress.md are ≤{MAX_TMS_LINE_CHARS} chars.")
+    print(f"✅ All lines in todo.md, in-progress.md and backlog.md are ≤{MAX_TMS_LINE_CHARS} chars.")
     return True
 
 

@@ -101,7 +101,7 @@ fi
 # === System Brain (templates — only when not present yet) ===
 echo ""
 echo -e "${CYAN}${BOLD}📝 [4/6] MACCHA System Templates (Home Directory)${RESET}"
-for f in AGENTS.md IMPROVEMENT.md done.md in-progress.md todo.md; do
+for f in AGENTS.md IMPROVEMENT.md done.md in-progress.md todo.md backlog.md; do
     if [ ! -f "$HOME_DIR/$f" ]; then
         cp "$REPO_DIR/system-brain/$f" "$HOME_DIR/$f"
         echo -e "  ${GREEN}✓${RESET} $f (Created default template)"
@@ -109,6 +109,26 @@ for f in AGENTS.md IMPROVEMENT.md done.md in-progress.md todo.md; do
         echo -e "  ${YELLOW}~${RESET} $HOME_DIR/$f exists, skipping template creation to protect your edits"
     fi
 done
+
+# Default TMS line-length config (single source read by session-startup & tms_integrity_hook.py)
+if [ ! -f "$HOME_DIR/.config/maccha/tms_line_limit.json" ]; then
+    mkdir -p "$HOME_DIR/.config/maccha"
+    cat > "$HOME_DIR/.config/maccha/tms_line_limit.json" << 'EOF'
+{
+  "max_line_chars": 300,
+  "tms_paths": [
+    "~/todo.md",
+    "~/in-progress.md",
+    "~/backlog.md",
+    "~/BRAIN/tms/todo.md",
+    "~/BRAIN/tms/in-progress.md",
+    "~/BRAIN/tms/backlog.md"
+  ],
+  "_comment": "Single source for the TMS line-length limit (UTF-8 characters). Read by session-startup, tms_integrity_hook.py, and optional editor/agent plugins."
+}
+EOF
+    echo -e "  ${GREEN}✓${RESET} .config/maccha/tms_line_limit.json (300 chars/line limit)"
+fi
 
 # Cross-agent hooks (shared by Claude Code, Gemini/Antigravity, OpenCode)
 mkdir -p "$HOME_DIR/BRAIN/hooks"
