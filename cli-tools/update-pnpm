@@ -1,101 +1,114 @@
 #!/bin/bash
 # ==============================================================================
 # Script: update-pnpm
-# Description: Updates pnpm, respecting the 7-day cooldown from .npmrc.
-#              On cooldown blocking: inform the user and offer alternatives.
+# Description: Updates pnpm to the newest version that respects the cooldown
+#              from ~/.npmrc (minimum-release-age, in minutes; default 7 days).
+#
+# WHY THIS WAS REWRITTEN (2026-10-28)
+#   The previous version delegated to `npm install -g pnpm@latest`. Two flaws:
+#     1. `minimum-release-age` is a pnpm setting — npm reports it as an
+#        "Unknown user config" and IGNORES it. The cooldown never applied, so
+#        the script silently installed versions younger than 7 days.
+#     2. npm's global prefix (the nvm node dir) is NOT where the pnpm binary on
+#        PATH lives (~/.npm-global). The update landed in a directory that is
+#        shadowed, so `pnpm -v` never changed: "the update does nothing".
+#   Plus: the fallback loop ran one `npm view` per released version (hundreds
+#   of registry calls) — it appeared to hang.
+#
+#   Fix: pick the target version from ONE `npm view pnpm time --json` call and
+#   let pnpm update itself (`pnpm self-update <version>`), which always touches
+#   the binary that is actually on PATH.
 # ==============================================================================
 
 set -euo pipefail
 
+NPMRC="${HOME}/.npmrc"
+
+# --- cooldown: read from .npmrc (minutes), default 7 days --------------------
+COOLDOWN_MIN=$(grep -E '^[[:space:]]*minimum-release-age[[:space:]]*=' "$NPMRC" 2>/dev/null \
+  | tail -1 | sed -E 's/.*=[[:space:]]*//' | tr -dc '0-9')
+COOLDOWN_MIN="${COOLDOWN_MIN:-10080}"
+COOLDOWN_DAYS=$(( COOLDOWN_MIN / 1440 ))
+
 CURRENT=$(pnpm -v 2>/dev/null || echo "unknown")
+echo "Installed pnpm:  $CURRENT"
+echo "Cooldown:        ${COOLDOWN_DAYS} days (${COOLDOWN_MIN} min, from ~/.npmrc)"
 
-echo "Current pnpm version: $CURRENT"
-echo "Checking available versions..."
+# --- one registry call: dates + newest compliant target ----------------------
+read -r LATEST LATEST_DATE TARGET TARGET_DATE < <(npm view pnpm time --json 2>/dev/null | \
+  python3 -c "
+import json, sys, datetime
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    print('? ? ? ?'); raise SystemExit
+now = datetime.datetime.now(datetime.timezone.utc)
+cut = now - datetime.timedelta(minutes=$COOLDOWN_MIN)
+stable = [(v, datetime.datetime.fromisoformat(t.replace('Z', '+00:00')))
+          for v, t in d.items() if v not in ('created', 'modified') and '-' not in v]
+if not stable:
+    print('? ? ? ?'); raise SystemExit
+stable.sort(key=lambda x: x[1])
+latest, latest_dt = stable[-1]
+ok = [x for x in stable if x[1] <= cut]
+target = ok[-1] if ok else ('none', now)
+print(latest, latest_dt.date(), target[0], target[1].date())
+")
 
-# Fetch all versions, newest first
-LATEST=$(npm view pnpm version 2>/dev/null || echo "")
-if [ -z "$LATEST" ]; then
-  echo "ERROR: Cannot fetch pnpm versions from the npm registry."
+if [ "$LATEST" = "?" ]; then
+  echo "ERROR: cannot read release dates from the npm registry."
   exit 1
 fi
 
-echo "Latest pnpm version: $LATEST"
+echo "Newest release:  $LATEST ($LATEST_DATE)"
+
+if [ "$TARGET" = "none" ]; then
+  echo "ERROR: no stable pnpm release is older than the cooldown."
+  exit 1
+fi
+
+echo "Allowed now:     $TARGET ($TARGET_DATE)"
+
+if [ "$CURRENT" = "$TARGET" ]; then
+  echo ""
+  echo "Already on the newest version the cooldown allows. Nothing to do."
+  exit 0
+fi
 
 if [ "$CURRENT" = "$LATEST" ]; then
-  echo "You already have the latest version ($LATEST). No update needed."
+  echo ""
+  echo "Already on the newest release; it is younger than the cooldown."
+  echo "No action needed."
   exit 0
 fi
 
-# Try the update — capture cooldown blocking
-OUTPUT=$(npm install -g "pnpm@$LATEST" 2>&1) && SUCCESS=true || SUCCESS=false
-
-if [ "$SUCCESS" = true ]; then
-  echo "Successfully updated to pnpm $(pnpm -v)"
-  exit 0
+echo ""
+echo "Updating: $CURRENT -> $TARGET"
+if ! pnpm self-update "$TARGET" --yes; then
+  # Fallback: pnpm refuses (e.g. npm-installed pnpm). Install explicitly into
+  # the prefix where the active binary lives — never npm's default (the nvm
+  # node dir), because ~/.npm-global shadows it.
+  echo ""
+  echo "self-update failed; falling back to npm with explicit prefix ~/.npm-global"
+  npm install -g --prefix "$HOME/.npm-global" "pnpm@$TARGET"
 fi
 
-# Check whether the failure is caused by the cooldown
-if echo "$OUTPUT" | grep -q "does not meet the minimumReleaseAge constraint"; then
-  echo ""
-  echo "=========================================="
-  echo "  PNPM $LATEST IS BLOCKED BY COOLDOWN"
-  echo "=========================================="
-  echo ""
-  echo "  Version $LATEST is less than 7 days old."
-  echo "  Your .npmrc enforces a minimum-release-age of 7 days"
-  echo "  as protection against supply-chain attacks."
-  echo ""
-  echo "  OPTIONS:"
-  echo ""
-  echo "  1. WAIT — update again after the cooldown period."
-  echo "     The block disappears automatically."
-  echo ""
-  echo "  2. INSTALL AN OLDER STABLE VERSION —"
-  echo "     the newest version that does pass the cooldown:"
-  echo ""
-
-  # Find the newest version that is old enough
-  OLDEST_OK=$(npm view pnpm versions --json 2>/dev/null | \
-    node -e "
-      const versions = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-      const cutoff = Date.now() - 7*24*60*60*1000;
-      const valid = versions
-        .filter(v => !v.includes('-'))
-        .filter(v => {
-          try {
-            const d = new Date(require('child_process')
-              .execSync('npm view pnpm@'+v time --json 2>/dev/null)
-              .toString());
-            return d.getTime() < cutoff;
-          } catch { return false; }
-        });
-      console.log(valid[valid.length-1] || 'unknown');
-    " 2>/dev/null || echo "")
-
-  if [ -n "$OLDEST_OK" ] && [ "$OLDEST_OK" != "unknown" ]; then
-    echo "     → pnpm@$OLDEST_OK"
-    echo ""
-    read -p "  Install? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      npm install -g "pnpm@$OLDEST_OK" && echo "Installed: pnpm $(pnpm -v)"
-    else
-      echo "Cancelled."
-    fi
-  else
-    echo "     (Could not find a valid older version)"
-  fi
-
-  echo ""
-  echo "  3. MANUAL OVERRIDE (not recommended) —"
-  echo "     Add to ~/.npmrc:"
-  echo "       minimum-release-age-exclude[]=pnpm"
-  echo "     and run again: update-pnpm"
-  echo ""
+# --- verify what is actually on PATH ----------------------------------------
+NEW=$(pnpm -v 2>/dev/null || echo "unknown")
+echo ""
+if [ "$NEW" = "$TARGET" ]; then
+  echo "OK: pnpm is now $NEW."
+else
+  echo "WARNING: pnpm reports $NEW, expected $TARGET."
+  echo "Check which binary comes first on PATH:"
+  type -a pnpm
   exit 1
 fi
 
-# Unexpected error
-echo "ERROR: Unexpected error while updating:"
-echo "$OUTPUT"
-exit 1
+# --- warn when another copy on this system differs ---------------------------
+while IFS= read -r bin; do
+  path="${bin##* }"
+  [ -x "$path" ] || continue
+  ver=$("$path" --version 2>/dev/null || echo "?")
+  [ "$ver" = "$NEW" ] || echo "  WARNING: other pnpm on this system: $path = $ver"
+done < <(type -a pnpm 2>/dev/null | sed -n 's/^pnpm is //p')
