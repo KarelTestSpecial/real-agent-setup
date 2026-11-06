@@ -133,6 +133,30 @@ else
 fi
 
 echo ""
+echo "=== System update check (throttled, 1x per 14 days) ==="
+if command -v apt >/dev/null 2>&1; then
+  UPD_MARKER=~/BRAIN/.last_apt_check
+  LASTU=$(cat "$UPD_MARKER" 2>/dev/null || echo 0)
+  if (( NOW - LASTU > 1209600 )); then
+    UPG_COUNT=$(apt list --upgradable 2>/dev/null | grep -c '\[upgradable from:' || true)
+    CACHE_MTIME=$(stat -c %Y /var/cache/apt/pkgcache.bin 2>/dev/null || stat -c %Y /var/lib/apt/lists 2>/dev/null || echo 0)
+    CACHE_AGE=$(( (NOW - CACHE_MTIME) / 86400 ))
+    if (( UPG_COUNT > 0 )); then
+      echo "📦 $UPG_COUNT package update(s) pending in APT."
+      echo "   Run 'aptupdate' in your terminal when convenient to update."
+    elif (( CACHE_AGE > 14 )); then
+      echo "ℹ️  APT package list is $CACHE_AGE days old."
+      echo "   Run 'aptupdate' to refresh and check for updates."
+    else
+      echo "Packages up-to-date (no updates pending)."
+      echo "$NOW" > "$UPD_MARKER"
+    fi
+  else
+    echo "Last update check $(( (NOW - LASTU) / 86400 )) day(s) ago — OK."
+  fi
+fi
+
+echo ""
 
 # Readable todo view retired (User's decision, 5 October 2026).
 # `todo.md` is the only place; the derived table `INFO/owner/todo_overzicht.md` was
