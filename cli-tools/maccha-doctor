@@ -84,6 +84,29 @@ else warn "tms_integrity_hook.py not found"; fi
 section "Supply chain"
 if [ -f "$H/.npmrc" ] && grep -q 'minimum-release-age' "$H/.npmrc"; then ok "minimum-release-age configured"; else warn "minimum-release-age not found in ~/.npmrc"; fi
 
+section "Browse MCP (real-browser automation)"
+# The browse MCP is a thin client: MCP process -> local relay on :19988 -> Chrome
+# extension. A running `browse mcp` process therefore proves nothing. `browse
+# doctor` is read-only and fast (~0.1s) and, unlike `browse execute`, does NOT
+# start the relay — so a dead relay here is a real finding.
+if command -v browse >/dev/null 2>&1; then
+  BD=$(browse doctor 2>&1)
+  RELAY=$(printf '%s\n' "$BD" | sed -n 's/^Relay: //p' | head -1)
+  EXT=$(printf '%s\n' "$BD" | sed -n 's/^Extension: //p' | head -1)
+  case "$RELAY" in
+    reachable*)
+      ok "relay $RELAY"
+      case "$EXT" in
+        connected*) ok "extension $EXT" ;;
+        *) warn "extension ${EXT%% (*} — open Chrome and run 'browse install' to pair it" ;;
+      esac ;;
+    "") warn "relay state unreadable ('browse doctor' printed no Relay line)" ;;
+    *) warn "relay ${RELAY%% (*} — browse MCP calls fail until it runs: 'browse status' starts it" ;;
+  esac
+else
+  warn "browse CLI not on PATH — the browse MCP cannot work"
+fi
+
 section "Disk space"
 FREE_KB=$(df -Pk "$H" 2>/dev/null | awk 'NR==2{print $4}')
 if [ -n "${FREE_KB:-}" ]; then
