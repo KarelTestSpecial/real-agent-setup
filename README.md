@@ -15,7 +15,9 @@ MACCHA is built for people who:
 
 ## ⚡ What is MACCHA?
 
-It solves the biggest limitation of modern AI coding agents: **transient memory and repetitive context-setting**. When you open a new session or switch from one platform to another, context gets lost. Standard AI assistants start from absolute zero. They forget who you are, your technical preferences, your system constraints, and the hard-earned lessons from yesterday. You have to explain your project rules over and over again.
+It solves the biggest limitation of modern AI coding agents: **transient memory and repetitive context-setting**.
+
+When you open a new session or switch from one platform to another, context gets lost. Standard AI assistants start from absolute zero. They forget who you are, your technical preferences, your system constraints, and the hard-earned lessons from yesterday. You have to explain your project rules over and over again.
 
 **MACCHA solves this permanently.** By establishing a structured memory hierarchy and automated maintenance loops, any AI agent reading your system instantly inherits a persistent, self-improving, and highly protected professional profile. 
 
