@@ -35,27 +35,17 @@ def cmd_prime(args):
     if not recent:
         output.append("- No active memories.")
     output.append("")
-    output.append("## Learned Lessons Index")
-    # Compact summary instead of the full list: the index lives in
-    # learned-lessons/<cat>/INDEX.md (owner, rule 1.b). Repeating the full list
-    # here cost ~1700 tokens per session and, due to the frontmatter
-    # (first line = "---"), only ever rendered "---" anyway.
-    if os.path.isdir(LESSONS_DIR):
-        counts = []
-        for entry in sorted(os.listdir(LESSONS_DIR)):
-            ep = os.path.join(LESSONS_DIR, entry)
-            if entry == "archive" or not os.path.isdir(ep):
-                continue
-            n = sum(
-                1
-                for root, _dirs, files in os.walk(ep)
-                for f in files
-                if f.endswith(".md") and f != "INDEX.md"
-            )
-            if n:
-                counts.append(f"**{entry}** {n}")
-        output.append("Full list per category in `learned-lessons/<cat>/INDEX.md` (owner).")
-        output.append(("Lessons: " + " · ".join(counts)) if counts else "Lessons: none.")
+    output.append("## Learned Lessons")
+    # Routing is the point of the prime: the router (32 domains, each with a
+    # 'when to use it') is what makes a lesson findable. Previously this printed
+    # only counts + a pointer, which is why lessons were never looked up.
+    router = os.path.join(LESSONS_DIR, "ROUTER.md")
+    if os.path.exists(router):
+        with open(router) as f:
+            output.append(f.read().strip())
+    else:
+        output.append("`learned-lessons/ROUTER.md` is missing — search with "
+                      "`grep -ril \"<keyword>\" ~/BRAIN/learned-lessons --include=*.md`.")
     output.append("")
     sp = os.path.expanduser("~/BRAIN/STATE.md")
     if os.path.exists(sp):

@@ -152,23 +152,55 @@ def check_workspace_activity(tms_content):
     return True
 
 
+def _read(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def _frontmatter(text):
+    """Return the frontmatter block (without the ---), or None when the file has none."""
+    if not text.startswith("---"):
+        return None
+    end = text.find("\n---", 3)
+    return text[3:end] if end != -1 else None
+
+
+def _domain_files(cat_dir):
+    """Domain files = .md files that INDEX.md lists as a domain."""
+    idx = os.path.join(cat_dir, "INDEX.md")
+    if not os.path.exists(idx):
+        return []
+    return re.findall(r"\]\(([a-z0-9-]+)\.md\)", _read(idx))
+
+
 def check_learned_lessons_integrity():
     print("📚 Checking learned-lessons for policy compliance...")
     issues = []
 
     for root, dirs, files in os.walk(LESSONS_DIR):
-        if os.sep + "archive" in root:
+        rel = os.path.relpath(root, LESSONS_DIR)
+        if rel == "." or rel.split(os.sep)[0] == "archive":
             continue
+        cat_dir = os.path.join(LESSONS_DIR, rel.split(os.sep)[0])
+        domain_files = _domain_files(cat_dir)
         for file in files:
-            if file.endswith(".md") and file != "INDEX.md":
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, "r") as f:
-                        content = f.read()
-                        if not content.startswith("---") or "tier:" not in content or "category:" not in content:
-                            issues.append(f"Invalid/Missing Frontmatter in: {file_path}")
-                except Exception as e:
-                    issues.append(f"Error reading {file_path}: {e}")
+            if not file.endswith(".md") or file == "INDEX.md":
+                continue
+            path = os.path.join(root, file)
+            try:
+                text = _read(path)
+            except Exception as e:
+                issues.append(f"Error reading {path}: {e}")
+                continue
+            fm = _frontmatter(text)
+            if fm is None:
+                # no frontmatter = domain file; it belongs in INDEX.md
+                if file[:-3] not in domain_files:
+                    issues.append(f"No frontmatter and not a domain file: {path}")
+                continue
+            for key in ("tier:", "category:", "domain:"):
+                if key not in fm:
+                    issues.append(f"Frontmatter missing '{key}' in: {path}")
 
     if issues:
         for issue in issues:
@@ -179,33 +211,68 @@ def check_learned_lessons_integrity():
 
 
 def check_index_coverage():
-    """Librarian check: every lesson file must be listed in its category INDEX.md."""
-    print("🗂️ Checking INDEX.md coverage of learned-lessons...")
+    """Every lesson sits in the domain file of its `domain:`; INDEX counts; ROUTER knows every domain."""
+    print("🗂️ Checking INDEX/domain-file coverage of learned-lessons...")
     issues = []
 
     if not os.path.exists(LESSONS_DIR):
         print("✅ Lessons directory not found, skipping.")
         return True
 
-    for category in os.listdir(LESSONS_DIR):
+    router_path = os.path.join(LESSONS_DIR, "ROUTER.md")
+    router = _read(router_path) if os.path.exists(router_path) else ""
+
+    for category in sorted(os.listdir(LESSONS_DIR)):
         cat_dir = os.path.join(LESSONS_DIR, category)
         if not os.path.isdir(cat_dir) or category == "archive":
             continue
         index_path = os.path.join(cat_dir, "INDEX.md")
-        index_content = ""
-        if os.path.exists(index_path):
-            with open(index_path, "r") as f:
-                index_content = f.read().lower()
-        for file in os.listdir(cat_dir):
-            if file.endswith(".md") and file != "INDEX.md":
-                if file.lower() not in index_content:
-                    issues.append(f"Lesson not listed in {category}/INDEX.md: {file}")
+        if not os.path.exists(index_path):
+            issues.append(f"Missing INDEX.md in {category}/")
+            continue
+        index = _read(index_path)
+        domains = _domain_files(cat_dir)
+
+        for d in domains:
+            path = os.path.join(cat_dir, d + ".md")
+            if not os.path.exists(path):
+                issues.append(f"Domain file missing: {category}/{d}.md")
+                continue
+            body = _read(path)
+            if f"{d}.md" not in router:
+                issues.append(f"Domain not in ROUTER.md: {category}/{d}.md")
+            m = re.search(rf"\[{re.escape(d)}\]\({re.escape(d)}\.md\) — (\d+) les", index)
+            actual = len(re.findall(r"^- \[", body, re.M))
+            if not m:
+                issues.append(f"Domain not in INDEX.md: {category}/{d}.md")
+            elif int(m.group(1)) != actual:
+                issues.append(f"INDEX says {m.group(1)} instead of {actual} lessons in {category}/{d}.md")
+            for target in re.findall(r"\]\(([^)]+\.md)\)", body):
+                if not os.path.exists(os.path.normpath(os.path.join(cat_dir, target))):
+                    issues.append(f"Dead link in {category}/{d}.md: {target}")
+
+        for file in sorted(os.listdir(cat_dir)):
+            if not file.endswith(".md") or file == "INDEX.md":
+                continue
+            path = os.path.join(cat_dir, file)
+            fm = _frontmatter(_read(path))
+            if fm is None:
+                continue  # domeinbestand
+            m = re.search(r"^domain:\s*(.+)$", fm, re.M)
+            if not m:
+                continue  # al gemeld door de frontmatter-check
+            dom = m.group(1).strip()
+            if dom not in domains:
+                issues.append(f"Lesson with unknown domain '{dom}': {category}/{file}")
+                continue
+            if file not in _read(os.path.join(cat_dir, dom + ".md")):
+                issues.append(f"Lesson not listed in {category}/{dom}.md: {file}")
 
     if issues:
         for issue in issues:
             print(f"❌ {issue}")
         return False
-    print("✅ All lessons are covered by their category INDEX.md.")
+    print("✅ All lessons are covered by their domain file, INDEX count and ROUTER.")
     return True
 
 
