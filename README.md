@@ -7,7 +7,7 @@ MACCHA acts as a universal, persistent "brain" that any AI tool can plug into. I
 MACCHA is built for people who:
 
 - do not want to lose their context when switching between different AI platforms and/or AI agents, and therefore refuse to be limited to a single coding agent
-- cannot afford — or simply do not want — heavy, 24/7 "always on" background agents
+- cannot afford — or simply do not want — heavy, 24/7 "always on" background agents like OpenClaw or Hermes Agent
 
 …but who still want the compounding benefits of a sophisticated, self-improving AI assistant system.
 
@@ -15,9 +15,7 @@ MACCHA is built for people who:
 
 ## ⚡ What is MACCHA?
 
-It solves the biggest limitation of modern AI coding agents: **transient memory and repetitive context-setting**.
-
-When you open a new workspace or start a terminal session, standard AI assistants start from absolute zero. They forget who you are, your technical preferences, your system constraints, and the hard-earned lessons from yesterday. You have to explain your project rules over and over again.
+It solves the biggest limitation of modern AI coding agents: **transient memory and repetitive context-setting**. When you open a new workspace or start a terminal session, standard AI assistants start from absolute zero. They forget who you are, your technical preferences, your system constraints, and the hard-earned lessons from yesterday. You have to explain your project rules over and over again.
 
 **MACCHA solves this permanently.** By establishing a structured memory hierarchy and automated maintenance loops, any AI agent reading your system instantly inherits a persistent, self-improving, and highly protected professional profile. 
 
