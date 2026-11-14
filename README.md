@@ -21,7 +21,7 @@ When you open a new session or switch from one platform to another, context gets
 
 **MACCHA solves this permanently.** By establishing a structured memory hierarchy and automated maintenance loops, any AI agent reading your system instantly inherits a persistent, self-improving, and highly protected professional profile. 
 
-Because this memory lives directly in your file system—not in a proprietary cloud silo—**MACCHA creates a shared, evolving intelligence across different platforms.** You can switch seamlessly between Antigravity, OpenCode, and Claude Code. They will all read from and write to the same MACCHA brain, sharing a single, unified digital identity.
+Because this memory lives directly in your file system—not in a proprietary cloud silo—**MACCHA creates a shared, evolving intelligence across all different platforms.** You can switch seamlessly between Antigravity, OpenCode, and Claude Code. They will all read from and write to the same MACCHA brain, sharing a single, unified digital identity.
 
 Imagine this:
 - **Monday**: You tell Antigravity that you strictly use `pnpm` and prefer dark-mode CSS without Tailwind. The agent writes this rule to your MACCHA memory.
