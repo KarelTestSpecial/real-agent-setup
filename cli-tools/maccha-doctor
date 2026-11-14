@@ -116,7 +116,7 @@ fi
 
 if [ "$SHOW_LOCAL" -eq 1 ]; then
 section "VDAB job-hunt (vdab-swipe)"
-V="$H/workspace/vdab-swipe"
+V="$H/workspace/werk-inkomen/vdab-swipe"
 if [ -d "$V" ]; then
   # --- data layer: symlinks, because maccha-backup covers INFO/PLAN/BRAIN/C, not workspace/
   if [ -L "$V/data" ]; then

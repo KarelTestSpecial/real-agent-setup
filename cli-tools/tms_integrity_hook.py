@@ -59,7 +59,7 @@ def check_git_activity(tms_content):
     This used to run as a bare `git log` in whatever working directory the hook
     was started from. That happens to be some other repo (or none at all) — on
     2/10 the hook reported "No recent local git commits found" while that day
-    had eight commits in ~/workspace/vdab-swipe. Now every repo under
+    had eight commits in ~/workspace/werk-inkomen/vdab-swipe. Now every repo under
     workspace/ is checked separately.
 
     Penalty rule: a repo that is itself mentioned in the TMS is checked strictly
