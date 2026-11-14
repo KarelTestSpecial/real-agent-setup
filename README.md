@@ -50,7 +50,7 @@ MACCHA is built for people who **cannot or do not want to run heavy, 24/7 backgr
 
 - **Lightweight Hardware:** Runs flawlessly on constrained hardware (like Chromebooks, older laptops, or free-tier cloud environments). The agent only consumes compute when you actively invoke it.
 - **Cross-Agent Synergy:** You are never locked into one tool. Antigravity can start a complex coding task today, and OpenCode can continue it tomorrow. 
-- **Human-in-the-Loop (HITL) by Default:** Perfect for sensitive operations, financial tasks, or personal data. You remain the conductor. The agent acts on-demand and proposes changes; you approve them. There are no runaway background processes
+- **Human-in-the-Loop (HITL) by Default:** Perfect for sensitive operations, financial tasks, or personal data. You remain the conductor. The agent acts on-demand and proposes changes; you approve them. There are no runaway background processes.
 - **True Continuity:** Despite not running 24/7, MACCHA's architecture gives you the same continuous context, tool integration, and long-term memory as an always-on agent. 
 
 **If you want the persistent memory and deep context of a sophisticated digital assistant, but need it to be highly resource-efficient and fully under your control—MACCHA is your bridge.**
