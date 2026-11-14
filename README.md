@@ -1,6 +1,6 @@
 # 🧠 MACCHA — Multi-Agent Continuous Context Harness
 
-Create one cross-platform brain for Antigravity, OpenCode, Claude Code, OpenAI Codex and any other AI coding assistant — and turn them into one fully contextualized, highly secure, self-improving Real-World Digital Assistant.
+> **Create one cross-platform brain for Antigravity, OpenCode, Claude Code, OpenAI Codex and any other AI coding assistant — and turn them into one fully contextualized, highly secure, self-improving Real-World Digital Assistant.**
 
 MACCHA acts as a universal, persistent "brain" that any AI tool can plug into. It creates a shared, evolving brain across all different platforms. You can switch seamlessly between Antigravity, OpenCode, Codex, Claude Code and others. They will all read from and write to the same MACCHA brain, sharing a single, unified digital identity.
 
@@ -54,6 +54,8 @@ MACCHA is built for people who **cannot or do not want to run heavy, 24/7 backgr
 - **True Continuity:** Despite not running 24/7, MACCHA's architecture gives you the same continuous context, tool integration, and long-term memory as an always-on agent. 
 
 **If you want the persistent memory and deep context of a sophisticated digital assistant, but need it to be highly resource-efficient and fully under your control—MACCHA is your bridge.**
+
+MACCHA is a lightweight file architecture, a set of intelligent markdown templates, and a suite of tools and maintenance scripts that live in your home directory.
 
 ---
 
