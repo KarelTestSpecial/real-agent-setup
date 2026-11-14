@@ -265,8 +265,9 @@ def check_index_coverage():
             if dom not in domains:
                 issues.append(f"Lesson with unknown domain '{dom}': {category}/{file}")
                 continue
-            if file not in _read(os.path.join(cat_dir, dom + ".md")):
-                issues.append(f"Lesson not listed in {category}/{dom}.md: {file}")
+            listed = _read(os.path.join(cat_dir, dom + ".md"))
+            if not re.search(r"\]\(" + re.escape(file) + r"\)", listed):
+                issues.append(f"Lesson not listed as a link in {category}/{dom}.md: {file}")
 
     if issues:
         for issue in issues:
