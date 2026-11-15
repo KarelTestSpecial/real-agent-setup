@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1] - 2026-11-15
+### Fixed
+- **`setup.sh` installed lessons to `~/learned-lessons/`, not `~/BRAIN/learned-lessons/`.** Tier 6 of the mandate map and every tool read the BRAIN path, so a fresh install started with its knowledge base in a place no agent would look — the same class of fault as the `AGENTS.md` path: the installer built a directory the mandate never mentions. `setup.sh`, `uninstall.sh` and the `publish.sh` hint now agree with the mandate, and the uninstall report lists the lessons under `~/BRAIN`.
+- **The starter bank never actually shipped.** `.gitignore` ignores `/learned-lessons/*` except `README.md`, so the 12 tracked lessons went out but no router and no domain file could be added: a fresh install would have lessons with no map and no place to add the next one. The starter bank is now explicitly allowed (router, domain files, lessons); the private bank in `~/BRAIN/learned-lessons/` still never enters the repo.
+- **The published starter lessons were still in the pre-router format.** `learned-lessons/` shipped an `INDEX.md` with `## Domain:` headings, which the 1.5.0 template explicitly forbids ("never in `INDEX.md`"). The 12 lessons are regrouped into 9 domain files with a `ROUTER.md`; `learned-lessons/README.md` now documents that layout instead of calling the directory an empty placeholder.
+
 ## [1.5.0] - 2026-11-15
 ### Added
 - **Lesson routing: one router instead of one 15k-token index.** `learned-lessons/ROUTER.md` lists 32 domains with a "use it when" line and is loaded *ambiently* (OpenCode `instructions`, and `memanto prime`). A domain file holds at most ~23 lessons instead of 157 in a single `INDEX.md`; `infrastructure-en-tooling` alone was split into eight. The previous design had a write path (frontmatter check, INDEX coverage) but no read path: the startup hook was registered nowhere, `prime` printed only counts, and nothing said *when* to look — so the same lesson was written twice. `MISSES.md` is the instrument that shows whether routing works: one line per lesson found too late.

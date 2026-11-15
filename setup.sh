@@ -200,12 +200,14 @@ fi
 # === Learned Lessons & Agent Skills (curated mirrors) ===
 echo ""
 echo -e "${CYAN}${BOLD}📚 [5/6] Knowledge Mirrors (Lessons & Skills)${RESET}"
-if [ ! -d "$HOME_DIR/learned-lessons" ]; then
-    mkdir -p "$HOME_DIR/learned-lessons"
-    # Copy the README placeholder
-    if [ -f "$REPO_DIR/learned-lessons/README.md" ]; then
-        cp "$REPO_DIR/learned-lessons/README.md" "$HOME_DIR/learned-lessons/README.md"
-        echo -e "  ${GREEN}✓${RESET} learned-lessons/ established"
+if [ ! -d "$HOME_DIR/BRAIN/learned-lessons" ]; then
+    mkdir -p "$HOME_DIR/BRAIN/learned-lessons"
+    # The whole starter bank: ROUTER.md + one file per domain + the lessons.
+    # Copying only the README would ship a layout the README describes but
+    # that is not there — no router to read, no domain file to add to.
+    if [ -d "$REPO_DIR/learned-lessons" ]; then
+        cp -r "$REPO_DIR/learned-lessons/." "$HOME_DIR/BRAIN/learned-lessons/"
+        echo -e "  ${GREEN}✓${RESET} BRAIN/learned-lessons/ (starter bank: router + domain files)"
     fi
 else
     echo -e "  ${YELLOW}~${RESET} learned-lessons/ directory exists, skipping"

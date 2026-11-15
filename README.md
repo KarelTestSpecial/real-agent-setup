@@ -257,7 +257,7 @@ bash uninstall.sh --force --yes   # delete pristine files without prompting
 > **Always dry-run first.** The default `bash uninstall.sh` (no flags) only *reports* — it never deletes. Read the list, then re-run with `--force` to act on it. With `--force` you are still asked to confirm every single file unless you add `--yes`.
 
 > [!NOTE]
-> **What it never removes:** your edited templates (`~/AGENTS.md`, `todo.md`, …), your memory store (`~/INFRA/agents-brain/data`), and your personal zones (`~/BRAIN`, `~/INFO`, `~/PLAN`, `~/learned-lessons`). These are reported as **kept** and must be deleted by hand if you truly want them gone. The optional Himalaya client (`~/.local/bin` + its PATH line) is also left for manual cleanup. Every run ends with an itemized report of exactly what was installed, removed, kept, and skipped.
+> **What it never removes:** your edited templates (`~/AGENTS.md`, `todo.md`, …), your memory store (`~/INFRA/agents-brain/data`), and your personal zones (`~/BRAIN` (incl. `learned-lessons/`), `~/INFO`, `~/PLAN`). These are reported as **kept** and must be deleted by hand if you truly want them gone. The optional Himalaya client (`~/.local/bin` + its PATH line) is also left for manual cleanup. Every run ends with an itemized report of exactly what was installed, removed, kept, and skipped.
 
 ---
 
@@ -273,7 +273,7 @@ bash publish.sh --check-only # Run sanitization + PII + language gates only (no 
 ```
 
 > [!WARNING]
-> `publish.sh` will **NEVER** copy your personal files (`~/AGENTS.md`, `~/BRAIN/`, `~/learned-lessons/`) to the repository. Your private data and re-integration context remain completely localized to your physical machine.
+> `publish.sh` will **NEVER** copy your personal files (`~/AGENTS.md`, `~/BRAIN/`) to the repository. Your private data and re-integration context remain completely localized to your physical machine.
 
 ### 🧭 Publish allowlist (tracked, fail-closed)
 
@@ -318,5 +318,5 @@ There is **no automated release workflow** — `.github/workflows/gates.yml` onl
 
 ---
 
-*MACCHA v1.5.0 | Multi-Agent Continuous Context Harness*  
+*MACCHA v1.5.1 | Multi-Agent Continuous Context Harness*  
 *"Continuity is the absolute key to agentic performance."*

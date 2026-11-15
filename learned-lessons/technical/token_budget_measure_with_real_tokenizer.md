@@ -45,6 +45,6 @@ needed. This harness wraps it as `~/bin/maccha/count-tokens <file> [...]`.
 The count showed **3 of 3 mandate files over budget** (2 764 / 3 457 / 4 325)
 while every estimate said "roughly fine" — turning a false all-green verdict
 into an immediate follow-up task (restate the budget + a machine guardrail).
-Same family as [verify public claims against the source](publicatieclaims_verificeren_tegen_clean_clone.md):
+Same family as verifying public claims against a clean clone:
 **re-check every measurement you make with the tool that defines the limit
 itself, not with your eye.**

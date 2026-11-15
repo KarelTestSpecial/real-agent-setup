@@ -1,11 +1,30 @@
 # Learned Lessons
 
-Placeholder directory for long-term memory storage.
+Curated, reusable lessons: one file per lesson, grouped in **domain files**, with
+`ROUTER.md` as the map. `ROUTER.md` says *when* to open which domain file; the
+domain file lists the lessons; the lesson file holds the content.
 
-The agent stores curated lessons here after each session, organized by category:
-- `technical/` — Code patterns, tool usage, debugging breakthroughs
-- `strategic/` — Market insights, positioning, opportunity analysis
-- `security/` — Trap patterns, honeypot signatures, supply chain risks
-- `archive/` — Historical lessons (rotated for bloat control)
+This is a starter set. Your agent adds to it after each session — one line in the
+domain file plus the lesson itself, never a second copy elsewhere.
 
-This directory is populated at runtime and should NOT contain pre-loaded content.
+## Layout
+
+```
+learned-lessons/
+  ROUTER.md                 ← start here: domain → "use it when"
+  technical/
+    <domain>.md             ← one file per domain: the lesson list
+    <lesson>.md             ← one file per lesson, with frontmatter
+  security/
+    ...
+```
+
+A lesson file carries frontmatter (`category`, `domain`, `tier`, `last_updated`).
+`domain:` must match the domain file that lists it.
+
+## Categories
+
+- `technical/` — code patterns, tool usage, debugging breakthroughs
+- `strategic/` — market insights, positioning, opportunity analysis
+- `security/` — trap patterns, honeypot signatures, supply chain risks
+- `archive/` — historical lessons (rotated for bloat control)

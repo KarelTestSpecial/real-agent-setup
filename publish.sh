@@ -194,7 +194,7 @@ echo -e "${CYAN}${BOLD}📚 [4/4] Curated Mirrors (Lessons & Skills)${RESET}"
 # through SYNC_DIRS.
 echo -e "  ${YELLOW}⚠️  PII-WARNING:${RESET} Learned lessons are ${BOLD}NOT${RESET} automatically copied."
 echo -e "     If you have sanitised lessons to publish, copy them manually:"
-echo -e "     ${BOLD}cp -r ~/learned-lessons/technical/ repo/learned-lessons/${RESET}"
+echo -e "     ${BOLD}cp -r ~/BRAIN/learned-lessons/technical/ repo/learned-lessons/${RESET}"
 
 echo ""
 if [ "$SKIPPED" -gt 0 ]; then

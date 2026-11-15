@@ -150,7 +150,7 @@ done
 consider "$REPO_DIR/system-brain/policies/guardrails.md" "$HOME_DIR/BRAIN/policies/guardrails.md"
 
 echo -e "${CYAN}${BOLD}📚 Seeded placeholders${RESET}"
-consider "$REPO_DIR/learned-lessons/README.md" "$HOME_DIR/learned-lessons/README.md"
+consider "$REPO_DIR/learned-lessons/README.md" "$HOME_DIR/BRAIN/learned-lessons/README.md"
 consider "$REPO_DIR/info/systeem-info/laptop-setup.md" "$HOME_DIR/INFO/systeem-info/laptop-setup.md"
 
 # Tidy up now-empty scaffolding dirs (never personal-data dirs), with confirmation.
@@ -187,7 +187,7 @@ print_list "${MAGENTA}Kept (edited by you):${RESET}" "${EDITED[@]:-}"
 echo ""
 echo -e "${YELLOW}Preserved on purpose — review/remove manually if you wish:${RESET}"
 echo -e "  • ${BLUE}~/INFRA/agents-brain/data${RESET}  (your memory store)"
-echo -e "  • ${BLUE}~/BRAIN, ~/INFO, ~/PLAN, ~/learned-lessons${RESET}  (your personal content)"
+echo -e "  • ${BLUE}~/BRAIN (incl. learned-lessons), ~/INFO, ~/PLAN${RESET}  (your personal content)"
 echo -e "  • Himalaya: ${BLUE}~/.local/bin${RESET} + the PATH line in ${BLUE}~/.bash_aliases${RESET} / ${BLUE}~/.profile${RESET}"
 echo ""
 if [ "$FORCE" -eq 0 ]; then

@@ -7,6 +7,13 @@
 /todo.md
 /learned-lessons/*
 !/learned-lessons/README.md
+# The starter bank ships: one file per domain plus the lessons it lists.
+# The private bank lives in ~/BRAIN/learned-lessons and never enters this repo.
+!/learned-lessons/ROUTER.md
+!/learned-lessons/technical/
+!/learned-lessons/technical/*.md
+!/learned-lessons/security/
+!/learned-lessons/security/*.md
 
 # === Publish-time sanitization config (local only — holds personal tokens) ===
 .publish-sanitize.sed*
