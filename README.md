@@ -1,8 +1,8 @@
 # MACCHA. Multi Agent Continuous Context Harness.
 
-> **Create one cross-platform brain for Antigravity, OpenCode, Claude Code, OpenAI Codex and any other AI coding assistant — and turn them alltogether into one fully contextualized, highly secure, self-improving Real-World Digital Assistant.**
+> **Create one cross-platform brain for Antigravity, OpenCode, Claude Code, OpenAI Codex and any other AI coding assistant — and turn them all together into one fully contextualized, highly secure, self-improving Real-World Digital Assistant.**
 
-MACCHA acts as a universal, persistent "brain" that any AI tool can plug into. It creates a shared, evolving brain across all different platforms. You can switch seamlessly between Antigravity, OpenCode, Codex, Claude Code and other. They will all read from and write to the same MACCHA brain, sharing a single, unified digital identity.
+MACCHA acts as a universal, persistent "brain" that any AI tool can plug into. It creates a shared, evolving brain across all different platforms. You can switch seamlessly between Antigravity, OpenCode, Codex, Claude Code and others. They will all read from and write to the same MACCHA brain, sharing a single, unified digital identity.
 
 MACCHA is built for people who:
 
@@ -35,7 +35,7 @@ Imagine this:
 MACCHA is not just a static set of rules; it is a **living engine** driven by two critical rituals: Startup and Closeout. 
 
 - **At the start of a session**, the agent will proactively read `~/AGENTS.md` and run the mandatory **Startup Protocol**. This primes your context, checks your `~/INBOX/`, verifies your TMS (`todo` / `in-progress`), and triggers throttled weekly backups. *(Note: Once you are familiar with the workflow, you could edit your personal `~/AGENTS.md` to disable the automatic trigger and only run the startup checklist when explicitly requested).*
-- **At the end of a session, you MUST manually ask the agent to "run closeout"** (or run `session-closeout` yourself). Because AI agents cannot predict when you are about to close your terminal, they cannot run this automatically. **Do not skip this!** Closeout captures your newly learned lessons, syncs and prunes your TMS, and records the session event in memory.
+- **At the end of a session, you MUST manually ask the agent to "run closeout"** (or run `session-closeout` yourself). Because AI agents cannot predict when you are about to close your terminal, they cannot run this automatically. **Do not skip this!** Closeout prunes and syncs your TMS, runs the integrity check and the throttled sweeps — then it *prompts* for the two steps only the agent can do: recording the session's lessons in `IMPROVEMENT.md` and writing the session event to Memanto. Finish those before you walk away.
 
 > [!IMPORTANT]
 > **Making the closeout request a habit is what turns MACCHA from a static rule file into a genuinely *self-improving* brain — each closeout compounds into the next startup.**
@@ -111,9 +111,9 @@ To make this possible, MACCHA organizes your system context into seven distinct,
 | **TIER 1** | `~/BRAIN/AGENTS.md` | **Project Mandates**: Session rules, meso memory rules, and local development standards. | 🟠 High |
 | **TIER 2** | `~/.gemini/GEMINI.md` | **Machine Mandates**: Cross-project preferences, machine hardware profile, global security. | 🟡 Medium |
 | **TIER 3** | `~/INFO/over-owner/SITUATIE_OVERZICHT.md` | **Owner Situation**: Central reference for personal context, legal/medical history, and targets. | 🟢 Reference |
-| **TIER 4** | `~/BRAIN/tms/` + `~/BRAIN/policies/` | **Live State**: TMS task flow (todo / in-progress / done) and the machine-enforced guardrails. | 🟢 State |
+| **TIER 4** | `~/BRAIN/tms/` + `~/BRAIN/policies/` | **Live State**: TMS task flow (todo / in-progress / backlog / done) and the machine-enforced guardrails. | 🟢 State |
 | **TIER 5** | `~/IMPROVEMENT.md` | **Long-Term Auto-Improvement**: Feedback loop tracking what the agent learned during the session. | 🟢 Feedback |
-| **TIER 6** | `~/BRAIN/learned-lessons/` | **Technical Lessons**: A highly curated directory of reusable coding/configuration patterns. | 🟢 Lessons |
+| **TIER 6** | `~/BRAIN/learned-lessons/` | **Lessons**: A highly curated, routed set of reusable coding/configuration/security patterns (`ROUTER.md` → domain file → lesson). | 🟢 Lessons |
 
 > [!IMPORTANT]
 > **The Routing Rule:** A piece of information MUST live in exactly one tier. If a conflict or duplicate arises, priority is determined from top to bottom (Global/Machine Rules supersede project templates, which supersede situational references).
@@ -137,34 +137,43 @@ An advanced diagnostics utility specifically engineered to maintain system healt
 - **Terminology Alignment**: Categorizes project directory state as either **💧 HYDRATED** (dependencies present) or **🌵 DORMANT** (dependencies pruned to free space).
 - **Interactive Cleanup**: Clears cache stores (`pnpm`, `npm`), optimizes bloated `.git` databases via `git gc --prune=now`, and identifies massive unused files to reclaim space instantly.
 
-### 🛡️ 3. Absolute Supply Chain & Safety Guards
-MACCHA turns your workspace into an ironclad security zone, protecting users who aren't cybersecurity experts:
-- **Supply Chain Cooldown**: Enforces a `minimum-release-age=7d` for all packages to safeguard against zero-day malware.
-- **HITL (Human-in-the-Loop) Mandate**: Under no circumstances can an agent execute actions modifying real-world capital or sending emails without explicit manual confirmation.
-- **Auto-Guard Scans**: Performs pre-install `pnpm audit` checks and prints immediate `Safety Report: GREEN/RED` flags.
-- **Secrets Scan**: Detects leaked API keys, RSA private keys, or service JSONs before committing.
+### 🛡️ 3. Supply Chain & Safety Guards
+Mandates plus the scripts that enforce them, written for users who aren't cybersecurity experts:
+- **Supply Chain Cooldown**: `minimum-release-age=10080` (7 days) in `~/.npmrc` holds back packages younger than a week; `cli-tools/update-pnpm` respects that cooldown when updating pnpm itself, and `cli-tools/maccha-doctor` warns when the setting is missing.
+- **HITL (Human-in-the-Loop) Mandate**: Under no circumstances can an agent execute actions modifying real-world capital or sending emails without explicit manual confirmation. `cli-tools/compose-mail` enforces the mail half of it: it only ever saves a Gmail draft, never sends.
+- **Install Guard**: the mandate requires a `pnpm audit` before every install and a `Safety: 🟢 GREEN / 🔴 RED` verdict in the reply. That is a rule the agent follows, not an automated gate. The automated check is `cli-tools/safety_gate.sh`: it validates the tier files, paths and script syntax of the installation and exits non-zero on a broken setup.
+- **Secrets & PII Scan**: `cli-tools/pii-check.mjs --staged` blocks a commit on private keys, GitHub/AWS/Google/Slack tokens, JWTs, IBANs, national registry numbers, e-mail addresses and `/home/<user>/` paths. Your own sensitive terms (names, institutions) live in a separate, gitignored wordlist, so the scanner itself stays publishable.
 
 ### 📌 4. Task Management System (TMS) Hygiene
 Automatic, script-driven maintenance keeps your daily workspace organized without mental overhead:
-- **TMS Integrity Hook**: Validates that all files modified in the workspace or committed via git are logged correctly under the TMS files (`todo.md`, `in-progress.md`, `done.md`).
+- **TMS Integrity Hook**: the gate that runs at every closeout (and on demand). It cross-checks git and workspace activity against `todo.md` / `in-progress.md` / `backlog.md` / `done.md`, then validates the lesson bank (domain, router coverage, dead links), the guardrails register, archive retention, the context budget, publish drift and version drift — exiting non-zero on any discrepancy.
 - **Pruning Rotator**: Completed items flow through `done.md` and are archived quarterly into `~/BRAIN/archive/tms/<year>-Q<x>.md`, preventing context windows from bloating.
 - **Rule Guard at Startup**: `session-startup` flags leftover `[x]` items, broken TMS symlinks and an overgrown `in-progress.md` (max ±10 active items), and triggers a throttled weekly sweep.
 
 ### 🗄️ 5. Encrypted Weekly Backup (`cli-tools/maccha-backup`)
 Set-and-forget disaster recovery for the entire knowledge base:
-- **AES-256 encrypted tar** of your personal zones (`INFO/ PLAN/ BRAIN/ …`) written to a mounted cloud drive, with rotated retention and an automatic decrypt-and-list integrity check. How many backups are kept is set by the `KEEP` variable at the top of `cli-tools/maccha-backup` — adjust to taste (e.g. `KEEP=1` keeps only the most recent, `KEEP=4` a month of weekly history).
+- **AES-256 encrypted tar** of your personal zones (`INFO/ PLAN/ BRAIN/ …`) written to a mounted cloud drive, with rotated retention and an automatic decrypt-and-list integrity check. How many backups are kept is set by the `KEEP` variable at the top of `cli-tools/maccha-backup` (default `2`) — adjust to taste (`KEEP=1` keeps only the most recent, `KEEP=4` a month of weekly history).
 - **Key stays local**: generated once into `~/.config/maccha/backup.key` (keep an off-device copy); plain restore instructions are written next to the backups — without the key.
 - **Zero overhead**: triggered automatically (throttled, once per 7 days) by `session-startup`.
 
 ### 🧰 6. Bundled AI & Productivity Tools
 MACCHA comes with a suite of pre-configured tools designed to extend your agent's capabilities beyond simple code editing:
-- **Himalaya Email CLI (`~/.local/bin/himalaya`)**: An optional, safe terminal-based email client. The `setup.sh` script can automatically compile and configure this for you, allowing agents to draft emails (subject to the strict HITL rules before sending).
+- **Himalaya Email CLI (`~/.local/bin/himalaya`)**: An optional, safe terminal-based email client. The `setup.sh` script offers to download and configure it for you (binary into `~/.local/bin`, PATH line into your shell rc), so agents can draft emails — subject to the strict HITL rules before sending.
 - **Google Drive Integration (`INFRA/mydrive-access-tool.js` & `INFRA/gdrive-markdown-uploader.js`)**: Bridge tools that allow your CLI agents to securely read and parse your Google Docs/Drive files, as well as automatically convert and upload local markdown documents to Google Drive.
 - **AI Waterfall / Deep Research (`INFRA/run_deep_research.js`)**: A powerful asynchronous research script that agents can trigger to perform deep web scraping and analysis, dropping the results back into the workspace.
 
----
+### 🧭 7. Lesson Routing (`learned-lessons/`)
 
-### 🎓 7. Bundled Agent Skills (`skills/`)
+Lessons are worthless if nobody opens them, so MACCHA does not ship one big `INDEX.md` to scan. It ships a router:
+
+- **`ROUTER.md` is the map**: one line per lesson with a short "use it when" hook, grouped by domain. It is loaded ambiently (`memanto prime`, and the OpenCode `instructions` entry) so the agent sees *when* to look — not just *that* lessons exist.
+- **One file per domain** (`technical/<domain>.md`, `security/<domain>.md`, …): holds the lesson list, so a domain carries ~20 entries instead of 150 in a single file.
+- **One file per lesson**: the content, with frontmatter (`category`, `domain`, `tier`, `last_updated`).
+- **The write path is enforced**: a new lesson is the lesson file **plus** one line in its domain file — never a second copy, and never `INDEX.md`. `tms_integrity_hook.py` checks the `domain:` value against a closed set, the count against the domain file, router coverage and dead links.
+
+The `learned-lessons/` in this repo is the sanitized starter bank; the full set lives in `~/BRAIN/learned-lessons/` and never enters the repository.
+
+### 🎓 8. Bundled Agent Skills (`skills/`)
 Not everything the harness knows is a mandate or a script — some of it is a *way of working*. `skills/` ships drop-in agent skills: plain `SKILL.md` files with YAML frontmatter that Claude Code, OpenCode, Antigravity and other harnesses pick up from a skills directory.
 
 - **`step-by-step`**: patient, one-step-at-a-time guidance. Exactly one step per message, always restarting at step 1, waiting for the user's "done" before moving on, and pausing in front of anything that changes something (send, submit, delete, pay) until the user says go. Made for the moment a user says "slow down", "walk me through it", or is doing something for the first time.
@@ -179,10 +188,12 @@ Installing a skill is one copy into your harness's skills directory (`~/.agents/
 ```text
 real-agent-setup/
 ├── system-brain/                  # MACCHA templates (PII-free, ready to customize)
-│   ├── AGENTS.md                  #   Root bootstrap — fill with your own context
+│   ├── AGENTS.md                  #   Mandate template — installed as ~/BRAIN/AGENTS.md
+│   ├── MANDATE_GUIDE.md           #   Read-once rationale behind the layer & zone model
 │   ├── IMPROVEMENT.md             #   LTAIS auto-improvement loop
-│   ├── todo.md / in-progress.md / done.md   # TMS trackers
-│   ├── hooks/                     #   Agent hooks (startup-lessons, tms-integrity, test-enforcer)
+│   ├── todo.md / in-progress.md / backlog.md / done.md   # TMS trackers
+│   ├── archive/                   #   Retention policy for the quarterly archives
+│   ├── hooks/                     #   Agent hooks (link-check, startup-lessons, tms-integrity, test-enforcer)
 │   └── policies/guardrails.md     #   Machine-enforced guardrails
 ├── brain/                         # Memory engine + maintenance playbooks
 │   ├── lib/memanto_engine.py      #   13-category working memory (Memanto)
@@ -191,12 +202,17 @@ real-agent-setup/
 ├── cli-tools/                     # Shared CLI utilities (AI models, storage, cleanup)
 ├── infrastructure/                # Shared bridges and session maintenance scripts
 ├── learned-lessons/               # Curated, sanitized lesson mirror (public subset);
-│   ├── security/ technical/       #   your full local set stays in ~/BRAIN/learned-lessons/
+│   ├── ROUTER.md                  #   the map: lesson → "use it when" (read this first)
+│   ├── technical/ security/       #   one domain file per domain; your full local set
+│   │                              #   stays in ~/BRAIN/learned-lessons/ and never ships
 │   └── README.md
 ├── skills/                        # Drop-in agent skills (English, harness-agnostic)
 │   ├── step-by-step/              #   One step per message; the user keeps the reins
 │   └── README.md                  #   Curation policy (hand-maintained, deliberately static)
 ├── setup.sh                       # Install script for new machines
+├── uninstall.sh                   # Reverse of setup.sh (dry-run by default)
+├── .github/workflows/gates.yml    # Shell/JS/Python syntax + publish gates per push & PR
+├── VERSION / CHANGELOG.md         # Single source of truth for the release number
 ├── .publish-allowlist             # Curated list of what may be published (fail-closed)
 └── publish.sh                     # Publish local improvements back to repo
 ```
@@ -227,9 +243,13 @@ bash setup.sh
 
 **What the setup script accomplishes:**
 1. Installs all standard **CLI utilities** in `~/bin/maccha/` — including the `session-startup` and `session-closeout` lifecycle scripts.
-2. Configures **Infrastructure Bridges** (storage manager, cloud-drive access, deep-research runner) in `~/INFRA/`.
-3. Copies MACCHA **PII-free templates** (`AGENTS.md`, `IMPROVEMENT.md`, etc.) to your home folder `~/`.
-4. Offers an optional interactive prompt to download, compile, and configure the local **Himalaya CLI** email client in `~/.local/bin/`.
+2. Configures **Infrastructure Bridges** (memory engine, storage manager, cloud-drive access, deep-research runner) in `~/INFRA/`.
+3. Creates the **tier files** (`~/BRAIN/AGENTS.md` + `~/AGENTS.md` symlink, `IMPROVEMENT.md`, TMS trackers, hooks, guardrails, archive policy).
+4. Lays down the **knowledge mirrors**: the `learned-lessons/` starter bank in `~/BRAIN/learned-lessons/` and the `skills/` into `~/.agents/skills/` (plus `~/.claude/skills/` when present).
+5. Creates the **personal zones** (`INFO/`, `PLAN/`, `INBOX/`, `workspace/`, `scratch/`) — empty scaffolding that matches the zone model.
+6. Offers an optional interactive prompt to download and configure the local **Himalaya CLI** email client in `~/.local/bin/`.
+
+Every step is skipped when the destination already exists, so your edits are never overwritten.
 
 ### 2. Post-Installation Configuration
 
@@ -319,4 +339,4 @@ There is **no automated release workflow** — `.github/workflows/gates.yml` onl
 ---
 
 *MACCHA v1.5.1 | Multi-Agent Continuous Context Harness*  
-*"Continuity is the absolute key to agentic performance."*
+*"Continuity is the key to agentic performance."*
