@@ -244,7 +244,7 @@ bash setup.sh
 **What the setup script accomplishes:**
 1. Installs all standard **CLI utilities** in `~/bin/maccha/` — including the `session-startup` and `session-closeout` lifecycle scripts.
 2. Configures **Infrastructure Bridges** (memory engine, storage manager, cloud-drive access, deep-research runner) in `~/INFRA/`.
-3. Creates the **tier files** (`~/BRAIN/AGENTS.md` + `~/AGENTS.md` symlink, `IMPROVEMENT.md`, TMS trackers, hooks, guardrails, archive policy).
+3. Creates the **tier files**: `~/BRAIN/AGENTS.md` (+ `~/AGENTS.md` symlink), `IMPROVEMENT.md`, the TMS trackers in `~/BRAIN/tms/` (+ `~/todo.md` … symlinks), the hooks, the guardrails register and the archive policy.
 4. Lays down the **knowledge mirrors**: the `learned-lessons/` starter bank in `~/BRAIN/learned-lessons/` and the `skills/` into `~/.agents/skills/` (plus `~/.claude/skills/` when present).
 5. Creates the **personal zones** (`INFO/`, `PLAN/`, `INBOX/`, `workspace/`, `scratch/`) — empty scaffolding that matches the zone model.
 6. Offers an optional interactive prompt to download and configure the local **Himalaya CLI** email client in `~/.local/bin/`.
@@ -277,7 +277,7 @@ bash uninstall.sh --force --yes   # delete pristine files without prompting
 > **Always dry-run first.** The default `bash uninstall.sh` (no flags) only *reports* — it never deletes. Read the list, then re-run with `--force` to act on it. With `--force` you are still asked to confirm every single file unless you add `--yes`.
 
 > [!NOTE]
-> **What it never removes:** your edited templates (`~/AGENTS.md`, `todo.md`, …), your memory store (`~/INFRA/agents-brain/data`), and your personal zones (`~/BRAIN` (incl. `learned-lessons/`), `~/INFO`, `~/PLAN`). These are reported as **kept** and must be deleted by hand if you truly want them gone. The optional Himalaya client (`~/.local/bin` + its PATH line) is also left for manual cleanup. Every run ends with an itemized report of exactly what was installed, removed, kept, and skipped.
+> **What it never removes:** your edited templates (`~/AGENTS.md`, `todo.md`, …), your memory store (`~/INFRA/agents-brain/data`), the installer config (`~/.config/maccha/` — line limits, secrets, keys) and your personal zones (`~/BRAIN` (incl. `learned-lessons/`), `~/INFO`, `~/PLAN`). These are reported as **kept** and must be deleted by hand if you truly want them gone. The optional Himalaya client (`~/.local/bin` + its PATH line) is also left for manual cleanup. Every run ends with an itemized report of exactly what was installed, removed, kept, and skipped.
 
 ---
 

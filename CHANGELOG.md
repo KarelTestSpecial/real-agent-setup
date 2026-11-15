@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Fixed
+- **`setup.sh` copied the TMS trackers into `~/` instead of `~/BRAIN/tms/`.** Tier 4 of the mandate map, the template `AGENTS.md` and `tms_integrity_hook.py` all read `~/BRAIN/tms/`, while `session-startup` reads `~/todo.md` — so a fresh install ended up with two truths and the integrity hook validated an empty TMS directory. The capsule now owns `BRAIN/tms/<file>` and the home-root names are symlinks into it (same layout as `~/AGENTS.md`); a pre-existing regular file is *moved* into the capsule, never copied, so no second copy can drift. `uninstall.sh` removes the link and then the target.
+- **`uninstall.sh` looked for the CLI tools in `~/bin/` while `setup.sh` installs them in `~/bin/maccha/`.** Every tool compared as "absent", so a full uninstall left all 34 scripts behind while the report claimed a clean removal. It also skipped `backlog.md`, `skills/`, `BRAIN/archive/README.md` and the empty `bin/`, `BRAIN/tms/` directories, and it referenced an `info/systeem-info/laptop-setup.md` that neither exists in the repo nor is ever installed.
+- **`copy_always` nested the directory it copied on every re-run** (`INFRA/agents-brain/lib/lib/…`) because it copied `src` instead of `src/.`; uninstall then compared the wrong path and left the nested copy behind.
+- **`consider_tree` produced broken destination paths for `skills/*/`** (the trailing slash defeated the prefix strip), so no skill file was ever compared — the skills were installed but invisible to the uninstaller.
+- **`uninstall.sh` printed a phantom `Kept (edited by you): (1)`** for every empty ledger: `"${arr[@]:-}"` expands to a single empty string, so the count was 1 with nothing listed underneath.
+
 ## [1.5.1] - 2026-11-15
 ### Fixed
 - **`setup.sh` installed lessons to `~/learned-lessons/`, not `~/BRAIN/learned-lessons/`.** Tier 6 of the mandate map and every tool read the BRAIN path, so a fresh install started with its knowledge base in a place no agent would look — the same class of fault as the `AGENTS.md` path: the installer built a directory the mandate never mentions. `setup.sh`, `uninstall.sh` and the `publish.sh` hint now agree with the mandate, and the uninstall report lists the lessons under `~/BRAIN`.

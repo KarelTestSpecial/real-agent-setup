@@ -81,9 +81,27 @@ consider() {
     esac
 }
 
+# Remove a symlink that points into the capsule ( ~/AGENTS.md, ~/todo.md, … ).
+# It carries no data of its own, so — unlike consider() — there is nothing to
+# compare or keep: an edited link is not a thing. Only the target file decides
+# whether content survives.
+remove_link() {
+    local link="$1"
+    if [ "$FORCE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
+        rm -f "$link"
+        echo -e "  ${GREEN}✗ removed${RESET} $link (symlink)"
+        REMOVED+=("$link")
+    else
+        echo -e "  ${YELLOW}[dry-run] would remove${RESET} $link ${BLUE}(symlink)${RESET}"
+        WOULD+=("$link")
+    fi
+}
+
 # Walk every file under repo dir $1, comparing to installed dir $2.
 consider_tree() {
-    local srcdir="$1" dstdir="$2"
+    # Strip a trailing slash: with one, "${f#"$srcdir"/}" no longer matches and
+    # the absolute source path gets appended to the destination (skills/*/).
+    local srcdir="${1%/}" dstdir="${2%/}"
     [ -d "$srcdir" ] || return
     while IFS= read -r -d '' f; do
         consider "$f" "$dstdir/${f#"$srcdir"/}"
@@ -92,9 +110,15 @@ consider_tree() {
 
 print_list() {  # $1 = title color+label, rest = items
     local label="$1"; shift
-    [ "$#" -gt 0 ] || return
-    echo -e "$label ${BOLD}($#)${RESET}"
-    local i; for i in "$@"; do echo -e "    $i"; done
+    # Drop empty entries: "${arr[@]:-}" expands to one empty string when the
+    # array is empty, which used to print a phantom "Kept (edited by you): (1)".
+    local items=() i
+    for i in "$@"; do
+        if [ -n "$i" ]; then items+=("$i"); fi
+    done
+    [ "${#items[@]}" -gt 0 ] || return
+    echo -e "$label ${BOLD}(${#items[@]})${RESET}"
+    for i in "${items[@]}"; do echo -e "    $i"; done
 }
 
 echo -e "${CYAN}${BOLD}======================================================${RESET}"
@@ -112,9 +136,11 @@ echo ""
 echo -e "${CYAN}${BOLD}🧠 Brain memory engine (code only)${RESET}"
 consider_tree "$REPO_DIR/brain/lib" "$HOME_DIR/INFRA/agents-brain/lib"
 
-echo -e "${CYAN}${BOLD}🛠️  CLI utilities (~/bin)${RESET}"
+echo -e "${CYAN}${BOLD}🛠️  CLI utilities (~/bin/maccha)${RESET}"
+# setup.sh installs into ~/bin/maccha/, so that is where we look — comparing
+# against ~/bin/<name> made every tool look absent and left all of them behind.
 for script in "$REPO_DIR"/cli-tools/*; do
-    consider "$script" "$HOME_DIR/bin/$(basename "$script")"
+    consider "$script" "$HOME_DIR/bin/maccha/$(basename "$script")"
 done
 
 echo -e "${CYAN}${BOLD}📂 Infrastructure bridges (~/INFRA)${RESET}"
@@ -124,20 +150,25 @@ done
 consider_tree "$REPO_DIR/infrastructure/maintenance" "$HOME_DIR/INFRA/maintenance"
 
 echo -e "${CYAN}${BOLD}📝 Home templates & hooks${RESET}"
-for f in IMPROVEMENT.md done.md in-progress.md todo.md; do
-    consider "$REPO_DIR/system-brain/$f" "$HOME_DIR/$f"
+consider "$REPO_DIR/system-brain/IMPROVEMENT.md" "$HOME_DIR/IMPROVEMENT.md"
+
+# TMS: the capsule owns BRAIN/tms/<file>; the home-root names are symlinks into
+# it (same layout as ~/AGENTS.md). Remove the link first — it carries no data —
+# then the target file. A real file at the home root is the pre-1.5.1 layout and
+# is handled by consider(): kept unless it is still byte-for-byte the template.
+for f in todo.md in-progress.md backlog.md done.md; do
+    if [ -L "$HOME_DIR/$f" ]; then
+        remove_link "$HOME_DIR/$f"
+    elif [ -e "$HOME_DIR/$f" ]; then
+        consider "$REPO_DIR/system-brain/$f" "$HOME_DIR/$f"
+    fi
+    consider "$REPO_DIR/system-brain/$f" "$HOME_DIR/BRAIN/tms/$f"
 done
+
 # Template layout: ~/AGENTS.md is a symlink to BRAIN/AGENTS.md. Remove the link
 # itself (it carries no data), then the target file.
 if [ -L "$HOME_DIR/AGENTS.md" ]; then
-    if [ "$FORCE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
-        rm -f "$HOME_DIR/AGENTS.md"
-        echo -e "  ${GREEN}✗ removed${RESET} $HOME_DIR/AGENTS.md (symlink)"
-        REMOVED+=("$HOME_DIR/AGENTS.md")
-    else
-        echo -e "  ${YELLOW}[dry-run] would remove${RESET} $HOME_DIR/AGENTS.md ${BLUE}(symlink)${RESET}"
-        WOULD+=("$HOME_DIR/AGENTS.md")
-    fi
+    remove_link "$HOME_DIR/AGENTS.md"
 fi
 consider "$REPO_DIR/system-brain/AGENTS.md" "$HOME_DIR/BRAIN/AGENTS.md"
 consider "$REPO_DIR/system-brain/MANDATE_GUIDE.md" "$HOME_DIR/BRAIN/MANDATE_GUIDE.md"
@@ -151,15 +182,37 @@ consider "$REPO_DIR/system-brain/policies/guardrails.md" "$HOME_DIR/BRAIN/polici
 
 echo -e "${CYAN}${BOLD}📚 Seeded placeholders${RESET}"
 consider "$REPO_DIR/learned-lessons/README.md" "$HOME_DIR/BRAIN/learned-lessons/README.md"
-consider "$REPO_DIR/info/systeem-info/laptop-setup.md" "$HOME_DIR/INFO/systeem-info/laptop-setup.md"
+consider "$REPO_DIR/system-brain/archive/README.md" "$HOME_DIR/BRAIN/archive/README.md"
+
+echo -e "${CYAN}${BOLD}🧩 Agent skills${RESET}"
+# setup.sh copies each skills/<name>/ into ~/.agents/skills and, when it exists,
+# ~/.claude/skills. Uninstall walks the same trees and keeps anything edited.
+for target in "$HOME_DIR/.agents/skills" "$HOME_DIR/.claude/skills"; do
+    for skill in "$REPO_DIR"/skills/*/; do
+        [ -d "$skill" ] || continue
+        consider_tree "$skill" "$target/$(basename "$skill")"
+    done
+done
 
 # Tidy up now-empty scaffolding dirs (never personal-data dirs), with confirmation.
 if [ "$FORCE" -eq 1 ]; then
-    for d in \
-        "$HOME_DIR/INFRA/agents-brain/lib" \
-        "$HOME_DIR/INFRA/maintenance" \
-        "$HOME_DIR/BRAIN/hooks" \
-        "$HOME_DIR/BRAIN/policies"; do
+    EMPTIES=(
+        "$HOME_DIR/INFRA/agents-brain/lib"
+        "$HOME_DIR/INFRA/maintenance"
+        "$HOME_DIR/BRAIN/hooks"
+        "$HOME_DIR/BRAIN/policies"
+        "$HOME_DIR/BRAIN/tms"
+        "$HOME_DIR/bin/maccha"
+        "$HOME_DIR/bin"
+    )
+    for target in "$HOME_DIR/.agents/skills" "$HOME_DIR/.claude/skills"; do
+        for skill in "$REPO_DIR"/skills/*/; do
+            [ -d "$skill" ] || continue
+            EMPTIES+=("$target/$(basename "$skill")")
+        done
+        EMPTIES+=("$target")
+    done
+    for d in "${EMPTIES[@]}"; do
         [ -d "$d" ] || continue
         [ -z "$(ls -A "$d" 2>/dev/null)" ] || continue   # only if empty
         reply="n"
@@ -188,6 +241,7 @@ echo ""
 echo -e "${YELLOW}Preserved on purpose — review/remove manually if you wish:${RESET}"
 echo -e "  • ${BLUE}~/INFRA/agents-brain/data${RESET}  (your memory store)"
 echo -e "  • ${BLUE}~/BRAIN (incl. learned-lessons), ~/INFO, ~/PLAN${RESET}  (your personal content)"
+echo -e "  • ${BLUE}~/.config/maccha/${RESET}  (tms_line_limit.json, secrets, keys — installer config, not a repo copy)"
 echo -e "  • Himalaya: ${BLUE}~/.local/bin${RESET} + the PATH line in ${BLUE}~/.bash_aliases${RESET} / ${BLUE}~/.profile${RESET}"
 echo ""
 if [ "$FORCE" -eq 0 ]; then

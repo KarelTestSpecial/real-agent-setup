@@ -52,8 +52,11 @@ copy_if_missing() {
 
 copy_always() {
     local src="$1" dst="$2"
-    mkdir -p "$(dirname "$dst")"
-    cp -r "$src" "$dst"
+    mkdir -p "$dst"
+    # "$src/." copies the *contents*. A plain `cp -r src dst` nests the
+    # directory (INFRA/agents-brain/lib/lib) whenever dst already exists,
+    # i.e. on every re-run of the installer.
+    cp -r "$src/." "$dst/"
     echo "  ✓ copied $src -> $dst"
 }
 
@@ -131,12 +134,42 @@ else
     echo -e "  ${YELLOW}~${RESET} $HOME_DIR/AGENTS.md exists (regular file), leaving it untouched"
 fi
 
-for f in IMPROVEMENT.md done.md in-progress.md todo.md backlog.md; do
-    if [ ! -f "$HOME_DIR/$f" ]; then
-        cp "$REPO_DIR/system-brain/$f" "$HOME_DIR/$f"
-        echo -e "  ${GREEN}✓${RESET} $f (Created default template)"
+# Tier 5 (IMPROVEMENT.md) sits in the home root; the Tier 4 TMS trackers live in
+# ~/BRAIN/tms/ and are only *linked* into the home root, exactly like
+# ~/AGENTS.md. Copying them to ~ as well created two truths: tms_integrity_hook.py
+# reads ~/BRAIN/tms/, session-startup reads ~/todo.md, so a fresh install
+# validated an empty TMS. A pre-existing regular file at the home root is *moved*
+# into the capsule (never copied — no duplicate to drift), but only when we just
+# created the template there, so an existing BRAIN/tms/ file is never overwritten.
+if [ ! -f "$HOME_DIR/IMPROVEMENT.md" ]; then
+    cp "$REPO_DIR/system-brain/IMPROVEMENT.md" "$HOME_DIR/IMPROVEMENT.md"
+    echo -e "  ${GREEN}✓${RESET} IMPROVEMENT.md (Created default template)"
+else
+    echo -e "  ${YELLOW}~${RESET} $HOME_DIR/IMPROVEMENT.md exists, skipping template creation to protect your edits"
+fi
+
+mkdir -p "$HOME_DIR/BRAIN/tms"
+for f in todo.md in-progress.md backlog.md done.md; do
+    created=0
+    if [ ! -f "$HOME_DIR/BRAIN/tms/$f" ]; then
+        cp "$REPO_DIR/system-brain/$f" "$HOME_DIR/BRAIN/tms/$f"
+        echo -e "  ${GREEN}✓${RESET} BRAIN/tms/$f (Created default template)"
+        created=1
     else
-        echo -e "  ${YELLOW}~${RESET} $HOME_DIR/$f exists, skipping template creation to protect your edits"
+        echo -e "  ${YELLOW}~${RESET} BRAIN/tms/$f exists, skipping template creation to protect your edits"
+    fi
+
+    if [ -L "$HOME_DIR/$f" ]; then
+        echo -e "  ${YELLOW}~${RESET} $HOME_DIR/$f is already a symlink"
+    elif [ -f "$HOME_DIR/$f" ] && [ "$created" -eq 1 ]; then
+        mv "$HOME_DIR/$f" "$HOME_DIR/BRAIN/tms/$f"
+        ln -s "BRAIN/tms/$f" "$HOME_DIR/$f"
+        echo -e "  ${GREEN}✓${RESET} $HOME_DIR/$f -> BRAIN/tms/$f (migrated + symlink)"
+    elif [ -f "$HOME_DIR/$f" ]; then
+        echo -e "  ${YELLOW}~${RESET} $HOME_DIR/$f and BRAIN/tms/$f both exist — left untouched; move one by hand"
+    elif [ ! -e "$HOME_DIR/$f" ]; then
+        ln -s "BRAIN/tms/$f" "$HOME_DIR/$f"
+        echo -e "  ${GREEN}✓${RESET} $f -> BRAIN/tms/$f (symlink)"
     fi
 done
 
