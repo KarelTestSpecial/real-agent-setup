@@ -2,7 +2,7 @@
 
 > **Create one cross-platform brain for Antigravity, OpenCode, Claude Code, OpenAI Codex and any other AI coding assistant — and turn them alltogether into one fully contextualized, highly secure, self-improving Real-World Digital Assistant.**
 
-MACCHA acts as a universal, persistent "brain" that any AI tool can plug into. It creates a shared, evolving brain across all different platforms. You can switch seamlessly between Antigravity, OpenCode, Codex, Claude Code and others. They will all read from and write to the same MACCHA brain, sharing a single, unified digital identity.
+MACCHA acts as a universal, persistent "brain" that any AI tool can plug into. It creates a shared, evolving brain across all different platforms. You can switch seamlessly between Antigravity, OpenCode, Codex, Claude Code and other. They will all read from and write to the same MACCHA brain, sharing a single, unified digital identity.
 
 MACCHA is built for people who:
 
