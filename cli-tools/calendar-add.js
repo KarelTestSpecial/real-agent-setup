@@ -53,7 +53,7 @@ async function main() {
   }
 
   const res = await calendar.events.insert({
-    calendarId,
+    calendarId: calId,
     requestBody: event,
   });
 
