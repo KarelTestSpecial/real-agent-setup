@@ -7,6 +7,9 @@ Gemini/Antigravity, OpenCode).
 
 ## How this works (for humans and agents)
 - Every guardrail is one `## Guardrail:` block with `- key: value` lines.
+- Keys may be English (`name`, `active`, `source`, `section`) or Dutch (`naam`,
+  `actief`, `bron`, `sectie`) — the hook accepts both, so an older register and
+  this template keep working side by side.
 - **Data stays with its owner** (one fact, one owner): a guardrail *points to*
   a source file, it never copies data.
 - Disable a guardrail = set `- active: no`, or delete the whole block.

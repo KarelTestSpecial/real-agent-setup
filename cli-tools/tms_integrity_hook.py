@@ -21,6 +21,16 @@ PUBLISH_MARKER = os.path.join(HOME, ".config", "maccha", "last_publish")
 # entries allowed), INFRA/backups = temporary restore points (never permanent).
 ARCHIVE_DIRS = [ARCHIVE_DIR, INFRA_BACKUPS]
 
+# Guardrail register keys: English (shipped template) → Dutch (hook internals).
+# An unknown key is not fatal, it is ignored — which is exactly how an English
+# `type:` used to become "unknown type" instead of an enforced rule.
+GUARDRAIL_KEY_ALIASES = {
+    "name": "naam",
+    "active": "actief",
+    "source": "bron",
+    "section": "sectie",
+}
+
 
 def run_command(command):
     try:
@@ -166,11 +176,30 @@ def _frontmatter(text):
 
 
 def _domain_files(cat_dir):
-    """Domain files = .md files that INDEX.md lists as a domain."""
+    """Domain files = the .md files that INDEX.md lists as a domain.
+
+    Since v1.5.0 a bank may ship without INDEX.md (the router layout: ROUTER.md
+    plus one domain file per domain). There a domain file is simply a .md file
+    without frontmatter — lessons always carry frontmatter, domain files never
+    do — so derive the list from the content instead of returning nothing.
+    """
     idx = os.path.join(cat_dir, "INDEX.md")
-    if not os.path.exists(idx):
-        return []
-    return re.findall(r"\]\(([a-z0-9-]+)\.md\)", _read(idx))
+    if os.path.exists(idx):
+        return re.findall(r"\]\(([a-z0-9-]+)\.md\)", _read(idx))
+    domains = []
+    try:
+        entries = sorted(os.listdir(cat_dir))
+    except OSError:
+        return domains
+    for entry in entries:
+        if not entry.endswith(".md") or entry == "INDEX.md":
+            continue
+        try:
+            if _frontmatter(_read(os.path.join(cat_dir, entry))) is None:
+                domains.append(entry[:-3])
+        except OSError:
+            continue
+    return domains
 
 
 def check_learned_lessons_integrity():
@@ -211,7 +240,8 @@ def check_learned_lessons_integrity():
 
 
 def check_index_coverage():
-    """Every lesson sits in the domain file of its `domain:`; INDEX counts; ROUTER knows every domain."""
+    """Every lesson sits in the domain file of its `domain:`; ROUTER knows every
+    domain; when the bank keeps an INDEX.md, its lesson counts must match."""
     print("🗂️ Checking INDEX/domain-file coverage of learned-lessons...")
     issues = []
 
@@ -227,11 +257,12 @@ def check_index_coverage():
         if not os.path.isdir(cat_dir) or category == "archive":
             continue
         index_path = os.path.join(cat_dir, "INDEX.md")
-        if not os.path.exists(index_path):
-            issues.append(f"Missing INDEX.md in {category}/")
-            continue
-        index = _read(index_path)
+        has_index = os.path.exists(index_path)
+        index = _read(index_path) if has_index else ""
         domains = _domain_files(cat_dir)
+        if not domains:
+            issues.append(f"No domain files in {category}/")
+            continue
 
         for d in domains:
             path = os.path.join(cat_dir, d + ".md")
@@ -241,12 +272,16 @@ def check_index_coverage():
             body = _read(path)
             if f"{d}.md" not in router:
                 issues.append(f"Domain not in ROUTER.md: {category}/{d}.md")
-            m = re.search(rf"\[{re.escape(d)}\]\({re.escape(d)}\.md\) — (\d+) les", index)
-            actual = len(re.findall(r"^- \[", body, re.M))
-            if not m:
-                issues.append(f"Domain not in INDEX.md: {category}/{d}.md")
-            elif int(m.group(1)) != actual:
-                issues.append(f"INDEX says {m.group(1)} instead of {actual} lessons in {category}/{d}.md")
+            # The lesson count lives in INDEX.md. A router-only bank has no
+            # INDEX to keep in sync, so there the domain file itself is the
+            # source of truth and only its links are checked.
+            if has_index:
+                m = re.search(rf"\[{re.escape(d)}\]\({re.escape(d)}\.md\) — (\d+) les", index)
+                actual = len(re.findall(r"^- \[", body, re.M))
+                if not m:
+                    issues.append(f"Domain not in INDEX.md: {category}/{d}.md")
+                elif int(m.group(1)) != actual:
+                    issues.append(f"INDEX says {m.group(1)} instead of {actual} lessons in {category}/{d}.md")
             for target in re.findall(r"\]\(([^)]+\.md)\)", body):
                 if not os.path.exists(os.path.normpath(os.path.join(cat_dir, target))):
                     issues.append(f"Dead link in {category}/{d}.md: {target}")
@@ -273,14 +308,18 @@ def check_index_coverage():
         for issue in issues:
             print(f"❌ {issue}")
         return False
-    print("✅ All lessons are covered by their domain file, INDEX count and ROUTER.")
+    print("✅ All lessons are covered by their domain file, ROUTER (and INDEX count where present).")
     return True
 
 
 def parse_guardrails():
     """Reads the guardrails register (BRAIN/policies/guardrails.md).
-    Each '## Guardrail:' block becomes a dict of its '- key: value' lines.
-    Note: register keys are Dutch by contract (naam/bron/sectie/actief)."""
+
+    Each '## Guardrail:' block becomes a dict of its '- key: value' lines. The
+    shipped template is English (naam→name, actief→active, bron→source,
+    sectie→section) while older personal registers are Dutch; both are accepted
+    so neither the template nor an existing register is silently ignored.
+    """
     if not os.path.exists(GUARDRAILS_FILE):
         return []
     with open(GUARDRAILS_FILE, "r") as f:
@@ -293,7 +332,8 @@ def parse_guardrails():
         for line in lines[1:]:
             m = re.match(r"-\s+([\w-]+):\s*(.+)$", line.strip())
             if m:
-                rule[m.group(1).lower()] = m.group(2).strip()
+                key = m.group(1).lower()
+                rule[GUARDRAIL_KEY_ALIASES.get(key, key)] = m.group(2).strip()
         guardrails.append(rule)
     return guardrails
 
@@ -348,6 +388,7 @@ def check_forbidden_terms_in_active_tms(rule):
 
 RULE_TYPES = {
     "verboden-termen-in-actieve-tms": check_forbidden_terms_in_active_tms,
+    "forbidden-terms-in-active-tms": check_forbidden_terms_in_active_tms,
 }
 
 
@@ -618,7 +659,13 @@ def check_context_budget(files=None, norm=None):
     if norm is None:
         try:
             with open(os.path.join(BRAIN, "AGENTS.md")) as f:
-                m = re.search(r"Context Efficiency[^\n]*?(\d{3,5})\s*\*{0,2}\s*tokens", f.read())
+                # The template labels the row "Context budget", the live mandate
+                # "Context Efficiency" — accept either, otherwise a fresh install
+                # silently falls back to the hardcoded number.
+                m = re.search(
+                    r"(?:Context Efficiency|Context budget)[^\n]*?(\d{3,5})\s*\*{0,2}\s*tokens",
+                    f.read(),
+                )
             if m:
                 norm = int(m.group(1))
                 budget_source = "BRAIN/AGENTS.md (Context Efficiency line)"
