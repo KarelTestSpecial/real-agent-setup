@@ -1,6 +1,6 @@
 # 🧠 MACCHA — Multi-Agent Continuous Context Harness
-**Top-Layer Agent Bootstrap | Root: `~/` (Home Directory)**
-> **To every AI agent:** this is the FIRST file you read — it activates the entire MACCHA system. Read it completely before taking any action.
+**Template | Root: `~/` (Home Directory)**
+> **This file is the template, not the instance.** `setup.sh` installs it as `~/BRAIN/AGENTS.md` and points `~/AGENTS.md` at it with a symlink. The live instance is that file in *your* home — edit it there, never here.
 
 ---
 
@@ -13,8 +13,8 @@
 ## 🗂️ Layer Structure (Read in this order)
 
 ```
-[TIER 0 — TOP]  ~/AGENTS.md                        ← THIS FILE (master bootstrap)
-[TIER 1]        ~/BRAIN/AGENTS.md                  ← Project mandates & session protocol
+[TIER 0 — TOP]  ~/AGENTS.md                        ← entry point; a symlink, not a second document
+[TIER 1]        ~/BRAIN/AGENTS.md                  ← THIS FILE — project mandates & session protocol
 [TIER 2]        ~/.gemini/GEMINI.md                ← Machine mandates & tooling rules
 [TIER 3]        ~/INFO/over-owner/SITUATIE_OVERZICHT.md  ← Owner situation (mandatory)
 [TIER 4]        ~/BRAIN/tms/ + ~/BRAIN/policies/   ← Live state: TMS task flow + guardrails register
@@ -97,8 +97,10 @@ The agent MUST ALWAYS run this checklist proactively, **in order**, at the start
 6. **DeFi No-Execution Zone:** analysis only. No trades without hardware-wallet confirmation.
 7. **Read-only registers:** some files (e.g. a curated shortlist) are owner-edited only — read, never write.
 8. **Secrets storage:** keys and keypairs live in `~/.config/maccha/secrets/` (dir 700, files 600); API keys only in a gitignored `.env`, never hardcoded; seed phrases are NEVER digitized. Keep a register at `~/.config/maccha/secrets/README.md`.
-9. **Bounty audit:** present an opportunity only after the 4-point audit (Payout, Response, Age, PR-count). Filter honeypots: "Prompt Leaks", "No Humans Allowed", and ghost bounties (>5 open PRs with no response).
-10. **Live-first:** use `gh` for current PR/issue status instead of trusting memory; discovery (GitHub dorks, bounty boards) is separate from validation.
+
+> Domain-specific working rules (bounty audits, job-application references, client
+> routing) do **not** belong here. They live in the domain file of
+> `~/BRAIN/learned-lessons/` — this file only carries what applies to every session.
 
 ---
 

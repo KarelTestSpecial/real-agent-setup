@@ -69,6 +69,10 @@ echo -e "${CYAN}${BOLD}🛠️  [2/6] CLI Utilities${RESET}"
 mkdir -p "$HOME_DIR/bin/maccha"
 for script in "$REPO_DIR"/cli-tools/*; do
     name=$(basename "$script")
+    # __pycache__ and other directories are not tools; cp would abort the run.
+    if [ ! -f "$script" ]; then
+        continue
+    fi
     if [ ! -f "$HOME_DIR/bin/maccha/$name" ]; then
         cp "$script" "$HOME_DIR/bin/maccha/$name"
         chmod +x "$HOME_DIR/bin/maccha/$name"
@@ -83,6 +87,10 @@ echo ""
 echo -e "${CYAN}${BOLD}📂 [3/6] Infrastructure Bridges${RESET}"
 mkdir -p "$HOME_DIR/INFRA"
 for f in mydrive-access-tool.js storage-manager.js manual-scrcpy.txt; do
+    # Optional bridges: a missing source must not abort the whole install.
+    if [ ! -f "$REPO_DIR/infrastructure/$f" ]; then
+        continue
+    fi
     if [ ! -f "$HOME_DIR/INFRA/$f" ]; then
         cp "$REPO_DIR/infrastructure/$f" "$HOME_DIR/INFRA/$f"
         echo -e "  ${GREEN}✓${RESET} $f -> INFRA/"
@@ -101,7 +109,29 @@ fi
 # === System Brain (templates — only when not present yet) ===
 echo ""
 echo -e "${CYAN}${BOLD}📝 [4/6] MACCHA System Templates (Home Directory)${RESET}"
-for f in AGENTS.md IMPROVEMENT.md done.md in-progress.md todo.md backlog.md; do
+
+# AGENTS.md gets its own rule: the mandate file lives in ~/BRAIN/ and ~/AGENTS.md
+# is a symlink to it. Tier 0 is the entry point, not a second document — two
+# copies of the same mandate drift apart, and the tier map in the template
+# promises a ~/BRAIN/AGENTS.md that used to be never created.
+mkdir -p "$HOME_DIR/BRAIN"
+if [ ! -f "$HOME_DIR/BRAIN/AGENTS.md" ]; then
+    cp "$REPO_DIR/system-brain/AGENTS.md" "$HOME_DIR/BRAIN/AGENTS.md"
+    echo -e "  ${GREEN}✓${RESET} BRAIN/AGENTS.md (Created default mandate file)"
+else
+    echo -e "  ${YELLOW}~${RESET} $HOME_DIR/BRAIN/AGENTS.md exists, skipping template creation to protect your edits"
+fi
+
+if [ ! -e "$HOME_DIR/AGENTS.md" ] && [ ! -L "$HOME_DIR/AGENTS.md" ]; then
+    ln -s BRAIN/AGENTS.md "$HOME_DIR/AGENTS.md"
+    echo -e "  ${GREEN}✓${RESET} AGENTS.md -> BRAIN/AGENTS.md (symlink)"
+elif [ -L "$HOME_DIR/AGENTS.md" ]; then
+    echo -e "  ${YELLOW}~${RESET} $HOME_DIR/AGENTS.md is already a symlink"
+else
+    echo -e "  ${YELLOW}~${RESET} $HOME_DIR/AGENTS.md exists (regular file), leaving it untouched"
+fi
+
+for f in IMPROVEMENT.md done.md in-progress.md todo.md backlog.md; do
     if [ ! -f "$HOME_DIR/$f" ]; then
         cp "$REPO_DIR/system-brain/$f" "$HOME_DIR/$f"
         echo -e "  ${GREEN}✓${RESET} $f (Created default template)"

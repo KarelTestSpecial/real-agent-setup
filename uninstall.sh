@@ -48,7 +48,9 @@ ABSENT=()      # not installed on this machine
 # mode, so the +x that setup.sh adds to bin scripts is not "edited".
 consider() {
     local repo="$1" dst="$2"
-    [ -e "$repo" ] || return
+    # A missing source is "not installed here", never an error: returning 1
+    # would abort the whole run under `set -e`.
+    [ -e "$repo" ] || return 0
     if [ ! -e "$dst" ]; then
         ABSENT+=("$dst"); return
     fi
@@ -122,9 +124,25 @@ done
 consider_tree "$REPO_DIR/infrastructure/maintenance" "$HOME_DIR/INFRA/maintenance"
 
 echo -e "${CYAN}${BOLD}📝 Home templates & hooks${RESET}"
-for f in AGENTS.md IMPROVEMENT.md done.md in-progress.md todo.md; do
+for f in IMPROVEMENT.md done.md in-progress.md todo.md; do
     consider "$REPO_DIR/system-brain/$f" "$HOME_DIR/$f"
 done
+# Template layout: ~/AGENTS.md is a symlink to BRAIN/AGENTS.md. Remove the link
+# itself (it carries no data), then the target file.
+if [ -L "$HOME_DIR/AGENTS.md" ]; then
+    if [ "$FORCE" -eq 1 ] || [ "$ASSUME_YES" -eq 1 ]; then
+        rm -f "$HOME_DIR/AGENTS.md"
+        echo -e "  ${GREEN}✗ removed${RESET} $HOME_DIR/AGENTS.md (symlink)"
+        REMOVED+=("$HOME_DIR/AGENTS.md")
+    else
+        echo -e "  ${YELLOW}[dry-run] would remove${RESET} $HOME_DIR/AGENTS.md ${BLUE}(symlink)${RESET}"
+        WOULD+=("$HOME_DIR/AGENTS.md")
+    fi
+fi
+consider "$REPO_DIR/system-brain/AGENTS.md" "$HOME_DIR/BRAIN/AGENTS.md"
+if [ -e "$HOME_DIR/AGENTS.md" ] && [ ! -L "$HOME_DIR/AGENTS.md" ]; then
+    consider "$REPO_DIR/system-brain/AGENTS.md" "$HOME_DIR/AGENTS.md"
+fi
 for hook in "$REPO_DIR"/system-brain/hooks/*.cjs; do
     consider "$hook" "$HOME_DIR/BRAIN/hooks/$(basename "$hook")"
 done
