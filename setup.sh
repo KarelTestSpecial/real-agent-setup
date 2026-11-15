@@ -140,6 +140,13 @@ for f in IMPROVEMENT.md done.md in-progress.md todo.md backlog.md; do
     fi
 done
 
+# Read-once rationale that AGENTS.md links to; it must sit next to the mandate
+# file, otherwise the link in the template breaks after install.
+if [ -f "$REPO_DIR/system-brain/MANDATE_GUIDE.md" ] && [ ! -f "$HOME_DIR/BRAIN/MANDATE_GUIDE.md" ]; then
+    cp "$REPO_DIR/system-brain/MANDATE_GUIDE.md" "$HOME_DIR/BRAIN/MANDATE_GUIDE.md"
+    echo -e "  ${GREEN}✓${RESET} BRAIN/MANDATE_GUIDE.md (read once at install)"
+fi
+
 # Default TMS line-length config (single source read by session-startup & tms_integrity_hook.py)
 if [ ! -f "$HOME_DIR/.config/maccha/tms_line_limit.json" ]; then
     mkdir -p "$HOME_DIR/.config/maccha"

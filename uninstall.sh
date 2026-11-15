@@ -140,6 +140,7 @@ if [ -L "$HOME_DIR/AGENTS.md" ]; then
     fi
 fi
 consider "$REPO_DIR/system-brain/AGENTS.md" "$HOME_DIR/BRAIN/AGENTS.md"
+consider "$REPO_DIR/system-brain/MANDATE_GUIDE.md" "$HOME_DIR/BRAIN/MANDATE_GUIDE.md"
 if [ -e "$HOME_DIR/AGENTS.md" ] && [ ! -L "$HOME_DIR/AGENTS.md" ]; then
     consider "$REPO_DIR/system-brain/AGENTS.md" "$HOME_DIR/AGENTS.md"
 fi

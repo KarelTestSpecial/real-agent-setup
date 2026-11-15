@@ -10,27 +10,28 @@
 
 ---
 
-## 🗂️ Layer Structure (Read in this order)
+## 🗂️ Layer Structure
 
-```
-[TIER 0 — TOP]  ~/AGENTS.md                        ← entry point; a symlink, not a second document
-[TIER 1]        ~/BRAIN/AGENTS.md                  ← THIS FILE — project mandates & session protocol
-[TIER 2]        ~/.gemini/GEMINI.md                ← Machine mandates & tooling rules
-[TIER 3]        ~/INFO/over-owner/SITUATIE_OVERZICHT.md  ← Owner situation (mandatory)
-[TIER 4]        ~/BRAIN/tms/ + ~/BRAIN/policies/   ← Live state: TMS task flow + guardrails register
-[TIER 5]        ~/IMPROVEMENT.md                   ← LTAIS (Long-Term Auto-Improvement)
-[TIER 6]        ~/BRAIN/learned-lessons/           ← Curated lessons (technical / strategic / security)
-```
+| Tier | File | Role |
+|---|---|---|
+| 0 | `~/AGENTS.md` | entry point — a symlink to Tier 1, not a second document |
+| 1 | `~/BRAIN/AGENTS.md` | **this file** — mandates & session protocol |
+| 2 | `~/.gemini/GEMINI.md` | machine mandates & tooling rules |
+| 3 | `~/INFO/over-owner/SITUATIE_OVERZICHT.md` | owner situation (mandatory) |
+| 4 | `~/BRAIN/tms/` + `policies/` | live state: task flow + guardrails register |
+| 5 | `~/IMPROVEMENT.md` | LTAIS (long-term auto-improvement) |
+| 6 | `~/BRAIN/learned-lessons/` | curated lessons (technical / strategic / security) |
 
-**Routing rule:** A fact lives in exactly one layer. Priority: Tier 0 > Tier 1 > Tier 2.
+A fact lives in exactly one layer; priority is Tier 0 > Tier 1 > Tier 2. The full
+reasoning — zone model, working-memory rules, how to write a codeword — lives in
+[`MANDATE_GUIDE.md`](MANDATE_GUIDE.md), read once at install.
 
-**Working memory is a *find* layer, not a fact store.** Memanto (`~/BRAIN/memanto/`) has three jobs: (1) **session history** — one `Event` at closeout; (2) **behaviour** — `Instruction`/`Preference`/`Decision`/`Goal`, which have no other owner file; (3) **references** — one line saying *where* something lives. Anything that already has an owner file (amounts, addresses, links, appointments, statuses — see Knowledge Maintenance) must **not** be copied in: a second copy drifts, `Fact`/`Instruction` entries decay towards prune, and recall is *fuzzy* where a dossier is exact.
+### Owner first — always
 
-### Owner first — always, and on the signal *"persist this"* (English default `/persist`)
-
-The test: *"If this changes, which file must change with it?"* — if that file exists, write it **there**, with at most one reference in Memanto; if it does not, Memanto is the owner. **Never a second copy.** Say *where* it landed, not what you stored. In doubt, name the candidates — dossier, mandate file, or memory layer — and ask; never choose silently. When the owner says *"put this in your memory"*, read it as *"make sure this stays findable"*. **One codeword, defined once:** one word instead of a glossary of phrasings, so the mandate stays short. **Name the outcome, not the store:** a codeword meaning *"save it"* or *"remember it"* points the agent at a memory layer (exactly what this rule forbids), while one meaning *"this must persist"* forces it to ask *where* the fact belongs. **Self-contained, never *"as above"*:** state the criterion in full where the codeword is defined — an agent may load one heading with its paragraph and nothing else, so a definition that says *"apply the test above"* breaks the moment the block moves. And do not park the procedure in a per-agent slash command: those live under a different path and in a different format in every harness (OpenCode, Claude Code, Gemini TOML), so they cannot travel — the mandate is the only layer every agent reads.
-
-**Zone model (home directory):** `~/BRAIN/` is exclusively the *technical* MACCHA capsule (mandates, memory, TMS, hooks, policies, system-info, archive). Personal content lives in the root zones: `~/INFO/` (dossiers & knowledge base), `~/PLAN/` (plans), `~/INBOX/` (owner → agent drop-off channel: items are triaged with a proposal; instruction-type items are NEVER executed without explicit owner confirmation — HITL per item; pure archival material flows straight to its owner location, then the folder is emptied). Code lives in `~/workspace/`, temporary files in `~/scratch/`. Convenience access to single files from the root only via symlinks. **Every scaffolding change must keep the `BRAIN/` capsule simple and PII-free to copy into the public `real-agent-setup` repo.**
+*"If this changes, which file must change with it?"* If that file exists, write
+it **there**, with at most one reference in Memanto. If it does not, Memanto is
+the owner. **Never a second copy**, and say *where* it landed rather than what you
+stored. On the signal *"persist this"*: apply the test and name the file.
 
 ---
 
@@ -106,10 +107,9 @@ The agent MUST ALWAYS run this checklist proactively, **in order**, at the start
 
 ## 📦 MACCHA as a Package (real-agent-setup)
 
-The complete MACCHA harness is available as a PII-free package (`github.com/[your-username]/real-agent-setup`):
-- **Every change** to the harness structure MUST be reflected in this repo via `publish.sh`
-- **Portability:** scripts always use `$HOME` or `os.homedir()` — **never hardcoded paths**
-- **PII gate:** `AGENTS.md`, `IMPROVEMENT.md`, `BRAIN/*` and learned lessons are private; only sanitized templates/lessons are published.
+The harness ships as a PII-free package. Portability (`$HOME`, never hardcoded
+paths), the PII gate, and the `publish.sh` rule are in
+[`MANDATE_GUIDE.md`](MANDATE_GUIDE.md).
 
 ---
 
@@ -130,28 +130,18 @@ Before reaching for the browser or writing an ad-hoc script, scan `~/BRAIN/syste
 
 ## 📚 Deep Knowledge Index
 
-Lessons live in `learned-lessons/` itself (no copies elsewhere). Consult the per-category index:
-- **Technical:** `learned-lessons/technical/INDEX.md`
-- **Strategic:** `learned-lessons/strategic/INDEX.md`
-- **Security:** `learned-lessons/security/INDEX.md`
+Lessons live in `learned-lessons/` itself (no copies elsewhere). **Routing:**
+`learned-lessons/ROUTER.md` — one file per domain, each with a "use it when"
+line. Read the router *before* you start a task, not after.
 
-> New lesson = create the lesson file AND update the matching `INDEX.md` (Librarian task), grouped under the right `## Domain:` heading. Frontmatter is mandatory — copy the block from any existing lesson (`category`, `domain`, `tier`, `last_updated`); `tms_integrity_hook.py` rejects lessons missing `tier:` or `category:`.
-
----
-
-## 🗺️ Key Locations (Quick Map)
-
-| What | Where |
-|---|---|
-| Task flow (TMS) | `~/BRAIN/tms/` (symlinks: `~/todo.md`, `~/in-progress.md`, `~/backlog.md`, `~/done.md`) |
-| Working memory | `~/BRAIN/memanto/memanto_global.json` (via `memanto_cli.py remember/recall/answer/distill/prune`) |
-| Tool register | `~/BRAIN/system-info/TOOL_REGISTER.md` |
-| Infrastructure scripts | `~/bin/maccha/` and `~/INFRA/` |
-| Encrypted weekly backup | `maccha-backup` — AES-256 tar of the personal zones + `~/bin/maccha` → cloud drive (key `~/.config/maccha/backup.key`); weekly via `session-startup` |
+> New lesson = the lesson file (frontmatter `category`, `domain`, `tier`,
+> `last_updated`) **plus** one line in the domain file of that domain — never in
+> `INDEX.md`, which is only a table of contents. `tms_integrity_hook.py` enforces
+> domain, count, router coverage and dead links.
 
 ---
 
-*MACCHA v1.4.1 | Multi-Agent Continuous Context Harness*
+*MACCHA v1.5.0 | Multi-Agent Continuous Context Harness*
 *"Continuity is the key to agentic performance."*
 
 ---

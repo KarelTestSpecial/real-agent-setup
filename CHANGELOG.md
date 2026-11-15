@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-11-15
+### Added
+- **Lesson routing: one router instead of one 15k-token index.** `learned-lessons/ROUTER.md` lists 32 domains with a "use it when" line and is loaded *ambiently* (OpenCode `instructions`, and `memanto prime`). A domain file holds at most ~23 lessons instead of 157 in a single `INDEX.md`; `infrastructure-en-tooling` alone was split into eight. The previous design had a write path (frontmatter check, INDEX coverage) but no read path: the startup hook was registered nowhere, `prime` printed only counts, and nothing said *when* to look — so the same lesson was written twice. `MISSES.md` is the instrument that shows whether routing works: one line per lesson found too late.
+- **`system-brain/MANDATE_GUIDE.md`**: the read-once rationale (layer structure, zone model, working-memory rules, codeword design) moved out of the mandate file into a document you read at install. The template links to it, and `setup.sh` installs it next to `BRAIN/AGENTS.md` so the link resolves.
+
+### Changed
+- **`system-brain/AGENTS.md` is now the template, `~/BRAIN/AGENTS.md` the instance.** `setup.sh` installs the template as `BRAIN/AGENTS.md` and points `~/AGENTS.md` at it with a symlink, instead of copying it to `~/AGENTS.md`. The tier map used to promise a `~/BRAIN/AGENTS.md` that was never created, so a fresh install got a document that contradicted its own file layout.
+- **The template carries only what applies to every session.** Layer structure condensed to a table (895 → ~150 tokens), the package and key-location sections moved to the guide, and the bounty rules (4-point audit, honeypot filter, live-first) removed: domain rules belong in `learned-lessons/`, not in a file every new user inherits. Template size 3,413 → **2,615 tokens**, below the live mandate file (2,796) rather than above it.
+- **`memanto prime` prints the router instead of lesson counts.** Counts told an agent that lessons existed; the router tells it which one to open.
+- **The integrity hook checks coverage in both directions.** It now validates `domain:` against a closed set, the INDEX count against the domain file, ROUTER coverage, and dead links — and it matches the lesson *link*, not a filename substring, so a lesson stripped of its link can no longer pass as covered.
+- **README**: refined description of what MACCHA is and who it is for; the HITL bullet gained its closing period.
+
+### Fixed
+- **`setup.sh` aborted on a directory.** `cli-tools/__pycache__` hit `cp` without `-r`, and `infrastructure/manual-scrcpy.txt` no longer exists; under `set -e` both stopped the install before step 4, leaving a half-configured machine. Missing or non-file sources are now skipped.
+- **`uninstall.sh` aborted on `consider()`.** `[ -e "$repo" ] || return` returned 1 for a missing source and `set -e` turned that into a full abort; it now returns 0.
+
 ## [1.4.1] - 2026-10-28
 ### Fixed
 - **`cli-tools/update-pnpm`: the cooldown guard was inert and the update never reached the binary on PATH.** Two independent faults, both silent. (1) The script installed through `npm install -g pnpm@latest`, but `minimum-release-age` is a **pnpm/bun** setting: npm reports it as `Unknown user config` and ignores it, so the cooldown branch was dead code and the updater installed exactly the releases the guardrail exists to hold back. It now reads the cooldown from `~/.npmrc` (default 7 days), takes **all** release dates from a single `npm view pnpm time --json` call, and picks the newest stable version that is old enough — the previous fallback issued one `npm view` per released version, which looked like a hang. (2) `npm`'s global prefix is the nvm node directory, which sits **behind** `~/.npm-global` on PATH, so a global install landed in a directory nothing ever executes and `pnpm -v` never changed — the symptom that made the script "not work optimally". The update now goes through `pnpm self-update <version> --yes` (pnpm replaces its own binary, so the one on PATH is always the one updated), with an explicit `--prefix ~/.npm-global` npm fallback for installs pnpm refuses to self-update. It verifies the result against the target version and warns when another pnpm copy on the system drifts from it — four entry points existed here (`~/.npm-global`, `~/.local/bin` → corepack, `/usr/bin` → corepack, and pnpm's standalone launcher), all reporting the same version but resolved by PATH order alone.
