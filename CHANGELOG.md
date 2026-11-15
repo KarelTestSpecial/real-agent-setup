@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.5.2] - 2026-11-16
 ### Fixed
 - **`tms_integrity_hook.py` rejected the lesson layout the repo ships.** `check_index_coverage()` demanded an `INDEX.md` per category and `check_learned_lessons_integrity()` treated every file without frontmatter as "not a domain file" — but the v1.5.0+ router layout has no `INDEX.md` and identifies a domain file exactly by that missing frontmatter. Every fresh install therefore ended on 🔴 with nine `No frontmatter and not a domain file` lines and two `Missing INDEX.md` lines. A domain file is now derived from the content when no `INDEX.md` exists; the INDEX lesson-count check runs only where an `INDEX.md` is kept (the local bank), so both layouts are validated without reintroducing the file the template forbids.
 - **The English guardrails template was unreadable for the hook.** `parse_guardrails()` only knew the Dutch keys (`naam`/`actief`/`bron`/`sectie`) and the Dutch rule type, while `system-brain/policies/guardrails.md` documents `name`/`active`/`source`/`section` and `forbidden-terms-in-active-tms` — the shipped example therefore printed `unknown type` and a user who set `active: yes` got a guardrail that never ran. Both key sets and both type names are accepted; an unknown key is ignored, which is how an English `type:` silently became a no-op.
