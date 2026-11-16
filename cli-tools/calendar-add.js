@@ -8,7 +8,11 @@ const { google } = req('googleapis');
 
 const CREDENTIALS_PATH = path.join(process.env.HOME, '.config/maccha/credentials.json');
 const TOKEN_PATH = path.join(process.env.HOME, '.config/maccha/calendar-token.json');
-const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
+// calendar.events = write events (calendar-add.js) · calendar.readonly = calendar list (calendar-read.js --list)
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/calendar.readonly',
+];
 
 async function main() {
   const args = process.argv.slice(2);
