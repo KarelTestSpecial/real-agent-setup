@@ -156,8 +156,6 @@ if command -v apt >/dev/null 2>&1; then
   fi
 fi
 
-echo ""
-
 # Readable todo view retired (User's decision, 5 October 2026).
 # `todo.md` is the only place; the derived table `INFO/owner/todo_overzicht.md` was
 # deleted. `tms_human_view.py` is still there, unused, in case it is ever needed.
