@@ -40,18 +40,15 @@ EXTRA_WATCH = [
     os.path.join(MACCHA_DIR, "service-account*.json"),
 ]
 
-# Section names are matched bilingually so the tool works with registers
-# written in Dutch or in English. The Dutch labels are assembled from
-# fragments so this public file itself stays English-only (language gate).
-NL_ACTIVE = "akt" "ief"        # actief
-NL_PUBLIC = "pub" "liek"       # publiek
-NL_DEAD = "d" "ood"            # dood
-NL_REMOVED = "verwij" "derd"   # removed (NL)
+# Section names default to English (the public version).
+# The local register is Dutch, so a LOCAL-ONLY block adds those labels; it is
+# stripped by publish.sh and never reaches the public capsule.
+SEC_ACTIVE = ("active",)
+SEC_PUBLIC = ("public",)
+SEC_DEAD = ("dead",)
+SEC_LOG = ("removed",)
+BLOCKED_PREFIXES = ("blocked",)
 
-SEC_ACTIVE = (NL_ACTIVE, "active")
-SEC_PUBLIC = (NL_PUBLIC, "public")
-SEC_DEAD = (NL_DEAD, "dead")
-SEC_LOG = (NL_REMOVED, "removed")
 
 
 def parse_rows(path):
@@ -155,12 +152,12 @@ def main():
         ops_note = cell(cells, len(cells) - 1)
         label = f"{ident} {cell(cells, 1)}"
 
-        if status.startswith(("geblokkeerd", "blocked")):
+        if status.startswith(BLOCKED_PREFIXES):
             reason = status.split("(", 1)[1].rstrip(")") if "(" in status else status
             blocked.append((label, reason.strip() or status))
             continue
 
-        if status not in ("actief", "active", ""):
+        if status not in SEC_ACTIVE + ("",):
             unknown.append((label, f"status '{status}'"))
             continue
 
