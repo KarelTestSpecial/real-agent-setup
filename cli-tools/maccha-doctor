@@ -82,7 +82,7 @@ if [ -f "$HOOK" ]; then
 else warn "tms_integrity_hook.py not found"; fi
 
 section "Supply chain"
-if [ -f "$H/.npmrc" ] && grep -q 'minimum-release-age' "$H/.npmrc"; then ok "minimum-release-age configured"; else warn "minimum-release-age not found in ~/.npmrc"; fi
+if [ -f "$H/.config/pnpm/config.yaml" ] && grep -Eq '^[[:space:]]*minimumReleaseAge[[:space:]]*:' "$H/.config/pnpm/config.yaml"; then ok "minimumReleaseAge configured"; else warn "minimumReleaseAge not found in ~/.config/pnpm/config.yaml"; fi
 
 section "Browse MCP (real-browser automation)"
 # The browse MCP is a thin client: MCP process -> local relay on :19988 -> Chrome

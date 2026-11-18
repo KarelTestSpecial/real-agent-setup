@@ -2,7 +2,8 @@
 # ==============================================================================
 # Script: update-pnpm
 # Description: Updates pnpm to the newest version that respects the cooldown
-#              from ~/.npmrc (minimum-release-age, in minutes; default 7 days).
+#              from ~/.config/pnpm/config.yaml (minimumReleaseAge, in minutes;
+#              default 7 days). pnpm 12 reads only auth/registry from .npmrc.
 #
 # WHY THIS WAS REWRITTEN (2026-10-28)
 #   The previous version delegated to `npm install -g pnpm@latest`. Two flaws:
@@ -22,17 +23,17 @@
 
 set -euo pipefail
 
-NPMRC="${HOME}/.npmrc"
+NPMRC="${HOME}/.config/pnpm/config.yaml"
 
-# --- cooldown: read from .npmrc (minutes), default 7 days --------------------
-COOLDOWN_MIN=$(grep -E '^[[:space:]]*minimum-release-age[[:space:]]*=' "$NPMRC" 2>/dev/null \
-  | tail -1 | sed -E 's/.*=[[:space:]]*//' | tr -dc '0-9')
+# --- cooldown: read from pnpm config.yaml (minutes), default 7 days ----------
+COOLDOWN_MIN=$(grep -E '^[[:space:]]*minimumReleaseAge[[:space:]]*:' "$NPMRC" 2>/dev/null \
+  | tail -1 | sed -E 's/.*:[[:space:]]*//' | tr -dc '0-9')
 COOLDOWN_MIN="${COOLDOWN_MIN:-10080}"
 COOLDOWN_DAYS=$(( COOLDOWN_MIN / 1440 ))
 
 CURRENT=$(pnpm -v 2>/dev/null || echo "unknown")
 echo "Installed pnpm:  $CURRENT"
-echo "Cooldown:        ${COOLDOWN_DAYS} days (${COOLDOWN_MIN} min, from ~/.npmrc)"
+echo "Cooldown:        ${COOLDOWN_DAYS} days (${COOLDOWN_MIN} min, from ~/.config/pnpm/config.yaml)"
 
 # --- one registry call: dates + newest compliant target ----------------------
 read -r LATEST LATEST_DATE TARGET TARGET_DATE < <(npm view pnpm time --json 2>/dev/null | \
