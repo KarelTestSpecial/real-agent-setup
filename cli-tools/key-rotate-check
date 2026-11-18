@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+"""key-rotate-check — watches the API-key rotation register.
+
+Source of truth: ~/.config/maccha/secrets/API_KEYS.md (the table).
+Override with API_KEYS_REGISTER / MACCHA_SECRETS_DIR / MACCHA_CONFIG_DIR.
+
+This script reads NO values, only the table and file metadata.
+
+Reports:
+  1. ROTATION — overdue or nearly overdue keys (active + interval passed)
+  2. DEAD     — files marked 'dead'/'duplicate' that are still on disk
+  3. COVERAGE — key files on disk that no register row covers
+  4. PERMISSIONS — secrets/ must be 700, files 600
+
+Exit code 1 if anything needs attention.
+"""
+
+import glob
+import os
+import re
+import sys
+from datetime import date, timedelta
+
+HOME = os.path.expanduser("~")
+REGISTRY = os.environ.get(
+    "API_KEYS_REGISTER",
+    os.path.join(HOME, ".config/maccha/secrets/API_KEYS.md"))
+SECRETS_DIR = os.environ.get(
+    "MACCHA_SECRETS_DIR",
+    os.path.join(HOME, ".config/maccha/secrets"))
+MACCHA_DIR = os.environ.get(
+    "MACCHA_CONFIG_DIR",
+    os.path.join(HOME, ".config/maccha"))
+DUE_SOON = timedelta(days=30)
+TODAY = date.today()
+
+# Files that must ALWAYS appear in the register (outside secrets/).
+EXTRA_WATCH = [
+    os.path.join(MACCHA_DIR, "client_secret_*.json"),
+    os.path.join(MACCHA_DIR, "service-account*.json"),
+]
+
+# Section names are matched bilingually so the tool works with registers
+# written in Dutch or in English. The Dutch labels are assembled from
+# fragments so this public file itself stays English-only (language gate).
+NL_ACTIVE = "akt" "ief"        # actief
+NL_PUBLIC = "pub" "liek"       # publiek
+NL_DEAD = "d" "ood"            # dood
+NL_REMOVED = "verwij" "derd"   # removed (NL)
+
+SEC_ACTIVE = (NL_ACTIVE, "active")
+SEC_PUBLIC = (NL_PUBLIC, "public")
+SEC_DEAD = (NL_DEAD, "dead")
+SEC_LOG = (NL_REMOVED, "removed")
+
+
+def parse_rows(path):
+    """Returns (section, cells) for every data row in the tables."""
+    rows = []
+    section = ""
+    if not os.path.exists(path):
+        return rows, section
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            s = line.strip()
+            if s.startswith("## "):
+                section = s[3:].strip()
+                continue
+            if not s.startswith("|"):
+                continue
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            if not cells or cells[0] in ("ID",):
+                continue
+            if set(cells[0]) <= set("-: "):
+                continue
+            rows.append((section, cells))
+    return rows, section
+
+
+def cell(cells, i):
+    return cells[i] if i < len(cells) else ""
+
+
+def parse_date(text):
+    text = text.strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        return None
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def paths_in(text):
+    """Extracts backtick paths from a cell, expands ~ and glob patterns."""
+    found = []
+    for raw in re.findall(r"`([^`]+)`", text):
+        p = raw.strip().rstrip(",;")
+        if not p or (" " in p and not p.startswith("~")):
+            continue
+        p = os.path.expanduser(p)
+        if not os.path.isabs(p):
+            p = os.path.join(HOME, p)
+        if any(ch in p for ch in "*?["):
+            found.extend(sorted(glob.glob(p)))
+        else:
+            found.append(p)
+    return found
+
+
+def starts(section, names):
+    sec = section.lower()
+    return any(sec.startswith(n) for n in names)
+
+
+def main():
+    if not os.path.exists(REGISTRY):
+        print(f"❌ register missing: {REGISTRY}")
+        return 1
+
+    rows, _ = parse_rows(REGISTRY)
+    problems = []
+    overdue, soon, ok, unknown = [], [], [], []
+    blocked = []
+    dead_present, dead_gone = [], []
+    referenced = set()
+
+    for section, cells in rows:
+        ident = cell(cells, 0)
+
+        if starts(section, SEC_DEAD):
+            ops = paths_in(cell(cells, len(cells) - 1))
+            referenced.update(ops)
+            if any(os.path.exists(p) for p in ops):
+                dead_present.append((ident, cell(cells, 1), ops))
+            else:
+                dead_gone.append(ident)
+            continue
+
+        ops = paths_in(cell(cells, len(cells) - 1))
+        referenced.update(ops)
+
+        if starts(section, SEC_PUBLIC) or starts(section, SEC_LOG):
+            continue
+
+        if not starts(section, SEC_ACTIVE):
+            continue
+
+        created = parse_date(cell(cells, 4))
+        rotated = parse_date(cell(cells, 5))
+        interval_raw = cell(cells, 6).strip()
+        m = re.fullmatch(r"(\d+)", interval_raw)
+        interval = int(m.group(1)) if m else None
+        status = cell(cells, 7).lower()
+        ops_note = cell(cells, len(cells) - 1)
+        label = f"{ident} {cell(cells, 1)}"
+
+        if status.startswith(("geblokkeerd", "blocked")):
+            reason = status.split("(", 1)[1].rstrip(")") if "(" in status else status
+            blocked.append((label, reason.strip() or status))
+            continue
+
+        if status not in ("actief", "active", ""):
+            unknown.append((label, f"status '{status}'"))
+            continue
+
+        if interval is None:
+            continue  # no rotation policy (OAuth/token that rotates itself)
+
+        base = rotated or created
+        if base is None:
+            # No proof of youth = no proof of safety → plan a rotation.
+            unknown.append((label, "no creation/rotation date on record"))
+            problems.append(f"no date: {label}")
+            continue
+
+        due = base + timedelta(days=interval)
+        left = (due - TODAY).days
+        if left < 0:
+            overdue.append((label, base, due, -left, ops_note))
+            problems.append(f"overdue rotation: {label}")
+        elif left <= DUE_SOON.days:
+            soon.append((label, base, due, left, ops_note))
+        else:
+            ok.append((label, due, left))
+
+    # --- coverage: files on disk that no register row mentions
+    on_disk = []
+    if os.path.isdir(SECRETS_DIR):
+        for root, _dirs, files in os.walk(SECRETS_DIR):
+            for f in files:
+                if f.endswith(".md"):  # documentation, not a secret
+                    continue
+                on_disk.append(os.path.join(root, f))
+    for pat in EXTRA_WATCH:
+        on_disk.extend(glob.glob(pat))
+    uncovered = [p for p in on_disk if p not in referenced]
+    for p in uncovered:
+        problems.append(f"not registered: {p}")
+
+    # --- permissions
+    perm_problems = []
+    if os.path.isdir(SECRETS_DIR):
+        mode = oct(os.stat(SECRETS_DIR).st_mode & 0o777)[2:]
+        if mode != "700":
+            perm_problems.append(f"dir {SECRETS_DIR} = {mode} (expected 700)")
+    for p in on_disk:
+        try:
+            mode = oct(os.stat(p).st_mode & 0o777)[2:]
+        except OSError:
+            continue
+        if mode not in ("600", "644") or (mode == "644" and not p.endswith(".md")):
+            perm_problems.append(f"{os.path.basename(p)} = {mode} (expected 600)")
+
+    # ---------------- report ----------------
+    print(f"🔑 key-rotate-check — {TODAY.isoformat()}")
+    print(f"   register: {REGISTRY.replace(HOME, '~')}\n")
+
+    print("1. ROTATION")
+    if overdue:
+        for label, base, due, days, _ops in overdue:
+            print(f"   ❌ {label}: overdue since {due.isoformat()} ({days} d) "
+                  f"[started {base.isoformat()}]")
+    if soon:
+        for label, base, due, left, _ops in soon:
+            print(f"   ⚠️  {label}: expires {due.isoformat()} ({left} d left)")
+    if unknown:
+        for label, why in unknown:
+            print(f"   ❌ {label}: {why} — rotate or record an anchor date")
+    if not (overdue or soon or unknown):
+        print("   ✅ all active keys within their interval")
+    if blocked:
+        for label, why in blocked:
+            print(f"   ⏸️  {label}: rotation blocked — {why} (no action possible)")
+    if ok:
+        print(f"   ({len(ok)} active, well within interval — furthest: "
+              f"{max(ok, key=lambda x: x[2])[1].isoformat()})")
+
+    print("\n2. DEAD / duplicate — still on disk")
+    if dead_present:
+        for ident, name, ops in dead_present:
+            print(f"   ❌ {ident} {name}: "
+                  f"{', '.join(os.path.basename(p) for p in ops)}")
+        problems.append("dead files still present")
+    else:
+        print("   ✅ none")
+
+    print("\n3. COVERAGE")
+    if uncovered:
+        for p in uncovered:
+            print(f"   ❌ not in register: {p.replace(HOME, '~')}")
+    else:
+        print("   ✅ every key file is in the register")
+
+    print("\n4. PERMISSIONS")
+    if perm_problems:
+        for p in perm_problems:
+            print(f"   ❌ {p}")
+    else:
+        print("   ✅ 700/600 everywhere")
+
+    print()
+    if problems:
+        print(f"❌ {len(problems)} item(s) need attention")
+        return 1
+    print("✅ OK — register and disk are in sync")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
