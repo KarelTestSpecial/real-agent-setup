@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-21
+### Added
+- **`tms-expiry-review.js` — expired / near-expiry TMS tasks as a HITL review queue.** The existing `auditActiveTms()` logged 7d/21d overruns but nothing acted on them, so stale `[Sprint]` items silently piled up. The new tool scans `todo.md` + `in-progress.md` and flags each task `OVERDUE-HARD` (a `deadline` passed), `OVERDUE-TIER` (logged longer ago than the tier window) or `NEAR` (past 70% of the window, or a deadline within 14 days). It only *prints* the queue — the agent puts each item to the user (extend / remove to `done.md` / park to `backlog.md`) and applies the decision; it never edits a file itself. It also requires splitting the single `(DD/MM)` field into two distinct meanings: `(DD/MM)` = created/last-reviewed (freshness) vs `deadline DD/MM` = a hard external date, so "overdue" is actually computable. Wired into `session-startup` (every start) and `session-closeout` (step 1).
+- **`key-rotate-check` — API-key rotation register watcher.** Reads `secrets/API_KEYS.md` (metadata only, no key values) and reports four things: overdue/near-overdue keys, `dead` files still on disk, key files with no register row, and wrong `secrets/` permissions (700/600). Exit code 1 when anything needs attention.
+- **`check_duplicate_lessons()` exceed-check in `tms_integrity_hook.py`.** After recent lessons are edited, cross-compares them against all other lessons; high overlap without a cross-link is reported as a warn-only ⚠️ so the closeout must either link the lessons or drop the duplicate instead of silently answering the warning away.
+
+### Changed
+- **`memanto prime` defaults to a one-line router pointer.** `ROUTER.md` is already auto-injected on OpenCode (`opencode.jsonc` instructions), so embedding it again paid for it twice per session. A new `--with-router` flag embeds the full router for harnesses that do not inject it (e.g. Claude).
+- **`maccha-doctor` reports a closed Chrome as info, not a warning.** A disconnected browse extension is only a fault when Chrome is running; with no browser there is nothing to pair, so the report distinguishes "extension not paired" from "browser simply closed".
+
+### Fixed
+- **`calendar-read --list` broke for auth-only events.** `calendar-add.js` requested only `calendar.events`; it now also requests `calendar.readonly`, which the list call needs.
+- **The shipped `infrastructure/maintenance/tms_integrity_hook.py` drifted from `cli-tools/tms_integrity_hook.py`.** Both copies are now in sync, and a stray `echo` was removed from `session-startup`.
+- **pnpm 12 config moved to `config.yaml`; the obsolete `tms_shortlist_sync.py` was dropped** (169 lines of dead sync logic), along with the `count-tokens`/`maccha-doctor`/`update-pnpm` adjustments that go with it.
+
 ## [1.5.2] - 2026-11-16
 ### Fixed
 - **`tms_integrity_hook.py` rejected the lesson layout the repo ships.** `check_index_coverage()` demanded an `INDEX.md` per category and `check_learned_lessons_integrity()` treated every file without frontmatter as "not a domain file" — but the v1.5.0+ router layout has no `INDEX.md` and identifies a domain file exactly by that missing frontmatter. Every fresh install therefore ended on 🔴 with nine `No frontmatter and not a domain file` lines and two `Missing INDEX.md` lines. A domain file is now derived from the content when no `INDEX.md` exists; the INDEX lesson-count check runs only where an `INDEX.md` is kept (the local bank), so both layouts are validated without reintroducing the file the template forbids.
