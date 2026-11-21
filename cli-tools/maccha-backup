@@ -81,6 +81,7 @@ echo "📦 Creating backup → $(basename "$TMP") (staged, not yet visible as a 
 # outside the fixed folder set. backup.key itself stays OUT of the tar (off-device copy).
 EXTRA=()
 if [ -f "$H/.config/maccha/pii-words.json" ]; then EXTRA+=( .config/maccha/pii-words.json ); fi
+if [ -f "$H/.config/maccha/dup_stopwords.txt" ]; then EXTRA+=( .config/maccha/dup_stopwords.txt ); fi
 if [ -f "$H/real-agent-setup/.publish-sanitize.sed" ]; then EXTRA+=( real-agent-setup/.publish-sanitize.sed ); fi
 if [ -f "$H/real-agent-setup/.publish-pii-words" ]; then EXTRA+=( real-agent-setup/.publish-pii-words ); fi
 echo "🔐 Extra config included: ${EXTRA[*]:-none}"

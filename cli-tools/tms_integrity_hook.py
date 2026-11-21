@@ -17,6 +17,10 @@ ARCHIVE_DIR = os.path.join(BRAIN, "archive")
 INFRA_BACKUPS = os.path.join(HOME, "INFRA", "backups")
 BIN_MACCHA = os.path.join(HOME, "bin", "maccha")
 PUBLISH_MARKER = os.path.join(HOME, ".config", "maccha", "last_publish")
+# Data/logic split (cf. pii_gate_data_logica_scheiden): the duplicate-check
+# stopword list matches the lessons' language and lives locally, not in the
+# published engine. Fail-visible if missing.
+DUP_STOPWORDS_FILE = os.path.join(HOME, ".config", "maccha", "dup_stopwords.txt")
 # Both are scanned: BRAIN/archive = curated knowledge archive (permanent
 # entries allowed), INFRA/backups = temporary restore points (never permanent).
 ARCHIVE_DIRS = [ARCHIVE_DIR, INFRA_BACKUPS]
@@ -173,6 +177,33 @@ def _frontmatter(text):
         return None
     end = text.find("\n---", 3)
     return text[3:end] if end != -1 else None
+
+
+def _load_dup_stopwords():
+    """Load the duplicate-check stopword list from the local config file.
+
+    Data/logic split: the engine is generic English, but the stopword list must
+    match the lessons' language (Dutch for User). Keeping it in a local file lets
+    the published tool stay English while the local install carries Dutch terms.
+
+    Fail-visible (cf. pii_gate_data_logica_scheiden): a missing or unreadable file
+    yields a built-in English-only baseline plus a loud warning — never silence."""
+    base = set(
+        "the a an and or but in on at to for of with is are was were be been being "
+        "have has had do does did will would could should may might this that these "
+        "those than then so such not no yes".split()
+    )
+    if not os.path.exists(DUP_STOPWORDS_FILE):
+        print(f"⚠️  {DUP_STOPWORDS_FILE} not found — duplicate-check uses English "
+              f"stopwords only (Dutch noise not filtered). See dup_stopwords.example.txt.")
+        return base
+    try:
+        with open(DUP_STOPWORDS_FILE, "r", encoding="utf-8") as f:
+            extra = set(w.strip().lower() for w in f if w.strip() and not w.startswith("#"))
+        return base | extra
+    except OSError as e:
+        print(f"⚠️  Cannot read {DUP_STOPWORDS_FILE} ({e}) — English stopwords only.")
+        return base
 
 
 def _domain_files(cat_dir):
@@ -784,6 +815,93 @@ def check_situatie_status_leak():
     return True
 
 
+def check_duplicate_lessons():
+    """Exceed-check: catches the exact failure mode — a new lesson written while a
+    related one already existed (the 'found it only afterwards' problem). Compares lessons
+    modified in the last few days against ALL other lessons by distinctive-term
+    overlap (Jaccard on title+body, stopwords removed). A high-overlap pair that
+    does NOT already link to each other is flagged.
+
+    Report-only (warn, never fails the gate): duplication is a human call, and a
+    false positive here is cheap — it just asks 'did you check lesson X?'.
+
+    Data/logic split (cf. pii_gate_data_logica_scheiden): the engine is generic
+    English; the stopword list — which must match the lessons' language (Dutch for
+    User) — lives in a local config file. Missing/unreadable list = visible
+    warning, never silent. This keeps the published tool English while the local
+    config carries the Dutch terms."""
+    print("🔁 Checking recently-touched lessons for possible duplication...")
+
+    if not os.path.exists(LESSONS_DIR):
+        return True
+
+    STOP = _load_dup_stopwords()
+
+    def terms(text):
+        # title (first # heading) + body, lowercased, split into words len>3, minus stopwords
+        head = re.search(r"^#\s+(.+)$", text, re.M)
+        title = head.group(1) if head else ""
+        words = re.findall(r"[a-zA-Zà-ÿ]{4,}", (title + " " + text).lower())
+        return set(w for w in words if w not in STOP)
+
+    # Collect all lessons with frontmatter (= real lessons, not domain files)
+    lessons = []
+    now = datetime.now().timestamp()
+    for root, dirs, files in os.walk(LESSONS_DIR):
+        rel = os.path.relpath(root, LESSONS_DIR)
+        if rel == "." or rel.split(os.sep)[0] == "archive":
+            continue
+        for file in files:
+            if not file.endswith(".md") or file == "INDEX.md":
+                continue
+            path = os.path.join(root, file)
+            try:
+                text = _read(path)
+            except Exception:
+                continue
+            if _frontmatter(text) is None:
+                continue  # domain file
+            mtime = os.path.getmtime(path)
+            lessons.append({
+                "path": path,
+                "rel": os.path.relpath(path, LESSONS_DIR),
+                "terms": terms(text),
+                "text": text,
+                "recent": (now - mtime) < (3 * 86400),  # modified in last 3 days
+            })
+
+    # Only compare recently-touched lessons (the new work) against everything else.
+    warnings = []
+    for i, a in enumerate(lessons):
+        if not a["recent"] or not a["terms"]:
+            continue
+        for j, b in enumerate(lessons):
+            if i == j or not b["terms"]:
+                continue
+            inter = len(a["terms"] & b["terms"])
+            union = len(a["terms"] | b["terms"])
+            if union == 0:
+                continue
+            jac = inter / union
+            if jac >= 0.30:
+                # already cross-linked? (either references the other's filename)
+                a_base = os.path.basename(a["path"])
+                b_base = os.path.basename(b["path"])
+                linked = (b_base in a["text"]) or (a_base in b["text"])
+                if not linked:
+                    warnings.append(
+                        f"{a['rel']}  ≈  {b['rel']}  (overlap {jac:.0%}) — check: related lesson already there?"
+                    )
+
+    if warnings:
+        for w in sorted(set(warnings)):
+            print(f"⚠️  {w}")
+        print("   → not an error, a question: was a related lesson already there? If so, link them.")
+        return True  # warn-only; never blocks closeout
+    print("✅ No possible duplicates among recently-modified lessons.")
+    return True
+
+
 def main():
     print(f"🛡️ TMS Integrity Hook - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     tms_content = get_tms_content()
@@ -793,6 +911,7 @@ def main():
     hygiene_ok = check_tms_hygiene()
     lessons_ok = check_learned_lessons_integrity()
     index_ok = check_index_coverage()
+    check_duplicate_lessons()
     guardrails_ok = check_guardrails()
     archive_ok = check_archive_retention()
     budget_ok = check_context_budget()

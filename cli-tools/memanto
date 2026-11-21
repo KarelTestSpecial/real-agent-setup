@@ -36,13 +36,18 @@ def cmd_prime(args):
         output.append("- No active memories.")
     output.append("")
     output.append("## Learned Lessons")
-    # Routing is the point of the prime: the router (32 domains, each with a
-    # 'when to use it') is what makes a lesson findable. Previously this printed
-    # only counts + a pointer, which is why lessons were never looked up.
+    # Routing is what makes a lesson findable. But ROUTER.md is already auto-
+    # injected on OpenCode (opencode.jsonc 'instructions'), so embedding it again
+    # in prime would pay for it twice per session. Default = a one-line pointer;
+    # --with-router embeds the full router for harnesses that don't inject it.
     router = os.path.join(LESSONS_DIR, "ROUTER.md")
-    if os.path.exists(router):
+    if getattr(args, "with_router", False) and os.path.exists(router):
         with open(router) as f:
             output.append(f.read().strip())
+    elif os.path.exists(router):
+        output.append("Router (`learned-lessons/ROUTER.md`) — consult before substantial work: "
+                      "32 domains with 'use when' + `Triggers`. "
+                      "Lesson-preflight: `lesson-finder <terms>`, then open 1–2 domain files.")
     else:
         output.append("`learned-lessons/ROUTER.md` is missing — search with "
                       "`grep -ril \"<keyword>\" ~/BRAIN/learned-lessons --include=*.md`.")
@@ -191,6 +196,10 @@ if __name__ == "__main__":
 
     pp = sub.add_parser("prime")
     pp.add_argument("--category")
+    pp.add_argument("--with-router", action="store_true",
+                    help="Embed the full ROUTER.md. Use only on harnesses that do NOT "
+                         "auto-inject ROUTER.md (e.g. Claude). On OpenCode ROUTER is "
+                         "already an instruction, so prime defaults to a one-line pointer.")
 
     dp = sub.add_parser("distill")
     dp.add_argument("title"); dp.add_argument("content"); dp.add_argument("--category")

@@ -1,0 +1,23 @@
+# dup_stopwords.example.txt — example stopword list for the duplicate-check.
+# The real list is local (~/.config/maccha/dup_stopwords.txt) and language-specific;
+# this example lets another install reproduce the pattern. Copy to the local path
+# and replace with your own language's common words. One word per line; # = comment.
+the
+a
+an
+and
+or
+but
+in
+on
+at
+to
+for
+of
+with
+is
+are
+was
+were
+this
+that

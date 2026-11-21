@@ -1,8 +1,13 @@
 #!/bin/bash
 # Session Startup: prime context + verify state
+# --with-router: embed the full ROUTER.md in the prime. Only needed on harnesses
+# that do NOT auto-inject ROUTER.md (Claude). OpenCode injects ROUTER via
+# opencode.jsonc already → omit here, otherwise it is paid twice per session.
 MEMANTO=~/bin/maccha/memanto_cli.py
+PRIME_ARGS=()
+[ "$1" = "--with-router" ] && PRIME_ARGS+=(--with-router)
 echo "=== PRIME: loading context ==="
-"$MEMANTO" prime 2>/dev/null
+"$MEMANTO" prime "${PRIME_ARGS[@]}" 2>/dev/null
 echo ""
 echo "=== TMS check ==="
 # Rule guard (CLAUDE.md 1.b): warns only on violations, otherwise one OK line.
@@ -155,6 +160,8 @@ if command -v apt >/dev/null 2>&1; then
     echo "Last update check $(( (NOW - LASTU) / 86400 )) day(s) ago — OK."
   fi
 fi
+
+echo ""
 
 # Readable todo view retired (User's decision, 5 October 2026).
 # `todo.md` is the only place; the derived table `INFO/owner/todo_overzicht.md` was
