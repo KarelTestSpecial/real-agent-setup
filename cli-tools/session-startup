@@ -88,6 +88,10 @@ else
 fi
 
 echo ""
+echo "=== TMS expiry review (every startup) ==="
+node ~/INFRA/maintenance/tms-expiry-review.js || true
+
+echo ""
 echo "=== INBOX check ==="
 # Untitled-1 = Users permanente kladblok (zie INBOX/README.md) — nooit tellen of opruimen.
 INBOX_N=$(find ~/INBOX -mindepth 1 -not -name 'README.md' -not -name 'Untitled-1' 2>/dev/null | wc -l)

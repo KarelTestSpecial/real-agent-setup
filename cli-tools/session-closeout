@@ -17,6 +17,10 @@ else
   echo "tms_prune.js not found"
 fi
 
+echo ""
+echo "=== TMS expiry review (HITL-queue: verleng / wis -> done / parkeer -> backlog) ==="
+node ~/INFRA/maintenance/tms-expiry-review.js || true
+
 # 2 Method Improver (self-reflection prompt)
 echo ""
 echo "=== Step 2: Method Improver ==="
