@@ -32,3 +32,4 @@ Two things follow from that:
 | Skill | What it does |
 | :--- | :--- |
 | `step-by-step` | Patient, one-step-at-a-time guidance: exactly one step per message, always restarting at step 1, and the user keeps the reins on anything that changes. |
+| `tms-review` | HITL walkthrough of every problematic TMS line, one at a time: the `tms-review-queue` tool prints the queue, the user decides per line (extend / split / de-tier / park / close / drop the flame / delete), the agent applies. Never automatic. |
