@@ -1,5 +1,5 @@
 #!/bin/bash
-# MACCHA encrypted backup of INFO/ PLAN/ BRAIN/ C-1/ C-2/ (creatief) to Google Drive.
+# MACCHA encrypted backup of INFO/ PLAN/ BRAIN/ C/ (creatief: C-1 zingeving, C-2 film, C-3 overig) to Google Drive.
 #
 # ⛔ DO NOT RUN ON EVERY SESSION CLOSEOUT. This is a WEEKLY run.
 #    On 1 October 2026 MACCHA ran this 8 times in one day because it had become
@@ -88,7 +88,7 @@ echo "🔐 Extra config included: ${EXTRA[*]:-none}"
 tar -C "$H" -czf - \
   --exclude='node_modules' --exclude='*/node_modules' \
   --exclude='.vite' \
-  INFO PLAN BRAIN C-1 C-2 bin ${EXTRA[@]+"${EXTRA[@]}"} \
+  INFO PLAN BRAIN C bin ${EXTRA[@]+"${EXTRA[@]}"} \
 | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass file:"$KEY_FILE" -out "$TMP"
 
 BYTES=$(stat -c %s "$TMP")
@@ -142,7 +142,7 @@ fi
 cat > "$DEST_DIR/RESTORE.md" <<'EOF'
 # Restoring a MACCHA backup
 
-Contents: ~/INFO, ~/PLAN, ~/BRAIN, ~/C-1, ~/C-2 — creative work (without node_modules and old backups).
+Contents: ~/INFO, ~/PLAN, ~/BRAIN, ~/C (C-1 zingeving, C-2 film, C-3 overig) — creative work (without node_modules and old backups).
 
 1. Put the key back on the (new) device:
    mkdir -p ~/.config/maccha && nano ~/.config/maccha/backup.key   # paste the 64-char hex key
