@@ -17,7 +17,7 @@
 //     that intentionally names a path which no longer exists (e.g. "the flag
 //     BRAIN/.harvest_paused no longer exists" — the sentence is correct, the path is not).
 //   * a zone must not start right after a word character: without this, an acronym such
-//     as "ABC/XYZ" was read as the path C/XYZ. Relative paths such as "../../../BRAIN/x"
+//     as "ABC/XYZ" was read as the path c/XYZ. Relative paths such as "../../../BRAIN/x"
 //     still match, because they are preceded by "/".
 //
 // Capsule copy of the local hook (~/BRAIN/hooks/link-check.cjs): same logic, English text.
