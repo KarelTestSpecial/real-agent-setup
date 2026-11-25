@@ -301,7 +301,11 @@ DUTCH_WORDS="niet geen bestand bestanden geheugen wekelijks wekelijkse verwijder
 # What it CAN do is make the exception explicit instead of accidental.
 # tms_shortlist_sync.py ships a Dutch stopword list for Dutch-language text
 # analysis — that is its function, not a leftover. One file, by name.
-GATE_EXCLUDE_FILES=(tms_shortlist_sync.py)
+# checkpoint-review.js matches Dutch TMS markers by function (headings say
+# "(AFGEROND)", block lines use `- afgehandeld:` / `- verouderd:` /
+# `- les-kandidaat:` / `- Volgende stap:`) — the Dutch tokens ARE its input, so
+# the file is excluded by name like tms_shortlist_sync.py.
+GATE_EXCLUDE_FILES=(tms_shortlist_sync.py checkpoint-review.js)
 GATE_EXCLUDE_ARGS=()
 for f in "${GATE_EXCLUDE_FILES[@]}"; do GATE_EXCLUDE_ARGS+=(--exclude="$f"); done
 NL=0

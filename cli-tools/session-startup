@@ -92,6 +92,10 @@ echo "=== TMS expiry review (every startup) ==="
 node ~/INFRA/maintenance/tms-expiry-review.js || true
 
 echo ""
+echo "=== Checkpoint-stale (finished/>7d/>3d-unverified blocks in in-progress.md) ==="
+node ~/INFRA/maintenance/checkpoint-review.js --stale || true
+
+echo ""
 echo "=== INBOX check ==="
 # Untitled-1 = Users permanente kladblok (zie INBOX/README.md) — nooit tellen of opruimen.
 INBOX_N=$(find ~/INBOX -mindepth 1 -not -name 'README.md' -not -name 'Untitled-1' 2>/dev/null | wc -l)

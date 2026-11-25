@@ -21,6 +21,13 @@ echo ""
 echo "=== TMS expiry review (HITL-queue: verleng / wis -> done / parkeer -> backlog) ==="
 node ~/INFRA/maintenance/tms-expiry-review.js || true
 
+echo ""
+echo "=== Checkpoint handling (HITL, owner of the checkpoint lifecycle) ==="
+node ~/INFRA/maintenance/checkpoint-review.js || true
+echo "   Per block: les-kandidaten -> LTAIS, 'Volgende stap' -> TMS, 1 line -> done.md,"
+echo "   then '- afgehandeld: DD/MM/YYYY' in the block and:"
+echo "   node ~/INFRA/maintenance/checkpoint-review.js --archive"
+
 # 2 Method Improver (self-reflection prompt)
 echo ""
 echo "=== Step 2: Method Improver ==="
