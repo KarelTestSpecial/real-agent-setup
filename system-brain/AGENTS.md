@@ -49,6 +49,23 @@ The agent MUST ALWAYS run this checklist proactively, **in order**, at the start
 
 ---
 
+## 🪵 Checkpoint Protocol (mid-session, on request)
+
+During a long session, when a context compaction is near, say `/checkpoint`. The agent appends a block under the active heading in `in-progress.md`:
+
+```markdown
+### Checkpoint DD/MM/YYYY — <title>
+- Gedaan: …          (what is finished)
+- Nu: …              (where it stands)
+- Volgende stap: …   (concrete next action + owner link)
+```
+
+This is a compaction safety-net, **not a task**: no checkbox, no priority — the TMS hygiene tools deliberately ignore it. One `les-kandidaat: …` line is allowed so a discovered lesson survives the compaction; the full write-up stays with `/closeout`. The field names are the literal markers that `checkpoint-review.js` matches, and are kept in Dutch so every copy of the tool parses them identically.
+
+`checkpoint-review.js --stale` reports finished, old (>7d) and unverified active (>3d) blocks at every startup. `/closeout` owns the cleanup: write the lessons, move `Volgende stap` into the TMS, add one line to `done.md`, mark the block `- afgehandeld: DD/MM/YYYY`, then run `checkpoint-review.js --archive` — which moves ONLY marked blocks to the archive, with a backup. Never wipe an unmarked block.
+
+---
+
 ## 🔄 Closeout Protocol (on request)
 
 1. **LTAIS:** review and, if warranted, record Learned Lessons in `IMPROVEMENT.md`.
