@@ -158,7 +158,7 @@ line. Read the router *before* you start a task, not after.
 
 ---
 
-*MACCHA v1.7.0 | Multi-Agent Continuous Context Harness*
+*MACCHA v1.8.0 | Multi-Agent Continuous Context Harness*
 *"Continuity is the key to agentic performance."*
 
 ---

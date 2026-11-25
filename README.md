@@ -340,5 +340,5 @@ There is **no automated release workflow** — `.github/workflows/gates.yml` onl
 
 ---
 
-*MACCHA v1.7.0 | Multi-Agent Continuous Context Harness*  
+*MACCHA v1.8.0 | Multi-Agent Continuous Context Harness*  
 *"Continuity is the key to agentic performance."*
