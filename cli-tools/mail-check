@@ -19,6 +19,7 @@ USAGE
   mail-check                     # last 48h, every account
   mail-check --days 7            # last 7 days
   mail-check --unread            # only unread messages
+  mail-check --needs-reply       # only incoming, not-yet-answered messages
   mail-check --account gmail-test
   mail-check --limit 80          # envelopes fetched per account
   mail-check --json              # machine-readable
@@ -27,6 +28,11 @@ OUTPUT
   One block per account: date, unread marker, sender, subject, message id,
   plus the exact `himalaya message read` command for that account. Message ids
   are folder-local: always read with the folder printed in the same block.
+  Markers: ● unread · ↩ already answered (IMAP \Answered) · ↗ sent from this
+  account. Answered mail MUST be marked: an incoming question that was already
+  replied to is not an open item — proposing a new draft for it is a false
+  positive. The All-Mail folder already contains sent copies, so toggling its
+  localized label does NOT fix this; the IMAP flag does.
 
   Timestamps are converted to THIS machine's timezone before they are printed
   (or emitted as ISO in --json). himalaya echoes the raw `Date:` header with the
@@ -58,6 +64,19 @@ def run(args):
     except json.JSONDecodeError:
         print(f"warning: non-JSON output for {' '.join(args)}", file=sys.stderr)
         return None
+
+
+def own_address(account):
+    """Return this account's own e-mail address from himalaya config (no secrets read)."""
+    path = os.path.expanduser("~/.config/himalaya/config.toml")
+    try:
+        import tomllib
+        with open(path, "rb") as fh:
+            cfg = tomllib.load(fh)
+        addr = (cfg.get("accounts", {}).get(account, {}).get("email") or "").lower()
+        return addr
+    except (OSError, ValueError, TypeError):
+        return ""
 
 
 def all_mail_folder(account):
@@ -111,6 +130,7 @@ def main():
     ap = argparse.ArgumentParser(add_help=True, description="Last messages across all accounts, over each All-Mail folder.")
     ap.add_argument("--days", type=float, default=2.0, help="window in days (default 2 = 48h)")
     ap.add_argument("--unread", action="store_true", help="only unread messages")
+    ap.add_argument("--needs-reply", action="store_true", help="only incoming, not-yet-answered messages")
     ap.add_argument("--account", action="append", help="limit to this account (repeatable)")
     ap.add_argument("--limit", type=int, default=40, help="envelopes fetched per account (default 40)")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
@@ -140,6 +160,7 @@ def main():
             "-o", "json",
             "--page-size", str(max(args.limit, 1)),
         ]) or []
+        mine = own_address(account)
 
         messages = []
         for env in envelopes:
@@ -150,12 +171,19 @@ def main():
             unseen = "Seen" not in flags
             if args.unread and not unseen:
                 continue
+            from_addr = (env.get("from") or {}).get("addr") or ""
+            answered = "Answered" in flags
+            outgoing = bool(mine) and from_addr.lower() == mine
+            if args.needs_reply and (outgoing or answered):
+                continue
             messages.append({
                 "id": env.get("id"),
                 "date": when.astimezone().isoformat() if when else env.get("date"),
                 "unread": unseen,
-                "from": (env.get("from") or {}).get("name") or (env.get("from") or {}).get("addr") or "?",
-                "from_addr": (env.get("from") or {}).get("addr") or "",
+                "answered": answered,
+                "outgoing": outgoing,
+                "from": (env.get("from") or {}).get("name") or from_addr or "?",
+                "from_addr": from_addr,
                 "subject": env.get("subject") or "(no subject)",
                 "attachment": bool(env.get("has_attachment")),
             })
@@ -186,12 +214,14 @@ def main():
               f"{sum(1 for m in messages if m['unread'])} unread")
         for m in messages:
             mark = "●" if m["unread"] else " "
+            flag = "↩" if m["answered"] else ("↗" if m["outgoing"] else " ")
             when = local_str(m["date"])
             attach = " [att]" if m["attachment"] else ""
-            print(f"  {when} {mark} {clip(m['from'], 22):<22} {clip(m['subject'], 62)}"
+            print(f"  {when} {mark}{flag} {clip(m['from'], 22):<22} {clip(m['subject'], 62)}"
                   f"  id:{m['id']}{attach}")
         if messages:
             print(f"  read: himalaya message read -a {account} --folder \"{folder}\" <id>")
+            print("  marks: ● unread · ↩ answered (\\Answered) · ↗ sent from this account")
 
 
 if __name__ == "__main__":
