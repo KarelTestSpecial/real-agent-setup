@@ -41,8 +41,8 @@ slicing a section and adding the pieces gives inconsistent results.
 enforced files and prints one line each:
 
 ```
-✅ ~/BRAIN/AGENTS.md: 3196/3333 tokens (137 free).
-⚠️ real-agent-setup/system-brain/AGENTS.md: 3400/3333 tokens — over budget.
+✅ ~/BRAIN/AGENTS.md: 3196/3600 tokens (404 free).
+⚠️ real-agent-setup/system-brain/AGENTS.md: 3700/3600 tokens — over budget.
 ```
 
 It is **non-blocking by design**: trimming a mandate file is a human decision, so

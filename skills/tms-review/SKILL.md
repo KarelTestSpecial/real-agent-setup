@@ -64,7 +64,7 @@ keeping it — only the *symbol* is up for debate.
 - Close/delete: remove from `todo.md`/`backlog.md`; never leave a `[x]` behind.
 - Symbol: drop `🔥 `.
 
-After each change the integrity hook validates ≤300 chars + tier correctness.
+After each change the integrity hook validates ≤360 chars + tier correctness.
 
 ## Step 5 — summarise at the end
 
@@ -82,4 +82,4 @@ chronology (that does NOT belong in the TMS line itself).
 
 - `tms-review-queue.js` — the queue itself (HITL, never auto).
 - `tms-expiry-review.js` — narrower per-item expiry check (runs in session-startup).
-- `tms_integrity_hook.py` — validation (≤300 chars, tier, guardrails).
+- `tms_integrity_hook.py` — validation (≤360 chars, tier, guardrails).

@@ -80,7 +80,7 @@ This is a compaction safety-net, **not a task**: no checkbox, no priority — th
 
 1. **One fact, one owner — never copy, always link.** Owners: tasks → `tms/`; income & tax → your tax/income register (offline mirror `tms/tax_income_ledger.md`); slow-changing situation → `INFO/over-owner/SITUATIE_OVERZICHT.md` (no status tables!); lessons → `learned-lessons/` + `IMPROVEMENT.md`; plans → `PLAN/`. Update a status **only** in its owner file.
 2. **TMS is flow-through, not a junk drawer.** Each task lives in exactly one TMS file (`in-progress.md` ≤ ~10 active; `todo.md` active ≤30d; `backlog.md` parked/>30d, not loaded at `start`; `done.md` finished as one line + archived quarterly to `BRAIN/archive/tms/`). Never leave `[x]` items in active files.
-3. **Fixed TMS line form (≤300 chars/line, label first):** `- [ ] [Tier] 🔥 **Title**: next action … (date) [link]` — `[Ephemeral]` (≤7d)/`[Sprint]` (≤21d)/`[Strategic]`/`[Eternal]` right after the checkbox; chronological history belongs in the owner dossier.
+3. **Fixed TMS line form (≤360 chars/line in `todo.md`, `in-progress.md` and `backlog.md`; `done.md` exempt, label first):** `- [ ] [Tier] 🔥 **Title**: next action … (date) [link]` — `[Ephemeral]` (≤7d)/`[Sprint]` (≤21d)/`[Strategic]`/`[Eternal]` right after the checkbox; chronological history belongs in the owner dossier. The number lives in `~/.config/maccha/tms_line_limit.json` (360 = 3600 mandate tokens / 10).
 4. **Weekly TMS sweep:** roll `[x]` items forward, dedupe, trim in-progress, enforce the line form.
 
 ---
@@ -100,7 +100,7 @@ This is a compaction safety-net, **not a task**: no checkbox, no priority — th
 | **Secrets** | NEVER in source code — scan before every commit |
 | **Outgoing email** | Always `~/bin/maccha/compose-mail` (HTML + quoted-printable + attachments + threading) — it only **saves a draft** (HITL). Never raw `.eml` or `himalaya save` (Gmail truncates them) |
 | **Himalaya** | Binary `~/.local/bin/himalaya`; pass the account with `-a` on the **subcommand** (an env var is ignored); inbox = `himalaya envelope list` |
-| **Context budget** | Mandate files stay ≤ 3333 tokens of critical mandates — project-specific detail lives in the Deep Knowledge Index |
+| **Context budget** | Mandate files stay ≤ 3600 tokens of critical mandates — project-specific detail lives in the Deep Knowledge Index |
 | **Filenames** | Correspondence, reports and drafts get a `yyyymmdd_` date prefix; drafts add `draft_` before the date; never sequence numbers (`08_`, `0x`) |
 
 ---

@@ -185,7 +185,7 @@ if [ ! -f "$HOME_DIR/.config/maccha/tms_line_limit.json" ]; then
     mkdir -p "$HOME_DIR/.config/maccha"
     cat > "$HOME_DIR/.config/maccha/tms_line_limit.json" << 'EOF'
 {
-  "max_line_chars": 300,
+  "max_line_chars": 360,
   "tms_paths": [
     "~/todo.md",
     "~/in-progress.md",
@@ -197,7 +197,7 @@ if [ ! -f "$HOME_DIR/.config/maccha/tms_line_limit.json" ]; then
   "_comment": "Single source for the TMS line-length limit (UTF-8 characters). Read by session-startup, tms_integrity_hook.py, and optional editor/agent plugins."
 }
 EOF
-    echo -e "  ${GREEN}✓${RESET} .config/maccha/tms_line_limit.json (300 chars/line limit)"
+    echo -e "  ${GREEN}✓${RESET} .config/maccha/tms_line_limit.json (360 chars/line limit)"
 fi
 
 # Cross-agent hooks (shared by Claude Code, Gemini/Antigravity, OpenCode)

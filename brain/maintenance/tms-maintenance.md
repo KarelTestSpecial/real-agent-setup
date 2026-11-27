@@ -4,9 +4,9 @@ The Task Management System (TMS) is four plain markdown files in `~/BRAIN/tms/`:
 
 | File | Holds | Cap |
 |---|---|---|
-| `todo.md` | active tasks (horizon ≤ 30 days) + items waiting on an external party | ≤ 100 lines, ≤ 300 chars/line |
-| `in-progress.md` | only what is actively being worked on right now | ~10 open items, ≤ 300 chars/line |
-| `backlog.md` | parked, paused, or long-term (> 30 days) tasks — **not** loaded at `start` | ≤ 300 chars/line |
+| `todo.md` | active tasks (horizon ≤ 30 days) + items waiting on an external party | ≤ 100 lines, ≤ 360 chars/line |
+| `in-progress.md` | only what is actively being worked on right now | ~10 open items, ≤ 360 chars/line |
+| `backlog.md` | parked, paused, or long-term (> 30 days) tasks — **not** loaded at `start` | ≤ 360 chars/line |
 | `done.md` | completed items, one line each | pruned at 100 lines |
 
 ## Flow rules
@@ -19,7 +19,7 @@ The Task Management System (TMS) is four plain markdown files in `~/BRAIN/tms/`:
    external party within the next 30 days belongs in `todo.md` (not
    `in-progress.md`). Parked projects and horizons > 30 days belong in
    `backlog.md` so `todo.md` stays compact for every session start.
-4. **Fixed line form (≤ 300 chars per line):**
+4. **Fixed line form (≤ 360 chars per line):**
 
    ```
    - [ ] [Tier] 🔥 **Title**: next action … (date) [link]
@@ -39,7 +39,7 @@ The Task Management System (TMS) is four plain markdown files in `~/BRAIN/tms/`:
 - leftover `- [x]` items in `todo.md` / `in-progress.md`,
 - more than ~10 open items in `in-progress.md`,
 - any line in `todo.md`, `in-progress.md`, or `backlog.md` exceeding the
-  character limit in `~/.config/maccha/tms_line_limit.json` (default: **300 chars**).
+  character limit in `~/.config/maccha/tms_line_limit.json` (default: **360 chars**).
 
 It also runs the **throttled weekly sweep** (once per 7 days): `tms_prune.js`
 plus a Memanto working-memory prune, followed by the manual steps below.
@@ -89,7 +89,7 @@ and checks, in order:
 
 1. recent git commits are registered in the TMS,
 2. recent workspace activity is registered,
-3. all lines in `todo.md`, `in-progress.md`, and `backlog.md` are ≤ 300 chars,
+3. all lines in `todo.md`, `in-progress.md`, and `backlog.md` are ≤ 360 chars,
 4. learned lessons carry valid frontmatter,
 5. every lesson appears in its category index,
 6. guardrails hold,

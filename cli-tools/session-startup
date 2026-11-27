@@ -41,9 +41,9 @@ try:
     with open(os.path.expanduser("~/.config/maccha/tms_line_limit.json"), encoding="utf-8") as fh:
         print(int(json.load(fh)["max_line_chars"]))
 except Exception:
-    print(300)
+    print(360)
 ' 2>/dev/null)
-[ -n "$TMS_MAX_LINE" ] || TMS_MAX_LINE=300
+[ -n "$TMS_MAX_LINE" ] || TMS_MAX_LINE=360
 LONG_LINES=$(python3 -c '
 import sys
 LIMIT = int(sys.argv[1])

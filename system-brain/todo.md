@@ -1,10 +1,10 @@
 # 📋 Todo — Active Tasks (horizon ≤ 30 days)
-*Rules: max. 300 chars per line (only next action + link; chronological history lives in the owner dossier). Parked / >30-day items → [`backlog.md`](backlog.md). Tiers: `[Ephemeral]` ≤7d · `[Sprint]` ≤21d · `[Strategic]` quarter · `[Eternal]` permanent.*
+*Rules: max. 360 chars per line (only next action + link; chronological history lives in the owner dossier). Parked / >30-day items → [`backlog.md`](backlog.md). Tiers: `[Ephemeral]` ≤7d · `[Sprint]` ≤21d · `[Strategic]` quarter · `[Eternal]` permanent.*
 *Domain headings below are sensible defaults. On first setup (or once `SITUATIE_OVERZICHT.md` is filled in), ask your agent to tailor these 5–7 headings to your own life and work domains.*
 
 # CRON JOBS
 
-- [ ] [Eternal] **TMS-sweep (weekly via `session-startup`)**: runs `tms_prune.js` + `memanto prune`; move `[x]` to `done.md`, expired/parked items to `backlog.md`, keep `in-progress.md` ≤10 and every line ≤300 chars.
+- [ ] [Eternal] **TMS-sweep (weekly via `session-startup`)**: runs `tms_prune.js` + `memanto prune`; move `[x]` to `done.md`, expired/parked items to `backlog.md`, keep `in-progress.md` ≤10 and every line ≤360 chars.
 
 # 🎯 PRIORITIES — the compass (no duplicate checkboxes)
 *Conflict rule: this ranking always wins over section order below.*
